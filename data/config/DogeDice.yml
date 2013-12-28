@@ -1,0 +1,5 @@
+minBet: .01
+lobbyIdleSeconds: 15
+channelWhitelistOn: True
+channelWhitelist:
+  - test

@@ -1,0 +1,5 @@
+hintDelay: 15
+delayNext: 5
+maxHints: 5
+abortAfterNoGuesses: 5
+decreaseFactor: 0.83

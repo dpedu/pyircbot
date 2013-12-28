@@ -1,0 +1,13 @@
+bot:
+  datadir: /home/example/bot/data/
+  rpcbind: 0.0.0.0
+  rpcport: 1876
+connection:
+  server: irc.freenode.net
+  ipv6: off
+  port: 6667
+modules:
+  - PingResponder
+  - Services
+  - MySQL
+  - AttributeStorage

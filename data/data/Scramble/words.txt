@@ -1,0 +1,313 @@
+Air
+Stone
+Grass
+Dirt
+Cobblestone
+Wooden Plank
+Sapling
+Redwood Sapling
+Birch Sapling
+Bedrock
+Water
+Lava
+Sand
+Gravel
+Gold Ore
+Iron Ore
+Coal Ore
+Wood
+Redwood
+Birchwood
+Leaves
+Redwood Leaves
+Birchwood Leaves
+Sponge
+Glass
+Lapis Lazuli Ore
+Lapis Lazuli Block
+Dispenser
+Sandstone
+Note Block
+Bed Block
+Powered Rail
+Detector Rail
+Sticky Piston
+Web
+Dead Shrub
+Tall Grass
+Live Shrub
+Dead Shrub
+Piston
+Piston Head
+White Wool
+Orange Wool
+Magenta Wool
+Light Blue Wool
+Yellow Wool
+Light Green Wool
+Pink Wool
+Gray Wool
+Light Gray Wool
+Cyan Wool
+Purple Wool
+Blue Wool
+Brown Wool
+Dark Green Wool
+Red Wool
+Black Wool
+Dandelion
+Rose
+Brown Mushroom
+Red Mushroom
+Gold Block
+Iron Block
+Double Stone Slab
+Double Sandstone Slab
+Double Wooden Slab
+Double Cobblestone Slab
+Double Brick Slab
+Double Stone Brick Slab
+Stone Slab
+Sandstone Slab
+Wooden Slab
+Cobblestone Slab
+Brick Slab
+Stone Brick Slab
+Brick
+TNT
+Bookshelf
+Mossy Cobblestone
+Obsidian
+Torch
+Fire
+Monster Spawner
+Wooden Stairs
+Chest
+Redstone Wire
+Diamond Ore
+Diamond Block
+Workbench
+Wheat Crops
+Soil
+Furnace
+Sign Post
+Wooden Door
+Ladder
+Rails
+Cobblestone Stairs
+Wall Sign
+Lever
+Stone Pressure Plate
+Iron Door Block
+Wooden Pressure Plate
+Redstone Ore
+Redstone Torch
+Stone Button
+Snow
+Ice
+Snow Block
+Cactus
+Clay
+Sugar Cane
+Jukebox
+Fence
+Pumpkin
+Netherrack
+Soul Sand
+Glowstone
+Portal
+Jack-O-Lantern
+Cake Block
+Redstone Repeater Block
+Locked Chest
+Trapdoor
+Stone (Silverfish)
+Stone Brick
+Mossy Stone Brick
+Cracked Stone Brick
+Red Mushroom Cap
+Brown Mushroom Cap
+Iron Bars
+Glass Pane
+Melon Block
+Pumpkin Stem
+Melon Stem
+Vines
+Fence Gate
+Brick Stairs
+Stone Brick Stairs
+Mycelium
+Lily Pad
+Nether Brick
+Nether Brick Fence
+Nether Brick Stairs
+Nether Wart
+Iron Shovel
+Iron Pickaxe
+Iron Axe
+Flint and Steel
+Apple
+Bow
+Arrow
+Coal
+Charcoal
+Diamond
+Iron Ingot
+Gold Ingot
+Iron Sword
+Wooden Sword
+Wooden Shovel
+Wooden Pickaxe
+Wooden Axe
+Stone Sword
+Stone Shovel
+Stone Pickaxe
+Stone Axe
+Diamond Sword
+Diamond Shovel
+Diamond Pickaxe
+Diamond Axe
+Stick
+Bowl
+Mushroom Soup
+Gold Sword
+Gold Shovel
+Gold Pickaxe
+Gold Axe
+String
+Feather
+Sulphur
+Wooden Hoe
+Stone Hoe
+Iron Hoe
+Diamond Hoe
+Gold Hoe
+Wheat Seeds
+Wheat
+Bread
+Leather Helmet
+Leather Chestplate
+Leather Leggings
+Leather Boots
+Chainmail Helmet
+Chainmail Chestplate
+Chainmail Leggings
+Chainmail Boots
+Iron Helmet
+Iron Chestplate
+Iron Leggings
+Iron Boots
+Diamond Helmet
+Diamond Chestplate
+Diamond Leggings
+Diamond Boots
+Gold Helmet
+Gold Chestplate
+Gold Leggings
+Gold Boots
+Flint
+Raw Porkchop
+Cooked Porkchop
+Painting
+Golden Apple
+Sign
+Wooden Door
+Bucket
+Water Bucket
+Lava Bucket
+Minecart
+Saddle
+Iron Door
+Redstone
+Snowball
+Boat
+Leather
+Milk Bucket
+Clay Brick
+Clay Balls
+Sugarcane
+Paper
+Book
+Slimeball
+Storage Minecart
+Powered Minecart
+Egg
+Compass
+Fishing Rod
+Clock
+Glowstone Dust
+Raw Fish
+Cooked Fish
+Ink Sack
+Rose Red
+Cactus Green
+Coco Beans
+Lapis Lazuli
+Purple Dye
+Cyan Dye
+Light Gray Dye
+Gray Dye
+Pink Dye
+Lime Dye
+Dandelion Yellow
+Light Blue Dye
+Magenta Dye
+Orange Dye
+Bone Meal
+Bone
+Sugar
+Cake
+Bed
+Redstone Repeater
+Cookie
+Map
+Shears
+Melon
+Pumpkin Seeds
+Melon Seeds
+Raw Beef
+Steak
+Raw Chicken
+Cooked Chicken
+Rotten Flesh
+Ender Pearl
+Blaze Rod
+Ghast Tear
+Gold Nugget
+Nether Wart Seeds
+Potion
+Glass Bottle
+Spider Eye
+Fermented Spider Eye
+Blaze Powder
+Magma Cream
+Gold Music Disc
+Green Music Disc
+Chicken
+Cow
+Mooshroom
+Ocelot
+Pig
+Sheep
+Squid
+Villager
+Enderman
+Wolf
+Zombie Pigman
+Wolf
+Ocelot
+Blaze
+Cave Spider
+Creeper
+Ghast
+Magma Cube
+Silverfish
+Skeleton
+Slime
+Spider
+Spider Jockey
+Zombie
+Snow Golem
+Iron Golem
+Ender Dragon
+Rana

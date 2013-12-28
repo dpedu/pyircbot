@@ -1,0 +1,3 @@
+channelWhitelistOn: True
+channelWhitelist:
+  - test
