@@ -70,7 +70,17 @@ class PyIRCBot(asynchat.async_chat):
 	
 	def found_terminator(self):
 		" A complete command was pushed through, so clear the buffer and process it."
-		self.process_data(self.getBuf().decode("UTF-8"))
+		line = None
+		buf = self.getBuf()
+		try:
+			line = buf.decode("UTF-8")
+		except UnicodeDecodeError as ude:
+			self.log.error("found_terminator(): could not decode input as UTF-8")
+			self.log.error("found_terminator(): data: %s" % line)
+			self.log.error("found_terminator(): repr(data): %s" % repr(line))
+			self.log.error("found_terminator(): error: %s" % str(ude))
+			return
+		self.process_data(line)
 	
 	def handle_close(self):
 		" called on socket shutdown "
