@@ -1,0 +1,21 @@
+types:
+  LTC:
+    name: Litecoin
+    abbr: LTC
+    host: 127.0.0.1
+    username: user
+    password: pass
+    port: 12893
+    precision: 8
+    reserve: .01
+    link: https://litecoin.org/
+  BTC:
+    name: Bitcoin
+    abbr: BTC
+    host: 127.0.0.1
+    username: user
+    password: pass
+    port: 48191
+    precision: 8
+    reserve: .001
+    link: http://bitcoin.org/
