@@ -88,14 +88,12 @@ class PyIRCBot(asynchat.async_chat):
 		self.connected=False
 		self.close()
 		
-		self.log.warning("Connection was lost.")
-		
-		#self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
-		#time.sleep(5)
-		#self._connect()
+		self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
+		time.sleep(5)
+		self._connect()
 	
 	def handle_error(self, *args, **kwargs):
-		raise
+		self.log.warning("Connection failed.")
 	
 	def _connect(self):
 		self.log.debug("Connecting to %(server)s:%(port)i", {"server":self.botconfig["connection"]["server"], "port":self.botconfig["connection"]["port"]})
