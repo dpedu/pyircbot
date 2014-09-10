@@ -7,6 +7,7 @@ import time
 import sys
 from socket import SHUT_RDWR
 from core.rpc import BotRPC
+import os.path
 
 try:
 	from cStringIO import StringIO
@@ -374,6 +375,8 @@ class PyIRCBot(asynchat.async_chat):
 	
 	" Filesystem Methods "
 	def getDataPath(self, moduleName):
+		if not os.path.exists("%s/data/%s" % (self.botconfig["bot"]["datadir"], moduleName)):
+			os.mkdir("%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName))
 		return "%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName)
 	
 	def getConfigPath(self, moduleName):
