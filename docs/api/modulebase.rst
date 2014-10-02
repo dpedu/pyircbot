@@ -1,5 +1,5 @@
 :mod:`ModuleBase` --- Main class of the bot
-=========================================
+===========================================
 
 yabba blahblah blahblah
 

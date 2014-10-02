@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyircbot3's documentation!
-=====================================
+PyIRCBot3 - A minimalist and modular IRC bot
+============================================
 
 PyIRCBot is a fault tolerant, multi-threaded, modular IRC bot designed for
 Python 3. 

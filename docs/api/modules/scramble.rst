@@ -1,5 +1,5 @@
 :mod:`Scramble` --- Module to provide a word scramble game
-=========================================================
+==========================================================
 
 yabba blahblah blahblah
 
