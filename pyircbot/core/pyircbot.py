@@ -1,4 +1,11 @@
-#!/usr/bin/env python
+"""
+.. module:: PyIRCBot
+   :synopsis: Main IRC bot class
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 import socket
 import asynchat
 import logging
@@ -15,13 +22,24 @@ except:
 	from io import BytesIO as StringIO
 
 class PyIRCBot(asynchat.async_chat):
+	""":param coreconfig: The core configuration of the bot. Passed by main.py.
+	:type coreconfig: dict
+	:param botconfig: The configuration of this instance of the bot. Passed by main.py.
+	:type botconfig: dict
+	"""
+	
 	def __init__(self, coreconfig, botconfig):
 		asynchat.async_chat.__init__(self)
-		" logging "
+		
 		self.log = logging.getLogger('PyIRCBot')
-		" config "
+		"""Reference to logger object"""
+		
 		self.coreconfig = coreconfig
+		"""saved copy of the core config"""
+		
 		self.botconfig = botconfig
+		"""saved copy of the instance config"""
+		
 		" rpc "
 		self.rpc = BotRPC(self)
 		
@@ -458,8 +476,24 @@ class PyIRCBot(asynchat.async_chat):
 			self.sendRaw("MODE %s %s" % (channel,mode))
 	
 	def act_ACTION(self, channel, action):
+		"""Use the `/me <action>` command
+		
+		:param channel: The channel name or target's name the message is sent to
+		:type channel: str
+		:param action: The text to send
+		:type action: str
+		"""
 		self.sendRaw("PRIVMSG %s :\x01ACTION %s"%(channel,action))
 	
-	def act_KICK(self, channel, who, comment):
+	def act_KICK(self, channel, who, comment=""):
+		"""Use the `/kick <user> <message>` command
+		
+		:param channel: The channel from which the user will be kicked
+		:type channel: str
+		:param who: The nickname of the user to kick
+		:type action: str
+		:param comment: The kick message
+		:type comment: str
+		"""
 		self.sendRaw("KICK %s %s :%s" % (channel, who, comment))
 	
