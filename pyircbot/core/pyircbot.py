@@ -28,6 +28,8 @@ class PyIRCBot(asynchat.async_chat):
 	:type botconfig: dict
 	"""
 	
+	version = "1.0a1-git"
+	
 	def __init__(self, coreconfig, botconfig):
 		asynchat.async_chat.__init__(self)
 		

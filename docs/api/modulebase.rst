@@ -1,9 +1,10 @@
-:mod:`PyIRCBot` --- Main class of the bot
+:mod:`ModuleBase` --- Main class of the bot
 =========================================
 
 yabba blahblah blahblah
 
-.. automodule:: core.pyircbot
+.. automodule:: core.modulebase
     :members:
     :undoc-members:
     :show-inheritance:
+

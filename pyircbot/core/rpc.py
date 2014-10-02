@@ -1,4 +1,11 @@
-#!/usr/bin/env python
+"""
+.. module:: BotRPC
+   :synopsis: RPC server
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 import traceback
 import logging
 from core import jsonrpc

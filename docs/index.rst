@@ -18,7 +18,6 @@ Contents:
    modules/_modules.rst
    rpc/_rpc.rst
    dev/_dev.rst
-   #PyIRCBot.rst
 
 More Information
 ================

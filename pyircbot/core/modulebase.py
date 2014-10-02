@@ -1,4 +1,10 @@
-#!/usr/bin/env python
+"""
+.. module:: ModuleBase
+	:synopsis: Base class that modules will extend
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
 
 import logging
 import os

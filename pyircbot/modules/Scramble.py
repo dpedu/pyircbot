@@ -1,4 +1,11 @@
-#!/usr/bin/env python
+"""
+.. module:: Scramble
+	:synopsis: Module to provide a word scramble game
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import random
 import yaml
@@ -16,7 +23,7 @@ class Scramble(ModuleBase):
 		
 		# Dictionary
 		self.wordsCount=0;
-			self.wordsFile = self.getFilePath("words.txt")
+		self.wordsFile = self.getFilePath("words.txt")
 		print(self.wordsFile)
 		wordsF = open(self.wordsFile, "r")
 		while True:
