@@ -29,9 +29,13 @@ class PyIRCBot(asynchat.async_chat):
 	"""
 	
 	version = "1.0a1-git"
+	""" PyIRCBot version """
 	
 	def __init__(self, coreconfig, botconfig):
 		asynchat.async_chat.__init__(self)
+		
+		self.connected=False
+		"""If we're connected or not"""
 		
 		self.log = logging.getLogger('PyIRCBot')
 		"""Reference to logger object"""
@@ -42,24 +46,27 @@ class PyIRCBot(asynchat.async_chat):
 		self.botconfig = botconfig
 		"""saved copy of the instance config"""
 		
-		" rpc "
 		self.rpc = BotRPC(self)
+		"""Reference to BotRPC thread"""
 		
-		" stringio object as buffer "
 		self.buffer = StringIO()
-		" line terminator "
+		"""cSTringIO used as a buffer"""
+		
+		# IRC Messages are terminated with \r\n
 		self.set_terminator(b"\r\n")
 		
-		" Setup hooks for modules "
+		# Set up hooks for modules
 		self.initHooks()
-		" Load modules "
+		
+		# Load modules 
 		self.initModules()
 		
+		# Connect to IRC
 		self._connect()
-		self.connected=False
 	
 	def kill(self):
-		" Close RPC Socket "
+		"""Shut down the bot violently"""
+		#TODO: have rpc thread be daemonized so it just dies
 		#try:
 		#	self.rpc.server._Server__transport.shutdown(SHUT_RDWR)
 		#except Exception as e:
@@ -69,28 +76,31 @@ class PyIRCBot(asynchat.async_chat):
 		except Exception as e:
 			self.log.error(str(e))
 		
-		" Kill RPC thread "
+		#Kill RPC thread
 		self.rpc._stop()
 		
-		" Close all modules "
+		#Close all modules
 		self.closeAllModules()
 	
-	" Net related code "
+	" Net related code here on down "
 	
 	def getBuf(self):
-		" return buffer and clear "
+		"""Return the network buffer and clear it"""
 		self.buffer.seek(0)
 		data = self.buffer.read()
 		self.buffer = StringIO()
 		return data
 	
 	def collect_incoming_data(self, data):
-		" Recieve data from stream, add to buffer "
+		"""Recieve data from the IRC server, append it to the buffer
+		
+		:param data: the data that was recieved
+		:type data: str"""
 		self.log.debug("<< %(message)s", {"message":repr(data)})
 		self.buffer.write(data)
 	
 	def found_terminator(self):
-		" A complete command was pushed through, so clear the buffer and process it."
+		"""A complete command was pushed through, so clear the buffer and process it."""
 		line = None
 		buf = self.getBuf()
 		try:
@@ -104,7 +114,7 @@ class PyIRCBot(asynchat.async_chat):
 		self.process_data(line)
 	
 	def handle_close(self):
-		" called on socket shutdown "
+		"""Called when the socket is disconnected. We will want to reconnect. """
 		self.log.debug("handle_close")
 		self.connected=False
 		self.close()
@@ -114,9 +124,11 @@ class PyIRCBot(asynchat.async_chat):
 		self._connect()
 	
 	def handle_error(self, *args, **kwargs):
+		"""Called on fatal network errors."""
 		self.log.warning("Connection failed.")
 	
 	def _connect(self):
+		"""Connect to IRC"""
 		self.log.debug("Connecting to %(server)s:%(port)i", {"server":self.botconfig["connection"]["server"], "port":self.botconfig["connection"]["port"]})
 		socket_type = socket.AF_INET
 		if self.botconfig["connection"]["ipv6"]:
@@ -129,13 +141,17 @@ class PyIRCBot(asynchat.async_chat):
 		self.connect(socketInfo[0][4])
 	
 	def handle_connect(self):
-		" Called when the first packets come through, so we ident here "
+		"""When asynchat indicates our socket is connected, fire the connect hook"""
 		self.connected=True
 		self.log.debug("handle_connect: setting USER and NICK")
 		self.fire_hook("_CONNECT")
 		self.log.debug("handle_connect: complete")
 	
 	def sendRaw(self, text):
+		"""Send a raw string to the IRC server
+		
+		:param text: the string to send
+		:type text: str"""
 		if self.connected:
 			self.log.debug(">> "+text)
 			self.send( (text+"\r\n").encode("ascii"))
@@ -143,7 +159,10 @@ class PyIRCBot(asynchat.async_chat):
 			self.log.warning("Send attempted while disconnected. >> "+text)
 	
 	def process_data(self, data):
-		" called per line of irc sent through "
+		"""Process one line of tet irc sent us
+		
+		:param data: the data to process
+		:type data: str"""
 		if data.strip() == "":
 			return
 			
@@ -172,12 +191,9 @@ class PyIRCBot(asynchat.async_chat):
 			self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
 	
 	
-	
-	
-	
-	
 	" Module related code "
 	def initHooks(self):
+		"""Defines hooks that modules can listen for events of"""
 		self.hooks = [
 			'_CONNECT', # Called when the bot connects to IRC on the socket level
 			'NOTICE',	# :irc.129irc.com NOTICE AUTH :*** Looking up your hostname...
@@ -218,6 +234,17 @@ class PyIRCBot(asynchat.async_chat):
 			self.hookcalls[command]=[]
 	
 	def fire_hook(self, command, args=None, prefix=None, trailing=None):
+		"""Run any listeners for a specific hook
+		
+		:param command: the hook to fire
+		:type command: str
+		:param args: the list of arguments, if any, the command was passed
+		:type args: list
+		:param prefix: prefix of the sender of this command
+		:type prefix: str
+		:param trailing: data payload of the command
+		:type trailing: str"""
+		
 		for hook in self.hookcalls[command]:
 			try:
 				hook(args, prefix, trailing)
@@ -225,7 +252,7 @@ class PyIRCBot(asynchat.async_chat):
 				self.log.warning("Error processing hook: \n%s"% self.trace())
 	
 	def initModules(self):
-		" load modules specified in config "
+		"""load modules specified in instance config"""
 		" storage of imported modules "
 		self.modules = {}
 		" instances of modules "
@@ -239,7 +266,10 @@ class PyIRCBot(asynchat.async_chat):
 			self.loadmodule(modulename)
 	
 	def importmodule(self, name):
-		" import a module by name "
+		"""Import a module
+		
+		:param moduleName: Name of the module to import
+		:type moduleName: str"""
 		" check if already exists "
 		if not name in self.modules:
 			" attempt to load "
@@ -257,7 +287,10 @@ class PyIRCBot(asynchat.async_chat):
 			return (False, "Module already imported")
 	
 	def deportmodule(self, name):
-		" remove a module from memory by name "
+		"""Remove a module's code from memory. If the module is loaded it will be unloaded silently.
+		
+		:param moduleName: Name of the module to import
+		:type moduleName: str"""
 		" unload if necessary "
 		if name in self.moduleInstances:
 			self.unloadmodule(name)
@@ -271,7 +304,10 @@ class PyIRCBot(asynchat.async_chat):
 				del sys.modules[name]
 	
 	def loadmodule(self, name):
-		" load a module and activate it "
+		"""Activate a module.
+		
+		:param moduleName: Name of the module to activate
+		:type moduleName: str"""
 		" check if already loaded "
 		if name in self.moduleInstances:
 			self.log.warning( "Module %s already loaded" % name )
@@ -287,7 +323,10 @@ class PyIRCBot(asynchat.async_chat):
 		self.loadModuleHooks(self.moduleInstances[name])
 	
 	def unloadmodule(self, name):
-		" unload a module by name "
+		"""Deactivate a module.
+		
+		:param moduleName: Name of the module to deactivate
+		:type moduleName: str"""
 		if name in self.moduleInstances:
 			" notify the module of disabling "
 			self.moduleInstances[name].ondisable()
@@ -304,7 +343,10 @@ class PyIRCBot(asynchat.async_chat):
 			return (False, "Module not loaded")
 	
 	def reloadmodule(self, name):
-		" unload then load a module by name "
+		"""Deactivate and activate a module.
+		
+		:param moduleName: Name of the target module
+		:type moduleName: str"""
 		" make sure it's imporeted"
 		if name in self.modules:
 			" remember if it was loaded before"
@@ -319,7 +361,10 @@ class PyIRCBot(asynchat.async_chat):
 		return (False, "Module is not loaded")
 	
 	def redomodule(self, name):
-		" reload a modules code from disk "
+		"""Reload a running module from disk
+		
+		:param moduleName: Name of the target module
+		:type moduleName: str"""
 		" remember if it was loaded before "
 		loadedbefore = name in self.moduleInstances
 		" unload/deport "
@@ -334,16 +379,30 @@ class PyIRCBot(asynchat.async_chat):
 		return (True, None)
 	
 	def loadModuleHooks(self, module):
+		"""**Internal.** Enable (connect) hooks of a module
+		
+		:param module: module object to hook in
+		:type module: object"""
 		" activate a module's hooks "
 		for hook in module.hooks:
 			self.addHook(hook.hook, hook.method)
 	
 	def unloadModuleHooks(self, module):
+		"""**Internal.** Disable (disconnect) hooks of a module
+		
+		:param module: module object to unhook
+		:type module: object"""
 		" remove a modules hooks "
 		for hook in module.hooks:
 			self.removeHook(hook.hook, hook.method)
 	
 	def addHook(self, command, method):
+		"""**Internal.** Enable (connect) a single hook of a module
+		
+		:param command: command this hook will trigger on
+		:type command: str
+		:param method: callable method object to hook in
+		:type method: object"""
 		" add a single hook "
 		if command in self.hooks:
 			self.hookcalls[command].append(method)
@@ -352,6 +411,12 @@ class PyIRCBot(asynchat.async_chat):
 			return False
 	
 	def removeHook(self, command, method):
+		"""**Internal.** Disable (disconnect) a single hook of a module
+		
+		:param command: command this hook triggers on
+		:type command: str
+		:param method: callable method that should be removed
+		:type method: object"""
 		" remove a single hook "
 		if command in self.hooks:
 			for hookedMethod in self.hookcalls[command]:
@@ -362,13 +427,21 @@ class PyIRCBot(asynchat.async_chat):
 			return False
 	
 	def getmodulebyname(self, name):
-		" return a module specified by the name "
+		"""Get a module object by name
+		
+		:param name: name of the module to return
+		:type name: str
+		:returns: object -- the module object"""
 		if not name in self.moduleInstances:
 			return None
 		return self.moduleInstances[name]
 	
 	def getmodulesbyservice(self, service):
-		" get a list of modules that provide the specified service "
+		"""Get a list of modules that provide the specified service 
+		
+		:param service: name of the service searched for
+		:type service: str
+		:returns: list -- a list of module objects"""
 		validModules = []
 		for module in self.moduleInstances:
 			if service in self.moduleInstances[module].services:
@@ -376,13 +449,18 @@ class PyIRCBot(asynchat.async_chat):
 		return validModules
 	
 	def getBestModuleForService(self, service):
+		"""Get the first module that provides the specified service 
+		
+		:param service: name of the service searched for
+		:type service: str
+		:returns: object -- the module object, if found. None if not found."""
 		m = self.getmodulesbyservice(service)
 		if len(m)>0:
 			return m[0]
 		return None
 	
 	def closeAllModules(self):
-		" Deport all modules (for shutdown). Modules are unloaded in the opposite order listed in the config. "
+		""" Deport all modules (for shutdown). Modules are unloaded in the opposite order listed in the config. """
 		loaded = list(self.moduleInstances.keys())
 		loadOrder = self.botconfig["modules"]
 		loadOrder.reverse()
@@ -395,17 +473,29 @@ class PyIRCBot(asynchat.async_chat):
 	
 	" Filesystem Methods "
 	def getDataPath(self, moduleName):
+		"""Return the absolute path for a module's data dir
+		
+		:param moduleName: the module who's data dir we want
+		:type moduleName: str"""
 		if not os.path.exists("%s/data/%s" % (self.botconfig["bot"]["datadir"], moduleName)):
 			os.mkdir("%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName))
 		return "%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName)
 	
 	def getConfigPath(self, moduleName):
+		"""Return the absolute path for a module's config file
+		
+		:param moduleName: the module who's config file we want
+		:type moduleName: str"""
 		return "%s/config/%s.yml" % (self.botconfig["bot"]["datadir"], moduleName)
 	
 	" Utility methods "
 	@staticmethod
 	def decodePrefix(prefix):
-		" Returns an object with nick, username, hostname attributes"
+		"""Given a prefix like nick!username@hostname, return an object with these properties
+		
+		:param prefix: the prefix to disassemble
+		:type prefix: str
+		:returns: object -- an UserPrefix object with the properties `nick`, `username`, `hostname` or a ServerPrefix object with the property `hostname`"""
 		if "!" in prefix:
 			ob = type('UserPrefix', (object,), {})
 			ob.nick, prefix = prefix.split("!")
@@ -418,10 +508,19 @@ class PyIRCBot(asynchat.async_chat):
 	
 	@staticmethod
 	def trace():
+		"""Return the stack trace of the bot as a string"""
 		return traceback.format_exc()
 	
 	@staticmethod
 	def messageHasCommand(command, message, requireArgs=False):
+		"""Check if a message has a command with or without args in it
+		
+		:param command: the command string to look for, like !ban
+		:type command: str
+		:param message: the message string to look in, like "!ban Lil_Mac"
+		:type message: str
+		:param requireArgs: if true, only validate if the command use has any amount of trailing text
+		:type requireArgs: bool"""
 		# Check if the message at least starts with the command
 		messageBeginning = message[0:len(command)]
 		if messageBeginning!=command:
@@ -452,26 +551,63 @@ class PyIRCBot(asynchat.async_chat):
 	
 	" Data Methods "
 	def get_nick(self):
+		"""Get the bot's current nick
+		
+		:returns: str - the bot's current nickname"""
 		return self.config["nick"]
 	
 	
 	" Action Methods "
 	def act_PONG(self, data):
+		"""Use the `/pong` command - respond to server pings
+		
+		:param data: the string or number the server sent with it's ping
+		:type data: str"""
 		self.sendRaw("PONG :%s" % data)
 	
 	def act_USER(self, username, hostname, realname):
+		"""Use the USER protocol command. Used during connection
+		
+		:param username: the bot's username
+		:type username: str
+		:param hostname: the bot's hostname
+		:type hostname: str
+		:param realname: the bot's realname
+		:type realname: str"""
 		self.sendRaw("USER %s %s %s :%s" % (username, hostname, self.botconfig["connection"]["server"], realname))
 	
 	def act_NICK(self, newNick):
+		"""Use the `/nick` command
+		
+		:param newNick: new nick for the bot
+		:type newNick: str"""
 		self.sendRaw("NICK %s" % newNick)
 	
 	def act_JOIN(self, channel):
+		"""Use the `/join` command
+		
+		:param channel: the channel to attempt to join
+		:type channel: str"""
 		self.sendRaw("JOIN %s"%channel)
 	
 	def act_PRIVMSG(self, towho, message):
+		"""Use the `/msg` command
+		
+		:param towho: the target #channel or user's name
+		:type towho: str
+		:param message: the message to send
+		:type message: str"""
 		self.sendRaw("PRIVMSG %s :%s"%(towho,message))
 	
 	def act_MODE(self, channel, mode, extra=None):
+		"""Use the `/mode` command
+		
+		:param channel: the channel this mode is for
+		:type channel: str
+		:param mode: the mode string. Example: +b
+		:type mode: str
+		:param extra: additional argument if the mode needs it. Example: user@*!*
+		:type extra: str"""
 		if extra != None:
 			self.sendRaw("MODE %s %s %s" % (channel,mode,extra))
 		else:
@@ -480,22 +616,20 @@ class PyIRCBot(asynchat.async_chat):
 	def act_ACTION(self, channel, action):
 		"""Use the `/me <action>` command
 		
-		:param channel: The channel name or target's name the message is sent to
+		:param channel: the channel name or target's name the message is sent to
 		:type channel: str
-		:param action: The text to send
-		:type action: str
-		"""
+		:param action: the text to send
+		:type action: str"""
 		self.sendRaw("PRIVMSG %s :\x01ACTION %s"%(channel,action))
 	
 	def act_KICK(self, channel, who, comment=""):
 		"""Use the `/kick <user> <message>` command
 		
-		:param channel: The channel from which the user will be kicked
+		:param channel: the channel from which the user will be kicked
 		:type channel: str
-		:param who: The nickname of the user to kick
+		:param who: the nickname of the user to kick
 		:type action: str
-		:param comment: The kick message
-		:type comment: str
-		"""
+		:param comment: the kick message
+		:type comment: str"""
 		self.sendRaw("KICK %s %s :%s" % (channel, who, comment))
 	

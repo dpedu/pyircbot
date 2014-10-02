@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: Services
+	:synopsis: Provides the ability to configure a nickname, password, channel auto-join
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 from time import sleep
 
