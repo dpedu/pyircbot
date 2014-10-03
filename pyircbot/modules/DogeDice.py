@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: DogeDice
+	:synopsis: Module to provide a game for gambling Dogecoin
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import random
 import yaml
@@ -23,7 +31,7 @@ class DogeDice(ModuleBase):
 	def gotMsg(self, args, prefix, trailing):
 		prefixObj = self.bot.decodePrefix(prefix)
 		# Ignore messages from users not logged in
-		loggedinfrom = self.attr.getAttribute(prefixObj.nick, "loggedinfrom")
+		loggedinfrom = self.attr.getKey(prefixObj.nick, "loggedinfrom")
 		if loggedinfrom==None:
 			# Send them a hint?
 			return
@@ -104,7 +112,7 @@ class gameObj:
 			if cmd:
 				if len(self.players)-1 < self.maxPlayers:
 					if self.getPlayer(prefix.nick)==None:
-						userWallet = self.master.attr.getAttribute(prefix.nick, "dogeaccountname")
+						userWallet = self.master.attr.getKey(prefix.nick, "dogeaccountname")
 						if userWallet == None:
 							self.master.bot.act_PRIVMSG(self.channel, "%s: You don't have enough DOGE!" % (prefix.nick))
 							return
@@ -194,7 +202,7 @@ class gameObj:
 		elif self.step == 4:
 			pass
 		
-		#senderIsOp = self.master.attr.getAttribute(prefix.nick, "op")=="yes"
+		#senderIsOp = self.master.attr.getKey(prefix.nick, "op")=="yes"
 	def clearTimer(self, timer):
 		if timer:
 			timer.cancel()

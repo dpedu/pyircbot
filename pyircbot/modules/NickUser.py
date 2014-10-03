@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: NickUser
+	:synopsis: A module providing a simple login/logout account service
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import time
 import hashlib
@@ -11,7 +19,7 @@ class NickUser(ModuleBase):
 	
 	def check(self, nick, hostname):
 		attr = self.bot.getBestModuleForService("attributes")
-		loggedin = attr.getAttribute(nick, "loggedinfrom")
+		loggedin = attr.getKey(nick, "loggedinfrom")
 		if hostname==loggedin:
 			return True
 		return False
@@ -36,14 +44,14 @@ class NickUser(ModuleBase):
 				self.bot.act_PRIVMSG(prefix.nick, ".setpass: usage: \".setpass newpass\" or \".setpass oldpass newpass\"")
 			else:
 				attr = self.bot.getBestModuleForService("attributes")
-				oldpass = attr.getAttribute(prefix.nick, "password")
+				oldpass = attr.getKey(prefix.nick, "password")
 				if oldpass == None:
-					attr.setAttribute(prefix.nick, "password", cmd.args[0])
+					attr.setKey(prefix.nick, "password", cmd.args[0])
 					self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." % cmd.args[0])
 				else:
 					if len(cmd.args)==2:
 						if cmd.args[0] == oldpass:
-							attr.setAttribute(prefix.nick, "password", cmd.args[1])
+							attr.setKey(prefix.nick, "password", cmd.args[1])
 							self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." % cmd.args[1])
 						else:
 							self.bot.act_PRIVMSG(prefix.nick, ".setpass: Old password incorrect.")
@@ -53,14 +61,14 @@ class NickUser(ModuleBase):
 		cmd = self.bot.messageHasCommand(".login", trailing)
 		if cmd:
 			attr = self.bot.getBestModuleForService("attributes")
-			userpw = attr.getAttribute(prefix.nick, "password")
+			userpw = attr.getKey(prefix.nick, "password")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".login: You must first set a password with .setpass")
 			else:
 				if len(cmd.args)==1:
 					if userpw == cmd.args[0]:
 						#################
-						attr.setAttribute(prefix.nick, "loggedinfrom", prefix.hostname)
+						attr.setKey(prefix.nick, "loggedinfrom", prefix.hostname)
 						self.bot.act_PRIVMSG(prefix.nick, ".login: You have been logged in from: %s" % prefix.hostname)
 						#################
 					else:
@@ -70,11 +78,11 @@ class NickUser(ModuleBase):
 		cmd = self.bot.messageHasCommand(".logout", trailing)
 		if cmd:
 			attr = self.bot.getBestModuleForService("attributes")
-			loggedin = attr.getAttribute(prefix.nick, "loggedinfrom")
+			loggedin = attr.getKey(prefix.nick, "loggedinfrom")
 			if loggedin == None:
 				self.bot.act_PRIVMSG(prefix.nick, ".logout: You must first be logged in")
 			else:
-				attr.setAttribute(prefix.nick, "loggedinfrom", None)
+				attr.setKey(prefix.nick, "loggedinfrom", None)
 				self.bot.act_PRIVMSG(prefix.nick, ".logout: You have been logged out.")
 	
 	def md5(self, data):

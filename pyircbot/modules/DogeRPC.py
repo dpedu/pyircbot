@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: DogeRPC
+	:synopsis: Provides a service for interacting with dogecoind.
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 from bitcoinrpc.authproxy import AuthServiceProxy
 

@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: Error
+	:synopsis: Module to provide a multi-type cryptocurrency wallet
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import time
 import hashlib
@@ -44,7 +52,7 @@ class CryptoWallet(ModuleBase):
 		self.checkUserHasWallet(prefix.nick, cmd.args[0])
 		
 		# Set their address
-		attr.setAttribute(prefix.nick, "cryptowallet-%s-address"%cmd.args[0].lower(), cmd.args[1])
+		attr.setKey(prefix.nick, "cryptowallet-%s-address"%cmd.args[0].lower(), cmd.args[1])
 		self.bot.act_PRIVMSG(prefix.nick, ".setaddr: Your address has been saved as: %s. Please verify that this is correct or your coins could be lost." % (cmd.args[1]))
 	
 	def handle_getbal(self, args, prefix, trailing, cmd):
@@ -69,7 +77,7 @@ class CryptoWallet(ModuleBase):
 		self.checkUserHasWallet(prefix.nick, cmd.args[0])
 		
 		# fetch RPC and tell them the balance
-		walletname = attr.getAttribute(prefix.nick, "cryptowallet-account-%s"%cmd.args[0].lower())
+		walletname = attr.getKey(prefix.nick, "cryptowallet-account-%s"%cmd.args[0].lower())
 		amount = 0.0
 		if walletname:
 			client = rpc.getRpc(cmd.args[0].lower())
@@ -98,13 +106,13 @@ class CryptoWallet(ModuleBase):
 		self.checkUserHasWallet(prefix.nick, cmd.args[0])
 		
 		# check that they have a withdraw addr
-		withdrawaddr = attr.getAttribute(prefix.nick, "cryptowallet-%s-address"%cmd.args[0].lower())
+		withdrawaddr = attr.getKey(prefix.nick, "cryptowallet-%s-address"%cmd.args[0].lower())
 		if withdrawaddr == None:
 			self.bot.act_PRIVMSG(prefix.nick, ".withdraw: You need to set a withdraw address before withdrawing. Try .setaddr")
 			return
 		
 		# fetch RPC and check balance
-		walletname = attr.getAttribute(prefix.nick, "cryptowallet-account-%s"%cmd.args[0].lower())
+		walletname = attr.getKey(prefix.nick, "cryptowallet-account-%s"%cmd.args[0].lower())
 		balance = 0.0
 		
 		client = rpc.getRpc(cmd.args[0].lower())
@@ -154,7 +162,7 @@ class CryptoWallet(ModuleBase):
 		# Just make sure they have a wallet
 		self.checkUserHasWallet(prefix.nick, cmd.args[0])
 		
-		walletaddr = attr.getAttribute(prefix.nick, "cryptowallet-depoaddr-%s"%cmd.args[0].lower())
+		walletaddr = attr.getKey(prefix.nick, "cryptowallet-depoaddr-%s"%cmd.args[0].lower())
 		self.bot.act_PRIVMSG(prefix.nick, "Your %s deposit address is: %s" % (cmd.args[0].upper(), walletaddr))
 	
 	def handle_curinfo(self, args, prefix, trailing, cmd):
@@ -178,18 +186,18 @@ class CryptoWallet(ModuleBase):
 		# Ensure the user has a wallet in the client
 		attr,login,rpc = self.getMods()
 		currency = currency.lower()
-		if attr.getAttribute(username, "cryptowallet-account-%s"%currency)==None:
+		if attr.getKey(username, "cryptowallet-account-%s"%currency)==None:
 			randName = self.md5(str(time.time()))[0:16]
-			attr.setAttribute(username, "cryptowallet-account-%s"%currency, randName)
+			attr.setKey(username, "cryptowallet-account-%s"%currency, randName)
 			# Generate a deposit addr to nudge the wallet
 			wallet = rpc.getRpc(currency.lower())
 			address = wallet.getAcctAddr(randName)
-			attr.setAttribute(username, "cryptowallet-depoaddr-%s"%currency, address)
-		elif attr.getAttribute(username, "cryptowallet-depoaddr-%s"%currency)==None:
-			walletName = attr.getAttribute(username, "cryptowallet-account-%s"%currency)
+			attr.setKey(username, "cryptowallet-depoaddr-%s"%currency, address)
+		elif attr.getKey(username, "cryptowallet-depoaddr-%s"%currency)==None:
+			walletName = attr.getKey(username, "cryptowallet-account-%s"%currency)
 			wallet = rpc.getRpc(currency.lower())
 			address = wallet.getAcctAddr(walletName)
-			attr.setAttribute(username, "cryptowallet-depoaddr-%s"%currency, address)
+			attr.setKey(username, "cryptowallet-depoaddr-%s"%currency, address)
 		
 	
 	def handlePm(self, args, prefix, trailing):

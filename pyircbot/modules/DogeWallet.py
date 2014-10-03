@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: DogeWallet
+	:synopsis: Module to provide a Dogecoin wallet
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import time
 import hashlib
@@ -27,14 +35,14 @@ class DogeWallet(ModuleBase):
 			if len(cmd.args)==0:
 				self.bot.act_PRIVMSG(prefix.nick, ".setpass: usage: \".setpass newpass\" or \".setpass oldpass newpass\"")
 			else:
-				oldpass = self.attr.getAttribute(prefix.nick, "password")
+				oldpass = self.attr.getKey(prefix.nick, "password")
 				if oldpass == None:
-					self.attr.setAttribute(prefix.nick, "password", cmd.args[0])
+					self.attr.setKey(prefix.nick, "password", cmd.args[0])
 					self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." % cmd.args[0])
 				else:
 					if len(cmd.args)==2:
 						if cmd.args[0] == oldpass:
-							self.attr.setAttribute(prefix.nick, "password", cmd.args[1])
+							self.attr.setKey(prefix.nick, "password", cmd.args[1])
 							self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." % cmd.args[1])
 						else:
 							self.bot.act_PRIVMSG(prefix.nick, ".setpass: Old password incorrect.")
@@ -42,18 +50,18 @@ class DogeWallet(ModuleBase):
 						self.bot.act_PRIVMSG(prefix.nick, ".setpass: You must provide the old password when setting a new one.")
 		cmd = self.bot.messageHasCommand(".setdogeaddr", trailing)
 		if cmd:
-			userpw = self.attr.getAttribute(prefix.nick, "password")
+			userpw = self.attr.getKey(prefix.nick, "password")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".setdogeaddr: You must first set a password with .setpass")
 			else:
 				if len(cmd.args)==2:
 					if userpw == cmd.args[0]:
-						self.attr.setAttribute(prefix.nick, "dogeaddr", cmd.args[1])
+						self.attr.setKey(prefix.nick, "dogeaddr", cmd.args[1])
 						self.bot.act_PRIVMSG(prefix.nick, ".setdogeaddr: Your doge address has been set to \"%s\"." % cmd.args[1])
 						# if they don't have a wallet name, we'll make one now
-						if self.attr.getAttribute(prefix.nick, "dogeaccountname")==None:
+						if self.attr.getKey(prefix.nick, "dogeaccountname")==None:
 							randName = self.md5(str(time.time()))[0:10]
-							self.attr.setAttribute(prefix.nick, "dogeaccountname", randName)
+							self.attr.setKey(prefix.nick, "dogeaccountname", randName)
 						
 					else:
 						self.bot.act_PRIVMSG(prefix.nick, ".setdogeaddr: incorrect password.")
@@ -62,14 +70,14 @@ class DogeWallet(ModuleBase):
 		
 		cmd = self.bot.messageHasCommand(".getdogebal", trailing)
 		if cmd:
-			userpw = self.attr.getAttribute(prefix.nick, "password")
+			userpw = self.attr.getKey(prefix.nick, "password")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".getdogebal: You must first set a password with .setpass")
 			else:
 				if len(cmd.args)==1:
 					if userpw == cmd.args[0]:
 						#################
-						walletname = self.attr.getAttribute(prefix.nick, "dogeaccountname")
+						walletname = self.attr.getKey(prefix.nick, "dogeaccountname")
 						amount = 0.0
 						if walletname:
 							amount = self.doge.getBal(walletname)
@@ -84,8 +92,8 @@ class DogeWallet(ModuleBase):
 		
 		cmd = self.bot.messageHasCommand(".withdrawdoge", trailing)
 		if cmd:
-			userpw = self.attr.getAttribute(prefix.nick, "password")
-			useraddr = self.attr.getAttribute(prefix.nick, "dogeaddr")
+			userpw = self.attr.getKey(prefix.nick, "password")
+			useraddr = self.attr.getKey(prefix.nick, "dogeaddr")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".withdrawdoge: You must first set a password with .setpass")
 			elif useraddr==None:
@@ -94,7 +102,7 @@ class DogeWallet(ModuleBase):
 				if len(cmd.args)==2:
 					if userpw == cmd.args[0]:
 						#################
-						walletname = self.attr.getAttribute(prefix.nick, "dogeaccountname")
+						walletname = self.attr.getKey(prefix.nick, "dogeaccountname")
 						walletbal = self.doge.getBal(walletname)
 						
 						desiredAmount = float(cmd.args[1])
@@ -115,14 +123,14 @@ class DogeWallet(ModuleBase):
 		
 		cmd = self.bot.messageHasCommand(".getdepositaddr", trailing)
 		if cmd:
-			userpw = self.attr.getAttribute(prefix.nick, "password")
+			userpw = self.attr.getKey(prefix.nick, "password")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".getdepositaddr: You must first set a password with .setpass")
 			else:
 				if len(cmd.args)==1:
 					if userpw == cmd.args[0]:
 						#################
-						walletname = self.attr.getAttribute(prefix.nick, "dogeaccountname")
+						walletname = self.attr.getKey(prefix.nick, "dogeaccountname")
 						addr = self.doge.getAcctAddr(walletname)
 						self.bot.act_PRIVMSG(prefix.nick, ".getdepositaddr: Your deposit address is: %s" % addr)
 						#################
@@ -135,14 +143,14 @@ class DogeWallet(ModuleBase):
 		
 		cmd = self.bot.messageHasCommand(".login", trailing)
 		if cmd:
-			userpw = self.attr.getAttribute(prefix.nick, "password")
+			userpw = self.attr.getKey(prefix.nick, "password")
 			if userpw==None:
 				self.bot.act_PRIVMSG(prefix.nick, ".login: You must first set a password with .setpass")
 			else:
 				if len(cmd.args)==1:
 					if userpw == cmd.args[0]:
 						#################
-						self.attr.setAttribute(prefix.nick, "loggedinfrom", prefix.hostname)
+						self.attr.setKey(prefix.nick, "loggedinfrom", prefix.hostname)
 						self.bot.act_PRIVMSG(prefix.nick, ".login: You have been logged in from: %s" % prefix.hostname)
 						#################
 					else:
@@ -151,11 +159,11 @@ class DogeWallet(ModuleBase):
 					self.bot.act_PRIVMSG(prefix.nick, ".login: usage: \".login password\"")
 		cmd = self.bot.messageHasCommand(".logout", trailing)
 		if cmd:
-			loggedin = self.attr.getAttribute(prefix.nick, "loggedinfrom")
+			loggedin = self.attr.getKey(prefix.nick, "loggedinfrom")
 			if loggedin == None:
 				self.bot.act_PRIVMSG(prefix.nick, ".logout: You must first be logged in")
 			else:
-				self.attr.setAttribute(prefix.nick, "loggedinfrom", None)
+				self.attr.setKey(prefix.nick, "loggedinfrom", None)
 				self.bot.act_PRIVMSG(prefix.nick, ".logout: You have been logged out.")
 	
 	def md5(self, data):

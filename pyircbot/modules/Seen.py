@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: Seen
+	:synopsis: Provides !seen <username>
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import sqlite3
 import time

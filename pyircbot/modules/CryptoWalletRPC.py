@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: CryptoWalletRPC
+	:synopsis: Module capable of operating bitcoind-style RPC. Provided as a service.
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 from bitcoinrpc.authproxy import AuthServiceProxy
 from math import floor

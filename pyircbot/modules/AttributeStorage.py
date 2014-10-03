@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: AttributeStorage
+	:synopsis: An item key->value storage engine based on mysql
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 
 class AttributeStorage(ModuleBase):
@@ -44,12 +52,17 @@ class AttributeStorage(ModuleBase):
 			c.close()
 		
 		# self.getItem('xMopxShell', 'name')
-		# self.getAttribute('xMopxShell', 'name')
-		# self.setAttribute('xMopxShell', 'name', 'dave')
+		# self.getKey('xMopxShell', 'name')
+		# self.setKey('xMopxShell', 'name', 'dave')
 		
 		# SELECT `i`.`id`, `i`.`item`, `a`.`attribute`, `v`.`value` FROM `items` `i` INNER JOIN `values` `v` on `v`.`itemid`=`i`.`id` INNER JOIN `attribute` `a` on `a`.`id`=`v`.`attributeid` ORDER BY `i`.`id` ASC, `a`.`id` ASC LIMIT 1000 ;
 	
 	def getItem(self, name):
+		"""Get all values for a item
+		
+		:param name: the item
+		:type name: str
+		:returns: dict -- the item's values expressed as a dict"""
 		c = self.db.connection.query("""SELECT 
 			`i`.`id`,
 			`i`.`item`,
@@ -78,7 +91,14 @@ class AttributeStorage(ModuleBase):
 			return {}
 		return item
 	
-	def getAttribute(self, item, attribute):
+	def getKey(self, item, key):
+		"""Get the value of an key on an item
+		
+		:param item: the item to fetch a key from 
+		:type item: str
+		:param key: they key who's value to return
+		:type key: str
+		:returns: str -- the item from the database or **None**"""
 		c = self.db.connection.query("""SELECT 
 			`i`.`id`,
 			`i`.`item`,
@@ -95,7 +115,7 @@ class AttributeStorage(ModuleBase):
 			`i`.`item`=%s
 				AND
 			`a`.`attribute`=%s;""",
-			(item,attribute)
+			(item,key)
 		)
 		row = c.fetchone()
 		c.close()
@@ -103,9 +123,17 @@ class AttributeStorage(ModuleBase):
 			return None
 		return row["value"]
 	
-	def setAttribute(self, item, attribute, value):
+	def setKey(self, item, key, value):
+		"""Set the key on an item
+		
+		:param item: the item name to set the key on
+		:type item: str
+		:param key: the key to set
+		:type key: tuple
+		:param value: the value to set
+		:type value: str"""
 		item = item.lower()
-		attribute = attribute.lower()
+		attribute = key.lower()
 		
 		# Check attribute exists
 		c = self.db.connection.query("SELECT `id` FROM `attribute` WHERE `attribute`=%s;", (attribute))

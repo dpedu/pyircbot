@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: MySQL
+	:synopsis: Module providing a mysql type service
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import sys
 
@@ -39,6 +47,13 @@ class Connection:
 		return False
 	
 	def query(self, queryText, args=()):
+		"""Execute a MySQL query and return the cursor
+		
+		:param queryText: the mysql query as a string, using '%s' for token replacement
+		:type queryText: str
+		:param args: arguments to be escaped into the query
+		:type args: tuple
+		:returns: cursor -- the sql cursor"""
 		c = self.getCursor()
 		if len(args)==0:
 			c.execute(queryText)
@@ -57,6 +72,11 @@ class Connection:
 		return c
 	
 	def escape(self, s):
+		"""Escape a string using the mysql server
+		
+		:param s: the string to escape
+		:type s: str
+		:returns: str -- the escaped string"""
 		self.ensureConnected()
 		return self.connection.escape_string(s)
 	

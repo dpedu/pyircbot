@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: DuckHunt
+	:synopsis: An animal hunting IRC game
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import time
 import yaml

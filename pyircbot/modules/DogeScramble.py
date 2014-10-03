@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: DogeScramble
+	:synopsis: This module provides a word scrambling game that rewards winners with small amounts of Dogecoin
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 import random
 import yaml
@@ -32,7 +40,7 @@ class DogeScramble(ModuleBase):
 		if channel[0] == "#":
 			# Ignore messages from users without a dogewallet password
 			prefixObj = self.bot.decodePrefix(prefix)
-			if self.attr.getAttribute(prefixObj.nick, "password")==None:
+			if self.attr.getKey(prefixObj.nick, "password")==None:
 				return
 			if not channel in self.games:
 				self.games[channel]=scrambleGame(self, channel)
@@ -98,7 +106,7 @@ class scrambleGame:
 		prefix = self.master.bot.decodePrefix(prefix)
 		sender = prefix.nick
 		
-		senderIsOp = self.master.attr.getAttribute(prefix.nick, "op")=="yes"
+		senderIsOp = self.master.attr.getKey(prefix.nick, "op")=="yes"
 		
 		cmd = self.master.bot.messageHasCommand(".scramble", trailing)
 		if cmd and not self.running:
@@ -114,8 +122,8 @@ class scrambleGame:
 		
 		if self.currentWord and trailing.strip().lower() == self.currentWord:
 			# Get winner withdraw address
-			useraddr = self.master.attr.getAttribute(prefix.nick, "dogeaddr")
-			userwallet = self.master.attr.getAttribute(prefix.nick, "dogeaccountname")
+			useraddr = self.master.attr.getKey(prefix.nick, "dogeaddr")
+			userwallet = self.master.attr.getKey(prefix.nick, "dogeaccountname")
 			
 			self.master.bot.act_PRIVMSG(self.channel, "%s got the word - %s!" % (sender, self.currentWord))
 			

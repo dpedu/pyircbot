@@ -1,4 +1,12 @@
 #!/usr/bin/env python
+"""
+.. module:: PingResponder
+	:synopsis: Module to repsond to irc server PING requests
+
+.. moduleauthor:: Dave Pedu <dave@davepedu.com>
+
+"""
+
 from modulebase import ModuleBase,ModuleHook
 
 class PingResponder(ModuleBase):
