@@ -8,14 +8,14 @@ user:
   hostname: pyircbot3.domain.com
   realname: pyircbot3
 ident:
-  enable: yes
+  enable: no
   to: nickserv
   command: identify %(password)s
   ghost: yes
   ghost_to: nickserv
   ghost_cmd: ghost %(nick)s %(password)s
 channels:
-  - "#pyircbot3"
+  - "#xmopx"
 privatechannels:
   to: chanserv
   command: invite %(channel)s

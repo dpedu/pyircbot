@@ -154,7 +154,7 @@ class PyIRCBot(asynchat.async_chat):
 		:type text: str"""
 		if self.connected:
 			self.log.debug(">> "+text)
-			self.send( (text+"\r\n").encode("ascii"))
+			self.send( (text+"\r\n").encode("UTF-8").decode().encode("UTF-8"))
 		else:
 			self.log.warning("Send attempted while disconnected. >> "+text)
 	
