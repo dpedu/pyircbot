@@ -39,6 +39,8 @@ class ModuleBase:
 		self.log = logging.getLogger("Module.%s" % self.moduleName)
 		"""Logger object for this module"""
 		
+		self.loadConfig()
+		
 		self.log.info("Loaded module %s" % self.moduleName)
 		
 	
