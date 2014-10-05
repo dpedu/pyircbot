@@ -47,7 +47,7 @@ class LinkTitler(ModuleBase):
 					continue
 				done.append(submissionId)
 				# TODO configurable user agent
-				r = praw.Reddit('129bot by /u/dpedu')
+				r = praw.Reddit(self.config["agent"])
 				submission = r.get_submission(submission_id = submissionId)
 				#for i in range(0,18):
 				#	self.bot.act_PRIVMSG(args[0], "\x031,%sTEST%s\x0f" %(i,i))
