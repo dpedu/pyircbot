@@ -91,6 +91,9 @@ class AttributeStorage(ModuleBase):
 			return {}
 		return item
 	
+	def get(self, item, key):
+		return self.getKey(item, key)
+	
 	def getKey(self, item, key):
 		"""Get the value of an key on an item
 		
@@ -122,6 +125,9 @@ class AttributeStorage(ModuleBase):
 		if row == None:
 			return None
 		return row["value"]
+	
+	def set(self, item, key, value):
+		return self.setKey(item, key, value)
 	
 	def setKey(self, item, key, value):
 		"""Set the key on an item
