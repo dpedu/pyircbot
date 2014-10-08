@@ -75,7 +75,7 @@ class Connection:
 	# Connects to the database server, and selects a database (Or attempts to create it if it doesn't exist yet)
 	def _connect(self):
 		self.log.info("Sqlite: opening database %s" % self.master.getFilePath(self.dbname))
-		self.connection = sqlite3.connect(self.master.getFilePath(self.dbname))
+		self.connection = sqlite3.connect(self.master.getFilePath(self.dbname), check_same_thread=False)
 		self.connection.row_factory = Connection.dict_factory
 		self.connection.isolation_level = None
 		self.log.info("Sqlite: Connected.")
@@ -84,3 +84,6 @@ class Connection:
 		c = self.connection.cursor()
 		derp=c.execute("SELECT * FROM SQLITE_MASTER")
 		c.close()
+	
+	def close(self):
+		self.connection.close()
