@@ -71,13 +71,13 @@ class PyIRCBot(asynchat.async_chat):
 		#	self.rpc.server._Server__transport.shutdown(SHUT_RDWR)
 		#except Exception as e:
 		#	self.log.error(str(e))
-		try:
-			self.rpc.server._Server__transport.close()
-		except Exception as e:
-			self.log.error(str(e))
+		#try:
+		#	self.rpc.server._Server__transport.close()
+		#except Exception as e:
+		#	self.log.error(str(e))
 		
 		#Kill RPC thread
-		self.rpc._stop()
+		#self.rpc._stop()
 		
 		#Close all modules
 		self.closeAllModules()
@@ -96,7 +96,7 @@ class PyIRCBot(asynchat.async_chat):
 		
 		:param data: the data that was recieved
 		:type data: str"""
-		self.log.debug("<< %(message)s", {"message":repr(data)})
+		#self.log.debug("<< %(message)s", {"message":repr(data)})
 		self.buffer.write(data)
 	
 	def found_terminator(self):
@@ -153,7 +153,7 @@ class PyIRCBot(asynchat.async_chat):
 		:param text: the string to send
 		:type text: str"""
 		if self.connected:
-			self.log.debug(">> "+text)
+			#self.log.debug(">> "+text)
 			self.send( (text+"\r\n").encode("UTF-8").decode().encode("UTF-8"))
 		else:
 			self.log.warning("Send attempted while disconnected. >> "+text)

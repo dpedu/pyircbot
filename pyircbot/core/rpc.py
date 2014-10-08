@@ -13,7 +13,7 @@ from threading import Thread
 
 class BotRPC(Thread):
 	def __init__(self, main):
-		Thread.__init__(self)
+		Thread.__init__(self, daemon=True)
 		self.bot = main
 		self.log = logging.getLogger('RPC')
 		self.server = jsonrpc.Server(jsonrpc.JsonRpc20(), jsonrpc.TransportTcpIp(addr=(self.bot.botconfig["bot"]["rpcbind"], self.bot.botconfig["bot"]["rpcport"])))
