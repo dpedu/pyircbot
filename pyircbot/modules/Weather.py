@@ -43,7 +43,7 @@ class Weather(ModuleBase):
 		if hasUnit:
 			hasUnit = hasUnit.upper()
 		
-		cmd = self.bot.messageHasCommand(".w", trailing)
+		cmd = self.bot.messageHasCommand([".w", ".weather"], trailing)
 		if cmd:
 			if len(cmd.args_str)>0:
 				self.send_weather(replyTo, fromWho, cmd.args_str, hasUnit)

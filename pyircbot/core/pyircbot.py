@@ -513,6 +513,15 @@ class PyIRCBot(asynchat.async_chat):
 	
 	@staticmethod
 	def messageHasCommand(command, message, requireArgs=False):
+		if not type(command)==list:
+			command = [command]
+		for item in command:
+			cmd = PyIRCBot.messageHasCommandSingle(item, message, requireArgs)
+			if cmd:
+				return cmd
+	
+	@staticmethod
+	def messageHasCommandSingle(command, message, requireArgs=False):
 		"""Check if a message has a command with or without args in it
 		
 		:param command: the command string to look for, like !ban
