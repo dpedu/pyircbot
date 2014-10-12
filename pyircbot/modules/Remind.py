@@ -113,7 +113,7 @@ class Remind(ModuleBase):
 		replyTo = prefixObj.nick if not "#" in args[0] else args[0]
 		
 		# Lots of code borrowed from https://github.com/embolalia/willie/blob/master/willie/modules/remind.py
-		cmd = self.bot.messageHasCommand(".at", trailing, True)
+		cmd = self.bot.messageHasCommand([".at", ".remind"], trailing, True)
 		if cmd:
 			regex = re.compile(r'(\d+):(\d+)(?::(\d+))?([^\s\d]+)? (.*)')
 			match = regex.match(cmd.args_str)
