@@ -385,7 +385,11 @@ class PyIRCBot(asynchat.async_chat):
 		:type module: object"""
 		" activate a module's hooks "
 		for hook in module.hooks:
-			self.addHook(hook.hook, hook.method)
+			if type(hook.hook) == list:
+				for hookcmd in hook.hook:
+					self.addHook(hookcmd, hook.method)
+			else:
+				self.addHook(hook.hook, hook.method)
 	
 	def unloadModuleHooks(self, module):
 		"""**Internal.** Disable (disconnect) hooks of a module
@@ -394,7 +398,11 @@ class PyIRCBot(asynchat.async_chat):
 		:type module: object"""
 		" remove a modules hooks "
 		for hook in module.hooks:
-			self.removeHook(hook.hook, hook.method)
+			if type(hook.hook) == list:
+				for hookcmd in hook.hook:
+					self.removeHook(hookcmd, hook.method)
+			else:
+				self.removeHook(hook.hook, hook.method)
 	
 	def addHook(self, command, method):
 		"""**Internal.** Enable (connect) a single hook of a module
