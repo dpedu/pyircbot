@@ -4,7 +4,6 @@ inv_msg: "\x01ACTION is carrying %(itemlist)s\x01"
 swap_msg: "\x01ACTION takes %(adjective)s%(recv_item)s but drops %(drop_item)s\x10"
 dupe_msg: "No thanks, I've already got %(item)s"
 adjectives:
-  - a
   - some
   - the
   - an
