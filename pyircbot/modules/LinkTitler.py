@@ -15,6 +15,7 @@ import praw #TODO: enable/disable modules
 import datetime
 from requests import get
 import html.parser
+from threading import Thread
 
 class LinkTitler(ModuleBase):
 	def __init__(self, bot, moduleName):
@@ -22,6 +23,11 @@ class LinkTitler(ModuleBase):
 		self.hooks=[ModuleHook("PRIVMSG", self.searches)]
 	
 	def searches(self, args, prefix, trailing):
+		t = Thread(target=self.doLinkTitle, args=(args, prefix, trailing))
+		t.daemon = True
+		t.start()
+	
+	def doLinkTitle(self, args, prefix, trailing):
 		sender = self.bot.decodePrefix(prefix)
 		
 		# Youtube
