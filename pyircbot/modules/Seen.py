@@ -36,7 +36,7 @@ class Seen(ModuleBase):
 		# update or add the user's row
 		datest=str( time.time()+(int(self.config["add_hours"])*60*60))
 		c.execute("REPLACE INTO `seen` (`nick`, `date`) VALUES (?, ?)", (nick.lower(), datest ))
-		self.log.info("Seen: %s on %s" % (nick.lower(), datest))
+		#self.log.info("Seen: %s on %s" % (nick.lower(), datest))
 		sql.commit()
 		if trailing.startswith(".seen"):
 			cmdargs = trailing.split(" ");
