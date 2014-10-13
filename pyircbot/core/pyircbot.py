@@ -52,6 +52,9 @@ class PyIRCBot(asynchat.async_chat):
 		self.buffer = StringIO()
 		"""cSTringIO used as a buffer"""
 		
+		self.alive = True
+		""" True if we should try to stay connected"""
+		
 		# IRC Messages are terminated with \r\n
 		self.set_terminator(b"\r\n")
 		
@@ -81,6 +84,10 @@ class PyIRCBot(asynchat.async_chat):
 		
 		#Close all modules
 		self.closeAllModules()
+		# Mark for shutdown
+		self.alive = False
+		# Exit
+		sys.exit(0)
 	
 	" Net related code here on down "
 	
@@ -118,10 +125,10 @@ class PyIRCBot(asynchat.async_chat):
 		self.log.debug("handle_close")
 		self.connected=False
 		self.close()
-		
-		self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
-		time.sleep(5)
-		self._connect()
+		if self.alive:
+			self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
+			time.sleep(5)
+			self._connect()
 	
 	def handle_error(self, *args, **kwargs):
 		"""Called on fatal network errors."""
@@ -651,4 +658,11 @@ class PyIRCBot(asynchat.async_chat):
 		:param comment: the kick message
 		:type comment: str"""
 		self.sendRaw("KICK %s %s :%s" % (channel, who, comment))
+	
+	def act_QUIT(self, message):
+		"""Use the `/quit` command
+		
+		:param message: quit message
+		:type message: str"""
+		self.sendRaw("QUIT :%s" % message)
 	

@@ -28,6 +28,7 @@ class BotRPC(Thread):
 		self.server.register_function( self.pluginCommand )
 		self.server.register_function( self.setPluginVar )
 		self.server.register_function( self.getPluginVar )
+		self.server.register_function( self.quit )
 		
 		self.start()
 	
@@ -143,4 +144,13 @@ class BotRPC(Thread):
 		self.log.info("RPC: setting %s.%s = %s )" % (moduleName, moduleVarName, value))
 		setattr(plugin, moduleVarName, value)
 		return (True, "Var set")
+	
+	def quit(self, message):
+		"""Tell the bot to quit IRC and exir
+		
+		:param message: Quit message
+		:type moduleName: str"""
+		self.bot.act_QUIT(message)
+		self.bot.kill()
+		return (True, "Shutdown ordered")
 		
