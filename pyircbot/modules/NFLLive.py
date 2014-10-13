@@ -141,7 +141,7 @@ class NFLLive(ModuleBase):
 		)
 	
 	def formatGameFuture(self, game):
-		return "%s@%s" % (
+		return "\x02%s\x02@\x02%s\x02" % (
 			game["visitor"],
 			game["home"]
 		)
