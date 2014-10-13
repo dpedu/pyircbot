@@ -89,6 +89,13 @@ class NFLLive(ModuleBase):
 			elif len(cmd.args)>0 and cmd.args[0]=="live":
 				if not liveGamesStr == "":
 					msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+			elif len(cmd.args)>0 and cmd.args[0]=="scores":
+				if not liveGamesStr == "":
+					msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+				if not gamesTodayStr == "":
+					msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
+				if not gamesEarlierWeekStr == "":
+					msgPieces.append("\x02Earlier this week: \x02 %s" % gamesEarlierWeekStr)
 			else:
 				if not liveGamesStr == "":
 					msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
