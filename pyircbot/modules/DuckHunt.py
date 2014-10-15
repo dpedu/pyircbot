@@ -115,8 +115,6 @@ class DuckHunt(ModuleBase):
 					message += self.config["animalNameFemale"]+" "
 				
 				message += "in %s seconds!" % shotIn
-				if fromWho=="Moodh":
-					message = "%s murders a %s lb smor in %s seconds!" % (fromWho, bagged["weight"], shotIn)
 				self.bot.act_PRIVMSG(self.config["activeChannel"], message)
 				
 				self.addKillFor(fromWho, bagged)
