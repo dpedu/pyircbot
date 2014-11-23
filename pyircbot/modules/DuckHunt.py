@@ -60,7 +60,7 @@ class DuckHunt(ModuleBase):
 				self.bot.act_PRIVMSG(fromWho, "You've shot %s %s for a total weight of %s lbs." % (kills, self.config["animalSpeciesPlural"], weight))
 				self.bot.act_PRIVMSG(fromWho, "%s prime catches, %s runts, %s bullets used and %s misses." % (prime, runts, shots, misses))
 				#self.bot.act_PRIVMSG(fromWho, "More info & highscores: http://duckhunt.xmopx.net/")
-				print("DuckHunt: %s used !huntscore" % fromWho)
+				self.log.info("DuckHunt: %s used !huntscore" % fromWho)
 			return
 		
 		# Channel only
