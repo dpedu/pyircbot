@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 import yaml
-import asyncore
 from optparse import OptionParser
 from core.pyircbot import PyIRCBot
 
@@ -36,7 +35,7 @@ if __name__ == "__main__":
 	
 	bot = PyIRCBot(coreconfig, botconfig)
 	try:
-		asyncore.loop()
+		bot.loop()
 	except KeyboardInterrupt:
 		bot.kill()
 	

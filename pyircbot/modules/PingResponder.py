@@ -16,4 +16,4 @@ class PingResponder(ModuleBase):
 	def pingrespond(self, args, prefix, trailing):
 		# got a ping? send it right back
 		self.bot.act_PONG(trailing)
-		self.log.info("Responded to a ping: %s" % trailing)
+		self.log.info("%s Responded to a ping: %s" % (self.bot.get_nick(), trailing))
