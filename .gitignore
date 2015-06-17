@@ -2,3 +2,4 @@ libs
 *__pycache__*
 docs/_build
 .DS_Store
+botenv
