@@ -19,11 +19,6 @@ except:
 	from io import BytesIO as StringIO
 
 class IRCCore(asynchat.async_chat):
-	""":param coreconfig: The core configuration of the bot. Passed by main.py.
-	:type coreconfig: dict
-	:param botconfig: The configuration of this instance of the bot. Passed by main.py.
-	:type botconfig: dict
-	"""
 	
 	def __init__(self):
 		asynchat.async_chat.__init__(self)
@@ -49,8 +44,7 @@ class IRCCore(asynchat.async_chat):
 		self.set_terminator(b"\r\n")
 		
 		# Set up hooks for modules
-		self.initHooks()
-		
+		self.initHooks()s
 	
 	def loop(self):
 		 asyncore.loop()
