@@ -44,7 +44,7 @@ class IRCCore(asynchat.async_chat):
 		self.set_terminator(b"\r\n")
 		
 		# Set up hooks for modules
-		self.initHooks()s
+		self.initHooks()
 	
 	def loop(self):
 		 asyncore.loop()
