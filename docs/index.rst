@@ -17,7 +17,7 @@ Contents:
    setup/_setup.rst
    modules/_modules.rst
    rpc/_rpc.rst
-   dev/_dev.rst
+   module_guide/_module_guide.rst
 
 More Information
 ================
