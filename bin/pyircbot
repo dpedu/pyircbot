@@ -4,7 +4,8 @@ import sys
 import logging
 import yaml
 from optparse import OptionParser
-from core.pyircbot import PyIRCBot
+from pyircbot import PyIRCBot
+
 
 if __name__ == "__main__":
 	" logging level and facility "

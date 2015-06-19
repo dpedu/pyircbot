@@ -8,7 +8,7 @@
 
 import traceback
 import logging
-from core import jsonrpc
+from pyircbot import jsonrpc
 from threading import Thread
 
 class BotRPC(Thread):

@@ -9,8 +9,9 @@
 import logging
 import time
 import sys
-from core.rpc import BotRPC
-from core.irccore import IRCCore
+from pyircbot.rpc import BotRPC
+from pyircbot.irccore import IRCCore
+from pyircbot import modulebase
 import os.path
 
 class PyIRCBot:

@@ -3,3 +3,6 @@ libs
 docs/_build
 .DS_Store
 botenv
+dist
+build
+pyircbot.egg-info

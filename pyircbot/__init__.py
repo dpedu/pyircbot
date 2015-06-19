@@ -9,3 +9,8 @@
 .. automodule:: core.rpc
 
 """
+
+__all__ = ["PyIRCBot"]
+
+from pyircbot.pyircbot import PyIRCBot
+from pyircbot.irccore import IRCCore
