@@ -8,7 +8,7 @@
 
 import logging
 import os
-import yaml
+from .pyircbot import PyIRCBot
 
 class ModuleBase:
 	"""All modules will extend this class
@@ -47,8 +47,8 @@ class ModuleBase:
 	def loadConfig(self):
 		"""Loads this module's config into self.config"""
 		configPath = self.bot.getConfigPath(self.moduleName)
-		if os.path.exists( configPath ):
-			self.config = yaml.load(open(configPath, 'r'))
+		if not configPath == None:
+			self.config = PyIRCBot.load(configPath)
 	
 	def ondisable(self):
 		"""Called when the module should be disabled. Your module should do any sort

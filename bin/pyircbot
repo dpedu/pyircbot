@@ -2,7 +2,6 @@
 import os
 import sys
 import logging
-import yaml
 from optparse import OptionParser
 from pyircbot import PyIRCBot
 

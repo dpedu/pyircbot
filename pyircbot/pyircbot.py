@@ -11,7 +11,6 @@ import time
 import sys
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
-from pyircbot import modulebase
 import os.path
 
 class PyIRCBot:
@@ -291,7 +290,14 @@ class PyIRCBot:
 		
 		:param moduleName: the module who's config file we want
 		:type moduleName: str"""
-		return "%s/config/%s.yml" % (self.botconfig["bot"]["datadir"], moduleName)
+		
+		basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
+		
+		if os.path.exists("%s.yml"%basepath):
+			return "%s.yml"%basepath 
+		elif os.path.exists("%s.json"%basepath):
+			return "%s.json"%basepath 
+		return None
 	
 	" Utility methods "
 	@staticmethod
