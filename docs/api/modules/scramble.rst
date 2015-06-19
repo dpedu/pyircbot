@@ -3,7 +3,7 @@
 
 yabba blahblah blahblah
 
-.. automodule:: modules.Scramble
+.. automodule:: pyircbot.modules.Scramble
     :members:
     :undoc-members:
     :show-inheritance:

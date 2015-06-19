@@ -3,7 +3,7 @@
 
 Module to provide a game for gambling Dogecoin
 
-.. automodule:: modules.DogeDice
+.. automodule:: pyircbot.modules.DogeDice
     :members:
     :undoc-members:
     :show-inheritance:

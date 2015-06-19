@@ -4,7 +4,7 @@
 .. note:: This is a Json RPC library by Roland Koebler and the documentation is
     included here only for developer reference.
 
-.. automodule:: core.jsonrpc
+.. automodule:: pyircbot.jsonrpc
     :members:
     :undoc-members:
     :show-inheritance:

@@ -3,7 +3,7 @@
 
 Provides !seen <username>
 
-.. automodule:: modules.Seen
+.. automodule:: pyircbot.modules.Seen
     :members:
     :undoc-members:
     :show-inheritance:

@@ -3,7 +3,7 @@
 
 A codebase for making IRC games
 
-.. automodule:: modules.GameBase
+.. automodule:: pyircbot.modules.GameBase
     :members:
     :undoc-members:
     :show-inheritance:

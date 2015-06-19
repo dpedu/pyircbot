@@ -3,7 +3,7 @@
 
 A module providing a simple login/logout account service
 
-.. automodule:: modules.NickUser
+.. automodule:: pyircbot.modules.NickUser
     :members:
     :undoc-members:
     :show-inheritance:

@@ -3,7 +3,7 @@
 
 Module providing a mysql type service
 
-.. automodule:: modules.MySQL
+.. automodule:: pyircbot.modules.MySQL
     :members:
     :undoc-members:
     :show-inheritance:

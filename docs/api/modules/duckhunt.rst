@@ -3,7 +3,7 @@
 
 An animal hunting IRC game
 
-.. automodule:: modules.DuckHunt
+.. automodule:: pyircbot.modules.DuckHunt
     :members:
     :undoc-members:
     :show-inheritance:

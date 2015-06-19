@@ -3,7 +3,7 @@
 
 Module to repsond to irc server PING requests
 
-.. automodule:: modules.PingResponder
+.. automodule:: pyircbot.modules.PingResponder
     :members:
     :undoc-members:
     :show-inheritance:

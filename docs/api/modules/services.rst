@@ -3,7 +3,7 @@
 
 yabba blahblah blahblah
 
-.. automodule:: modules.Services
+.. automodule:: pyircbot.modules.Services
     :members:
     :undoc-members:
     :show-inheritance:

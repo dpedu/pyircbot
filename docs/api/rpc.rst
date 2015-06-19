@@ -10,7 +10,7 @@ It's important to know the different states a module can be in.
 - **Imported** - Module's code exists in memory but has not been instantiated
 - **Loaded** - Module's code exists in memory and has been instantiated. "Running" modules are of this state.
 
-.. automodule:: core.rpc
+.. automodule:: pyircbot.rpc
     :members:
     :undoc-members:
     :show-inheritance:

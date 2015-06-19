@@ -3,7 +3,7 @@
 
 Module capable of operating Bitcoind-style RPC. Provided as a service.
 
-.. automodule:: modules.CryptoWalletRPC
+.. automodule:: pyircbot.modules.CryptoWalletRPC
     :members:
     :undoc-members:
     :show-inheritance:

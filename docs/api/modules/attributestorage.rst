@@ -15,7 +15,7 @@ Items are dicts. An item can have many keys. Each key points to one value.
                +--> [ key ] --> [ value ]
     
 
-.. automodule:: modules.AttributeStorage
+.. automodule:: pyircbot.modules.AttributeStorage
     :members:
     :undoc-members:
     :show-inheritance:
