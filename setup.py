@@ -9,6 +9,6 @@ setup(name='pyircbot',
 	url='http://gitlab.xmopx.net/dave/pyircbot3/tree/master',
 	author='dpedu',
 	author_email='dave@davepedu.com',
-	packages=['pyircbot'],
+	packages=['pyircbot', 'pyircbot.modules'],
 	scripts=['bin/pyircbot'],
 	zip_safe=False)
