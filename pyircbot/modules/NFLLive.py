@@ -6,7 +6,7 @@
 
 """
 
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 from time import time
 from requests import get
 from lxml import etree

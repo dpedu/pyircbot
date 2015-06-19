@@ -7,7 +7,7 @@
 
 """
 
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 
 class AttributeStorageLite(ModuleBase):
 	def __init__(self, bot, moduleName):

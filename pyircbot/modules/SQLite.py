@@ -7,7 +7,7 @@
 
 """
 
-from modulebase import ModuleBase
+from pyircbot.modulebase import ModuleBase
 import sys
 import sqlite3
 

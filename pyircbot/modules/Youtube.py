@@ -7,7 +7,7 @@
 
 """
 
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 from requests import get
 import time
 

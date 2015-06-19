@@ -7,7 +7,7 @@
 
 """
 
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 from bitcoinrpc.authproxy import AuthServiceProxy
 
 class DogeRPC(ModuleBase):

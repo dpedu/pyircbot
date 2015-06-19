@@ -6,7 +6,7 @@
 
 """
 
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 from datetime import datetime,timedelta
 from threading import Thread
 from time import sleep

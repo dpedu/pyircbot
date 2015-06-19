@@ -7,7 +7,7 @@
 """
 
 #!/usr/bin/env python
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 
 class Error(ModuleBase):
 	def __init__(self, bot, moduleName):

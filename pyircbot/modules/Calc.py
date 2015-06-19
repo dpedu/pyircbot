@@ -1,4 +1,4 @@
-from modulebase import ModuleBase,ModuleHook
+from pyircbot.modulebase import ModuleBase,ModuleHook
 import datetime
 import time
 import math
