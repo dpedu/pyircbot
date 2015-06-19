@@ -21,10 +21,6 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../'))
-#sys.path.insert(0, os.path.abspath('../pyircbot/'))
-
-#sys.path.append(os.path.abspath('../pyircbot/'))
-#sys.path.append(os.path.abspath('../pyircbot/modules/'))
 
 # -- General configuration ------------------------------------------------
 
@@ -55,7 +51,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'pyircbot3'
-copyright = '2014, dpedu'
+copyright = '2015, dpedu'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -253,7 +249,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'pyircbot3', 'pyircbot3 Documentation',
-   'dpedu', 'pyircbot3', 'One line description of project.',
+   'dpedu', 'pyircbot3', 'Modular IRC bot.',
    'Miscellaneous'),
 ]
 
