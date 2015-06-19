@@ -341,3 +341,20 @@ class PyIRCBot:
 		ob.message = message
 		return ob
 		# return (True, command, args, message)
+	
+	@staticmethod
+	def load(filepath):
+		"""Return an object from the passed filepath
+		
+		:param filepath: path to a file of json or yaml format. filename must end with .json or .yml
+		:type filepath: str
+		"""
+		if filepath.endswith(".yml"):
+			from yaml import load
+			return load(open(filepath, 'r'))
+			
+		elif filepath.endswith(".json"):
+			from json import load
+			return load(open(filepath, 'r'))
+		else:
+			raise Exception("Unknown config format")

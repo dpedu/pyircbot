@@ -24,7 +24,7 @@ if __name__ == "__main__":
 		log.critical("No bot config file specified (-c). Exiting.")
 		sys.exit(0)
 	
-	botconfig = yaml.load(open(options.config, 'r'))
+	botconfig = PyIRCBot.load(options.config)
 	
 	log.debug(botconfig)
 	
