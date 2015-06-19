@@ -15,21 +15,13 @@ from pyircbot import modulebase
 import os.path
 
 class PyIRCBot:
-	""":param coreconfig: The core configuration of the bot. Passed by main.py.
-	:type coreconfig: dict
-	:param botconfig: The configuration of this instance of the bot. Passed by main.py.
+	""":param botconfig: The configuration of this instance of the bot. Passed by main.py.
 	:type botconfig: dict
 	"""
 	
-	version = "1.0a1-git"
-	""" PyIRCBot version """
-	
-	def __init__(self, coreconfig, botconfig):
+	def __init__(self, botconfig):
 		self.log = logging.getLogger('PyIRCBot')
 		"""Reference to logger object"""
-		
-		self.coreconfig = coreconfig
-		"""saved copy of the core config"""
 		
 		self.botconfig = botconfig
 		"""saved copy of the instance config"""
@@ -96,10 +88,7 @@ class PyIRCBot:
 		" instances of modules "
 		self.moduleInstances = {}
 		" append module location to path "
-		sys.path.append(self.coreconfig["moduledir"])
-		" append bot directory to path "
-		sys.path.append(self.coreconfig["botdir"]+"core/")
-		
+		sys.path.append(os.path.dirname(__file__)+"/modules/")
 		for modulename in self.botconfig["modules"]:
 			self.loadmodule(modulename)
 	

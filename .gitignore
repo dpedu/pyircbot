@@ -6,3 +6,4 @@ botenv
 dist
 build
 pyircbot.egg-info
+dev

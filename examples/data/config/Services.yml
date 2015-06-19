@@ -1,9 +1,8 @@
 user:
   nick:
-    - dave
-    - dave_
-    - dave__
-    - dave___
+    - pyircbot3
+    - pyircbot3_
+    - pyircbot3__
   password: nickservpassword
   username: pyircbot3
   hostname: pyircbot3.domain.com
@@ -16,7 +15,7 @@ ident:
   ghost_to: nickserv
   ghost_cmd: ghost %(nick)s %(password)s
 channels:
-  - "#dave2"
+  - "#xmopx"
 privatechannels:
   to: chanserv
   command: invite %(channel)s
