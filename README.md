@@ -6,8 +6,8 @@ Quick start
 -----------
 
 * Install: `python3 setup.py install`
-* Configure: `cd examples ; vim config.yml data/config/Services.yml`
-* Run: `./run-example.sh` or `pyircbot -c config.yml`
+* Configure: `cd examples ; vim config.json data/config/Services.json`
+* Run: `pyircbot -c config.json`
 
 Developing Modules
 ------------------
