@@ -9,13 +9,20 @@ Quick start
 * Configure: `cd examples ; vim config.json data/config/Services.json`
 * Run: `pyircbot -c config.json`
 
+Building Docs
+---–---------
+
+* Install sphinx and all modules pyircbot depends on
+* `cd docs ; make html`
+* Open _build/index.html
+
 Developing Modules
 ------------------
 
-Check docs/
+Check *Module Developer’s Guide* in the docs
 
 TODO
 ----
 
-* Fix docs/
+* Update docs
 * Add a way to pass additional directories where modules are stored
