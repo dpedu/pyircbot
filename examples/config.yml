@@ -1,5 +1,5 @@
 bot:
-  datadir: /home/example/bot/data/
+  datadir: ./data/
   rpcbind: 0.0.0.0
   rpcport: 1876
 connection:
@@ -9,5 +9,3 @@ connection:
 modules:
   - PingResponder
   - Services
-  - MySQL
-  - AttributeStorage
