@@ -1,2 +1,2 @@
 #!/bin/sh
-pyircbot --config config.yml
+pyircbot --config config.json

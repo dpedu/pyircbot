@@ -1,0 +1,31 @@
+{
+	"user":{
+		"nick":[
+			"pyircbot3",
+			"pyircbot3_",
+			"pyircbot3__"
+		],
+		"password":"nickservpassword",
+		"username":"pyircbot3",
+		"hostname":"pyircbot3.domain.com",
+		"realname":"pyircbot3"
+	},
+	"ident":{
+		"enable":"no",
+		"to":"nickserv",
+		"command":"identify %(password)s",
+		"ghost":"no",
+		"ghost_to":"nickserv",
+		"ghost_cmd":"ghost %(nick)s %(password)s"
+	},
+	"channels":[
+		"#xmopx"
+	],
+	"privatechannels":{
+		"to":"chanserv",
+		"command":"invite %(channel)s",
+		"list":[
+			"#aprivatechannel"
+		]
+	}
+}
