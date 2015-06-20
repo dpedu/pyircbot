@@ -12,7 +12,7 @@ Python 3.
 Contents:
 
 .. toctree::
-   :maxdepth: 8
+   :maxdepth: 2
    
    setup/_setup.rst
    modules/_modules.rst
