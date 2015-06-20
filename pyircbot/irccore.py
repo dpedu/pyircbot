@@ -45,9 +45,12 @@ class IRCCore(asynchat.async_chat):
 		
 		# Set up hooks for modules
 		self.initHooks()
+		
+		# Map for asynchat
+		self.asynmap = {}
 	
 	def loop(self):
-		 asyncore.loop()
+		asyncore.loop(map=self.asynmap)
 	
 	def kill(self):
 		"""TODO close the socket"""
@@ -106,6 +109,7 @@ class IRCCore(asynchat.async_chat):
 		self.create_socket(socket_type, socket.SOCK_STREAM)
 		
 		self.connect(socketInfo[0][4])
+		self.asynmap[self._fileno] = self
 	
 	def handle_connect(self):
 		"""When asynchat indicates our socket is connected, fire the connect hook"""
