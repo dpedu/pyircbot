@@ -9,7 +9,7 @@ Services enables the bot to:
  - Request invites & join private channels
 
 Config
------
+------
 
 .. code-block:: json
 

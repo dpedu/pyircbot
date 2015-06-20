@@ -745,7 +745,7 @@ class TransportSTDINOUT(Transport):
     Useful e.g. for debugging.
     """
     def send(self, string):
-        """write data to STDOUT with '***SEND:' prefix """
+        """write data to STDOUT with '\*\*\*SEND:' prefix """
         print("***SEND:")
         print(string)
     def recv(self):
