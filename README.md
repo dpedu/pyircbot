@@ -17,6 +17,8 @@ Building Docs
 * `cd docs ; make html`
 * Open _build/index.html
 
+Or, use my pre-built copy [here](http://davepedu.com/files/botdocs/).
+
 Developing Modules
 ------------------
 
@@ -25,5 +27,5 @@ Check *Module Developer’s Guide* in the docs
 TODO
 ----
 
-* Update docs
+* Improve/complete docs
 * Add a way to pass additional directories where modules are stored
