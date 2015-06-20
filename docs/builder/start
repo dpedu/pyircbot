@@ -5,4 +5,5 @@ wget http://gitlab.xmopx.net/dave/pyircbot3/repository/archive.tar?ref=master -O
 tar xvf pyircbot.tar
 cd pyircbot3.git/docs/
 make html
+rm -rf /tmp/docs/*
 cp -r _build/html/* /tmp/docs/
