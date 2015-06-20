@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cd /tmp
+wget http://gitlab.xmopx.net/dave/pyircbot3/repository/archive.tar?ref=master -O pyircbot.tar
+tar xvf pyircbot.tar
+cd pyircbot3.git/docs/
+make html
+cp -r _build/html/* /tmp/docs/
