@@ -19,6 +19,9 @@ Building Docs
 
 Or, use my pre-built copy [here](http://davepedu.com/files/botdocs/).
 
+Alternatively, use the included Dockerfile to create an environment for
+building the docs. Check `docs/builder/README.md`.
+
 Developing Modules
 ------------------
 
