@@ -109,7 +109,7 @@ class IRCCore(asynchat.async_chat):
 		self.create_socket(socket_type, socket.SOCK_STREAM)
 		
 		self.connect(socketInfo[0][4])
-		self.asynmap[self._fileno] = self
+		self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
 	
 	def handle_connect(self):
 		"""When asynchat indicates our socket is connected, fire the connect hook"""
