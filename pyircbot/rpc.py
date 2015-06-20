@@ -12,11 +12,23 @@ from pyircbot import jsonrpc
 from threading import Thread
 
 class BotRPC(Thread):
+	""":param main: A reference to the PyIRCBot instance this instance will control
+	:type main: PyIRCBot
+	"""
+	
 	def __init__(self, main):
 		Thread.__init__(self, daemon=True)
 		self.bot = main
 		self.log = logging.getLogger('RPC')
-		self.server = jsonrpc.Server(jsonrpc.JsonRpc20(), jsonrpc.TransportTcpIp(addr=(self.bot.botconfig["bot"]["rpcbind"], self.bot.botconfig["bot"]["rpcport"])))
+		self.server = jsonrpc.Server(
+			jsonrpc.JsonRpc20(),
+			jsonrpc.TransportTcpIp(
+				addr=(
+					self.bot.botconfig["bot"]["rpcbind"],
+					self.bot.botconfig["bot"]["rpcport"]
+				)
+			)
+		)
 		
 		self.server.register_function( self.importModule )
 		self.server.register_function( self.deportModule )

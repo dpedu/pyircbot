@@ -30,19 +30,19 @@ class ModuleBase:
 		"""Hooks (aka listeners) this module has"""
 		
 		self.services=[]
-		"""If this module provides services usable by another module, they're stored
+		"""If this module provides services usable by another module, they're listed
 		here"""
 		
 		self.config={}
-		"""Configuration dictionary. Blank until loadConfig is called"""
+		"""Configuration dictionary. Autoloaded from `%(datadir)s/%(modulename)s.yml`"""
 		
 		self.log = logging.getLogger("Module.%s" % self.moduleName)
 		"""Logger object for this module"""
 		
+		# Autoload config if available
 		self.loadConfig()
 		
 		self.log.info("Loaded module %s" % self.moduleName)
-		
 	
 	def loadConfig(self):
 		"""Loads this module's config into self.config"""
@@ -68,7 +68,7 @@ class ModuleBase:
 		:Warning: .. Warning::  this does no error checking if the file exists or is\
 			writable. The bot's data dir *should* always be writable"""
 		return self.bot.getDataPath(self.moduleName) + (f if f else '')
-	
+
 class ModuleHook:
 	def __init__(self, hook, method):
 		self.hook=hook

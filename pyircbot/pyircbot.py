@@ -25,6 +25,13 @@ class PyIRCBot:
 		self.botconfig = botconfig
 		"""saved copy of the instance config"""
 		
+		"""storage of imported modules"""
+		self.modules = {}
+		
+		"""instances of modules"""
+		self.moduleInstances = {}
+		
+		
 		self.rpc = BotRPC(self)
 		"""Reference to BotRPC thread"""
 		
@@ -34,7 +41,7 @@ class PyIRCBot:
 		self.irc.port = self.botconfig["connection"]["port"]
 		self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"]=="on" else False
 		
-		self.irc.addHook("_DISCONNECT", self.handle_close)
+		self.irc.addHook("_DISCONNECT", self.connection_closed)
 		
 		# legacy support
 		self.act_PONG = self.irc.act_PONG
@@ -69,11 +76,7 @@ class PyIRCBot:
 		
 		sys.exit(0)
 	
-	
-	" Net related code here on down "
-	
-	# TODO move handle_close to an event hook
-	def handle_close(self):
+	def connection_closed(self):
 		"""Called when the socket is disconnected. We will want to reconnect. """
 		if self.alive:
 			self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
@@ -82,10 +85,6 @@ class PyIRCBot:
 	
 	def initModules(self):
 		"""load modules specified in instance config"""
-		" storage of imported modules "
-		self.modules = {}
-		" instances of modules "
-		self.moduleInstances = {}
 		" append module location to path "
 		sys.path.append(os.path.dirname(__file__)+"/modules/")
 		for modulename in self.botconfig["modules"]:
@@ -354,6 +353,7 @@ class PyIRCBot:
 		
 		:param filepath: path to a file of json or yaml format. filename must end with .json or .yml
 		:type filepath: str
+		:Returns:	| dict
 		"""
 		if filepath.endswith(".yml"):
 			from yaml import load

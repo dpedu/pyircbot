@@ -30,15 +30,17 @@ class IRCCore(asynchat.async_chat):
 		"""Reference to logger object"""
 		
 		self.buffer = StringIO()
-		"""cSTringIO used as a buffer"""
+		"""cStringIO used as a buffer"""
 		
 		self.alive = True
-		""" True if we should try to stay connected"""
+		"""True if we should try to stay connected"""
 		
-		# Connection details
 		self.server = None
+		"""Server address"""
 		self.port = 0
+		"""Server port"""
 		self.ipv6 = False
+		"""Use IPv6?"""
 		
 		# IRC Messages are terminated with \r\n
 		self.set_terminator(b"\r\n")
@@ -54,7 +56,7 @@ class IRCCore(asynchat.async_chat):
 	
 	def kill(self):
 		"""TODO close the socket"""
-		pass
+		self.act_QUIT("Help! Another thread is killing me :(")
 	
 	" Net related code here on down "
 	
@@ -88,7 +90,7 @@ class IRCCore(asynchat.async_chat):
 		self.process_data(line)
 	
 	def handle_close(self):
-		"""Called when the socket is disconnected. We will want to reconnect. """
+		"""Called when the socket is disconnected. Triggers the _DISCONNECT hook"""
 		self.log.debug("handle_close")
 		self.connected=False
 		self.close()
@@ -96,7 +98,10 @@ class IRCCore(asynchat.async_chat):
 	
 	def handle_error(self, *args, **kwargs):
 		"""Called on fatal network errors."""
-		self.log.warning("Connection failed.")
+		self.log.error("Connection failed (handle_error)")
+		self.log.error(str(args))
+		self.log.error(str(kwargs))
+		self.log(IRCCore.trace());
 	
 	def _connect(self):
 		"""Connect to IRC"""
@@ -112,10 +117,9 @@ class IRCCore(asynchat.async_chat):
 		self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
 	
 	def handle_connect(self):
-		"""When asynchat indicates our socket is connected, fire the connect hook"""
+		"""When asynchat indicates our socket is connected, fire the _CONNECT hook"""
 		self.connected=True
-		# TODO move to an event
-		self.log.debug("handle_connect: setting USER and NICK")
+		self.log.debug("handle_connect: connected")
 		self.fire_hook("_CONNECT")
 		self.log.debug("handle_connect: complete")
 	
