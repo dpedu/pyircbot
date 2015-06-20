@@ -9,8 +9,9 @@ Quick start
 * Configure: `cd examples ; vim config.json data/config/Services.json`
 * Run: `pyircbot -c config.json`
 
+
 Building Docs
----–---------
+-------------
 
 * Install sphinx and all modules pyircbot depends on
 * `cd docs ; make html`

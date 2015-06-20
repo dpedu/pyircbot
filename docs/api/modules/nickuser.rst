@@ -1,5 +1,5 @@
-:mod:`NickUser` --- A module to cause an error
-==============================================
+:mod:`NickUser` --- A simple authentication service
+===================================================
 
 A module providing a simple login/logout account service
 
