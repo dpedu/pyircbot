@@ -1,7 +1,8 @@
 :mod:`Error` --- A module to cause an error
 ===========================================
 
-yabba blahblah blahblah
+Class Reference
+---------------
 
 .. automodule:: pyircbot.modules.Error
     :members:

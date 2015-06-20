@@ -2,8 +2,11 @@
 Dependancies
 ************
 
-PyIRCBot is designed to run on Python 3, and is usually tested with 3.4. Several
-modules are needed that are available for both version of python.
+PyIRCBot is designed to run on Python 3, and is usually tested with 3.4. Python
+2.x is not supported.
+
+Although **no** non-core modules are needed to run PyIRCBot in it's most basic 
+form, not all features and modules will be available.
 
 The following non-core Python modules are needed, and easily available through
 Pip for python 3:

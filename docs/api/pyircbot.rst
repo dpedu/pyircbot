@@ -1,7 +1,7 @@
 :mod:`PyIRCBot` --- Main class of the bot
 =========================================
 
-yabba blahblah blahblah
+Main bot class
 
 .. automodule:: pyircbot.pyircbot
     :members:
