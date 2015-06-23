@@ -130,27 +130,38 @@ class Remind(ModuleBase):
 					second = int(second)
 				
 			except:
-				self.bot.act_PRIVMSG(replyTo, "%s: .at - Remind at a time. Example: .at 20:45EST Do your homework!", prefixObj.nick)
+				self.bot.act_PRIVMSG(replyTo, "%s: .at - Remind at a time. Example: .at 20:45EST Do your homework!" % prefixObj.nick)
 				return
 			
 			now = datetime.now()
+			remindAt = datetime.now()
 			
-			remindAt = datetime.now().replace(hour=hour).replace(minute=minute).replace(microsecond=0)
-			
-			if second == None:
-				remindAt = remindAt.replace(second=0)
-			else:
-				remindAt = remindAt.replace(second=second)
-			
-			# if there was timezone, adjust for it
+			# if there was timezone, make sure the time we're reminding them at is relative to their timezone
 			if not tz == None:
 				try:
 					theirzone = pytz.timezone(Remind.translateZoneStr(tz))
 				except:
 					self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (prefixObj.nick, tz))
 					return
-				theirtime = theirzone.localize(remindAt, is_dst=Remind.is_dst(theirzone))
-				remindAt = theirtime.astimezone(pytz.timezone(self.config["mytimezone"])).replace(tzinfo=None)
+				remindAt = theirzone.localize(remindAt, is_dst=Remind.is_dst(theirzone))
+			
+			# Set the hour and minute we'll remind them at today. If the ends up being in the past, we'll add a day alter
+			remindAt = remindAt.replace(hour=hour).replace(minute=minute).replace(microsecond=0)
+			
+			# Set seconds
+			if second == None:
+				remindAt = remindAt.replace(second=0)
+			else:
+				remindAt = remindAt.replace(second=second)
+			
+			# if there was timezone, convert remindAt to our zone
+			if not tz == None:
+				try:
+					theirzone = pytz.timezone(Remind.translateZoneStr(tz))
+				except:
+					self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (prefixObj.nick, tz))
+					return
+				remindAt = remindAt.astimezone(pytz.timezone(self.config["mytimezone"])).replace(tzinfo=None)
 			
 			# Advance it a day if the time would have been earlier today
 			while remindAt<now:
@@ -182,7 +193,8 @@ class Remind(ModuleBase):
 	@staticmethod
 	def translateZoneStr(zonestr):
 		translations = {
-			"EDT":"US/Eastern"
+			"EDT":"US/Eastern",
+			"PDT":"America/Los_Angeles"
 		}
 		if zonestr in translations:
 			return translations[zonestr]
