@@ -136,7 +136,7 @@ class Weather(ModuleBase):
 		# Build 5day
 		fiveday = ""
 		for item in data["forecast"]["simpleforecast"]["forecastday"][1:6]:
-			fiveday += "%(day)s%(icon)s%(low)s-%(high)s°%(unit)s • " % {
+			fiveday += "%(day)s %(icon)s %(low)s-%(high)s°%(unit)s • " % {
 				"unit":unit.upper(),
 				"high":item["high"]["fahrenheit" if unit=="f" else "celsius"],
 				"low":item["low"]["fahrenheit" if unit=="f" else "celsius"],
