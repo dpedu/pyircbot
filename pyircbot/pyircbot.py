@@ -54,6 +54,7 @@ class PyIRCBot:
 		self.act_KICK = self.irc.act_KICK
 		self.act_QUIT    = self.irc.act_QUIT
 		self.get_nick    = self.irc.get_nick
+		self.decodePrefix = IRCCore.decodePrefix
 		
 		# Load modules 
 		self.initModules()
