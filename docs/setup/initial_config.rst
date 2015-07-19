@@ -46,10 +46,11 @@ options:
 
 .. cmdoption:: bot.datadir
 
-    Location where module data will be stored. This directory generally
-    contains two folders: `config` and `data`. Config contains a config file
-    for each module of the same name. Data can be empty, the bot will create 
-    directories for each module as needed.
+    Location where module data will be stored. This directory must contains 
+    two directories: `config` and `data`. Config contains a config file for 
+    each module of the same name (for example: Services.json for ``Services`` 
+    module). Data can be empty, the bot will create directories for each 
+    module as needed.
 
 .. cmdoption:: bot.rpcbind
 

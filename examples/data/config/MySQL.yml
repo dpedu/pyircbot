@@ -1,4 +1,4 @@
 host: 10.0.3.14
 username: root
-password: droids
+password: root
 database: pyircbot_dev
