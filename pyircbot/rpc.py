@@ -158,7 +158,7 @@ class BotRPC(Thread):
 		return (True, "Var set")
 	
 	def quit(self, message):
-		"""Tell the bot to quit IRC and exir
+		"""Tell the bot to quit IRC and exit
 		
 		:param message: Quit message
 		:type moduleName: str"""

@@ -81,3 +81,12 @@ rpc with ``rpc_``.
 Since only basic types (like string, integer, dict, etc) can be passed over 
 RPC, a well-written module should have helper rpc methods to express and 
 manipulate the module's state using only these types.
+
+Using the RPC client in python code is very easy. The above shows how to use 
+RPC methods using python; rpc clients can be created as so:
+
+.. code-block:: python
+
+    #!/usr/bin/env python3
+    from pyircbot.rpcclient import connect
+    rpc = connect("127.0.0.1", 1876)
