@@ -7,3 +7,4 @@ dist
 build
 pyircbot.egg-info
 dev
+docs/builder/build.sh

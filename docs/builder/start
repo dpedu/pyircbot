@@ -1,9 +1,11 @@
 #!/bin/sh
-
 cd /tmp
-wget http://gitlab.xmopx.net/dave/pyircbot3/repository/archive.tar?ref=master -O pyircbot.tar
-tar xvf pyircbot.tar
-cd pyircbot3.git/docs/
+if [ ! -d "pyircbot" ] ; then
+    mkdir pyircbot
+    wget http://gitlab.xmopx.net/dave/pyircbot3/repository/archive.tar.gz?ref=master -O pyircbot.tgz
+    tar zxvf pyircbot.tgz -C pyircbot/ --strip-components=1
+fi
+cd pyircbot/docs/
 make html
 rm -rf /tmp/docs/*
 cp -r _build/html/* /tmp/docs/
