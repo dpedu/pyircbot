@@ -83,7 +83,7 @@ RPC, a well-written module should have helper rpc methods to express and
 manipulate the module's state using only these types.
 
 Using the RPC client in python code is very easy. The above shows how to use 
-RPC methods using python; rpc clients can be created as so:
+an existing RPC client using python; rpc clients can be created as so:
 
 .. code-block:: python
 
