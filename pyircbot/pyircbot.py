@@ -31,7 +31,6 @@ class PyIRCBot:
 		"""instances of modules"""
 		self.moduleInstances = {}
 		
-		
 		self.rpc = BotRPC(self)
 		"""Reference to BotRPC thread"""
 		
