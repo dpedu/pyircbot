@@ -8,3 +8,4 @@ build
 pyircbot.egg-info
 dev
 docs/builder/build.sh
+examples/config.test.json
