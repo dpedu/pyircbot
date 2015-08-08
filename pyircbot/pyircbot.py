@@ -87,6 +87,11 @@ class PyIRCBot:
         """load modules specified in instance config"""
         " append module location to path "
         sys.path.append(os.path.dirname(__file__)+"/modules/")
+        
+        " append usermodule dir to beginning of path"
+        for path in self.botconfig["bot"]["usermodules"]:
+            sys.path.insert(0, path+"/")
+        
         for modulename in self.botconfig["modules"]:
             self.loadmodule(modulename)
     

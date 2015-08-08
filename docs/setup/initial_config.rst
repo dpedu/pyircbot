@@ -61,6 +61,10 @@ options:
 
     Port on which RPC will listen
 
+.. cmdoption:: bot.usermodules
+
+    Paths to directories where modules where also be included from
+
 .. cmdoption:: connection.server
 
     Hostname or IP of the IRC server to connection to
