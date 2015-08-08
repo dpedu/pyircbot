@@ -24,7 +24,7 @@ modules one after the other so a long delay slows bot startup.
 .. code-block:: python
 
         def __init__(self, bot, moduleName):
-            ModuleBase.__init__(self, bot, moduleName);
+            ModuleBase.__init__(self, bot, moduleName)
 
 If your module has a config file - EchoExample.json - it can be loaded by 
 calling :py:meth:`pyircbot.modulebase.ModuleBase.loadConfig`:
@@ -74,6 +74,33 @@ shutdown handler is needed to ensure a clean shutdown.
             """
             pass
 
+EchoExample module
+------------------
+
+.. code-block:: python
+
+    from pyircbot.modulebase import ModuleBase,ModuleHook
+    
+    class EchoExample(ModuleBase):
+        def __init__(self, bot, moduleName):
+            ModuleBase.__init__(self, bot, moduleName)
+            self.loadConfig()
+            print(self.config)
+            self.hooks=[ModuleHook("PRIVMSG", self.echo)]
+        
+        def echo(self, args, prefix, trailing):
+            self.bot.act_PRIVMSG(args[0], trailing)
+        
+        def ondisable(self):
+            print("I'm getting unloaded!")
+
+In usage:
+
+.. code-block:: text
+
+    4:40:17 PM <Beefpile> test
+    4:40:17 PM <derpbot420> test
+
 Advanced Usage
 ==============
 
@@ -105,7 +132,7 @@ Modules providing a service state so like:
 .. code-block:: python
 
         def __init__(self, bot, moduleName):
-            ModuleBase.__init__(self, bot, moduleName);
+            ModuleBase.__init__(self, bot, moduleName)
             self.services=["cache"]
 
 Then, another module can find this one by using either 
