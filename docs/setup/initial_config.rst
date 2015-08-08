@@ -27,7 +27,8 @@ Instance Configuration
         "bot":{
             "datadir":"./data/",
             "rpcbind":"0.0.0.0",
-            "rpcport":1876
+            "rpcport":1876,
+            "usermodules": [ "./data/modules/" ]
         },
         "connection":{
             "server":"irc.freenode.net",
