@@ -1,0 +1,24 @@
+{
+	"email-addr":"5555555555@carrier.com.com",
+	"output-channels":["#yourchannel"],
+	"interval": 30,
+	"account": {
+		"auth": {
+			"username": "example@gmail.com",
+			"password": "Password"
+		},
+
+		"imap": {
+			"host": "imap.gmail.com",
+			"ssl": true,
+			"port": 993
+		},
+
+		"smtp": {
+			"host": "smtp.gmail.com",
+			"ssl": true,
+			"authentication": true,
+			"port": 465
+		}
+	}
+}
