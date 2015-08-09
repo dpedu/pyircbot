@@ -12,6 +12,7 @@ import asyncore
 import logging
 import traceback
 import sys
+from inspect import getargspec
 from socket import SHUT_RDWR
 
 try:
@@ -225,7 +226,11 @@ class IRCCore(asynchat.async_chat):
         
         for hook in self.hookcalls[command]:
             try:
-                hook(args, prefix, trailing)
+                if len(getargspec(hook).args) == 2:
+                    hook(IRCCore.packetAsObject(args, prefix, trailing))
+                else:
+                    hook(args, prefix, trailing)
+                
             except:
                 self.log.warning("Error processing hook: \n%s"% self.trace())
     
@@ -259,6 +264,23 @@ class IRCCore(asynchat.async_chat):
             self.log.warning("Invalid hook - %s" % command)
             return False
     
+    def packetAsObject(args, prefix, trailing):
+        """Given an irc message's args, prefix, and trailing data return an object with these properties
+        
+        :param args: list of args from the IRC packet
+        :type args: list
+        :param prefix: prefix object parsed from the IRC packet
+        :type prefix: ServerPrefix or UserPrefix
+        :param trailing: trailing data from the IRC packet
+        :type trailing: str
+        :returns: object -- a IRCEvent object with the ``args``, ``prefix``, ``trailing``"""
+        
+        return type('IRCEvent', (object,), {
+            "args": args,
+            "prefix": IRCCore.decodePrefix(prefix),
+            "trailing": trailing
+        })
+    
     " Utility methods "
     @staticmethod
     def decodePrefix(prefix):
@@ -269,11 +291,13 @@ class IRCCore(asynchat.async_chat):
         :returns: object -- an UserPrefix object with the properties `nick`, `username`, `hostname` or a ServerPrefix object with the property `hostname`"""
         if "!" in prefix:
             ob = type('UserPrefix', (object,), {})
+            ob.str = prefix
             ob.nick, prefix = prefix.split("!")
             ob.username, ob.hostname = prefix.split("@")
             return ob
         else:
             ob = type('ServerPrefix', (object,), {})
+            ob.str = prefix
             ob.hostname = prefix
             return ob
     

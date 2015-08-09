@@ -45,19 +45,29 @@ Then, a handler for this hook:
 
 .. code-block:: python
 
-        def echo(self, args, prefix, trailing):
+        def echo(self, event):
 
-The handler is passed the data sent by the irc server. What these are can vary,
-but the format is the same. ``args`` is the list of arguments the IRC server
-sent. ``prefix`` is the sender. ``trailing`` is arbitrary data associated with 
-the event. In the case of PRIVMSG: args has one entry - the channel name or 
-nick the message was in/from. Prefix is a user's nick string, in the format of:
-NickName!username@ip. Trailing is message content. Since the module describe 
-above echos messages, let's do that:
+The handler is passed and IRCEvent object containing the data sent by the irc 
+server. The values of these are can vary, but the format is alwaysthe same. 
+
+``event.args`` is the list of arguments the IRC server sent. ``event.prefix`` 
+is the sender, parsed. ``trailing`` is arbitrary data associated 
+with the event. In the case of PRIVMSG: args has one entry - the channel name 
+or  nick the message was in/from.
+
+Prefix is an ``UserPrefix`` object with the properties ``event.prefix.nick``, 
+``event.prefix.username``, ``event.prefix.hostname``, and the original unparsed
+prefix, ``event.prefix.str``.
+
+Prefix may also be a ``ServerPrefix`` object, if the hook is for an IRC method 
+that interacts with the server directly, such as PING. It would have the 
+properties ``event.prefix.hostname`` and ``event.prefix.str``.
+
+Since the module described above echos messages, let's do that:
 
 .. code-block:: python
 
-            self.bot.act_PRIVMSG(args[0], trailing)
+            self.bot.act_PRIVMSG(event.args[0], event.trailing)
 
 This sends a PRIVMSG to the originating channel or nick, with the same msg 
 content that was received. 
@@ -88,8 +98,8 @@ EchoExample module
             print(self.config)
             self.hooks=[ModuleHook("PRIVMSG", self.echo)]
         
-        def echo(self, args, prefix, trailing):
-            self.bot.act_PRIVMSG(args[0], trailing)
+        def echo(self, event):
+            self.bot.act_PRIVMSG(event.args[0], event.trailing)
         
         def ondisable(self):
             print("I'm getting unloaded!")
@@ -100,6 +110,31 @@ In usage:
 
     4:40:17 PM <Beefpile> test
     4:40:17 PM <derpbot420> test
+
+New Style Module Hooks
+----------------------
+
+Instead of receiving the values of the IRC event a module is responding to in 
+3 separate arguments, hooks can receive them as one object. The hook system 
+will automatically determine which argument style to use.
+
+The reason for this change is to eliminate some unnecessary code in modules. 
+Any module that looks at a user's nick or hostname may find itself doing 
+something like this in every hook:
+
+.. code-block:: python
+
+        def saynick(self, args, prefix, trailing):
+            prefixObj = self.bot.decodePrefix(prefix)
+            self.bot.act_PRIVMSG(args[0], "Hello, %s. You are connecting from %s" % (prefixObj.nick, prefixObj.hostname))
+
+With the new style, one line can be eliminated, as the passed ``IRCEvent`` 
+event has the prefix already parsed:
+
+.. code-block:: python
+
+        def saynick(self, event):
+            self.bot.act_PRIVMSG(event.args[0], "Hello, %s. You are connecting from %s" % (event.prefix.nick, event.prefix.hostname))
 
 Advanced Usage
 ==============
