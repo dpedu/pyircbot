@@ -278,7 +278,12 @@ class IRCCore(asynchat.async_chat):
             return ob
     
     @staticmethod
-    def trace():
+        def trace():
+            """Return the stack trace of the bot as a string"""
+            return traceback.format_exc()
+    
+    @staticmethod
+    def fulltrace():
         """Return the stack trace of the bot as a string"""
         result = ""
         result += "\n*** STACKTRACE - START ***\n"
