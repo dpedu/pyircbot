@@ -103,7 +103,7 @@ class IRCCore(asynchat.async_chat):
         self.log.error("Connection failed (handle_error)")
         self.log.error(str(args))
         self.log.error(str(kwargs))
-        self.log(IRCCore.trace());
+        self.log.error(IRCCore.trace());
     
     def _connect(self):
         """Connect to IRC"""
