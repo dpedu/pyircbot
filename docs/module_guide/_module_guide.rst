@@ -149,6 +149,9 @@ Refer to existing modules for helper methods from elsewhere in PyIRCBot.
 - :py:meth:`pyircbot.pyircbot.PyIRCBot.getDataPath`
 - :py:meth:`pyircbot.pyircbot.PyIRCBot.getmodulebyname`
 
+:doc:`GameBase </api/modules/gamebase>` is a good example of the basic code 
+structure a IRC game could follow, designed so different channels would have 
+separate game instances.
 
 Inter-module Communication
 --------------------------
