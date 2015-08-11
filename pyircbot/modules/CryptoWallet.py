@@ -136,7 +136,7 @@ class CryptoWallet(ModuleBase):
 		# Create a transaction
 		txn = client.send(walletname, withdrawaddr, withdrawamount)
 		if txn:
-			self.bot.act_PRIVMSG(prefix.nick, ".withdraw: %s DOGE sent to %s. Transaction ID: %s"% (withdrawamount, withdrawaddr, txn))
+			self.bot.act_PRIVMSG(prefix.nick, ".withdraw: %s %s sent to %s. Transaction ID: %s"% (withdrawamount, client.name, withdrawaddr, txn))
 		else:
 			self.bot.act_PRIVMSG(prefix.nick, ".withdraw: Transaction create failed. Maybe the transaction was too large for the network? Try a smaller increment.")
 	
