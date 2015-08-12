@@ -77,7 +77,7 @@ class PyIRCBot:
         
         sys.exit(0)
     
-    def connection_closed(self):
+    def connection_closed(self, args, prefix, trailing):
         """Called when the socket is disconnected. We will want to reconnect. """
         if self.alive:
             self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
