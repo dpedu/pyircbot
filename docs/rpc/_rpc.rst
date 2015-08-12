@@ -61,7 +61,7 @@ development:
 
 .. code-block:: python
 
-   >>> print( rpc.eval("self.bot.irc.trace()")[1] )
+   >>> print( rpc.eval("self.bot.irc.fulltrace()")[1] )
    
    *** STACKTRACE - START ***
 
