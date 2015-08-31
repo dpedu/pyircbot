@@ -68,14 +68,15 @@ class PyIRCBot:
     def loop(self):
         self.irc.loop()
     
-    def kill(self):
+    def kill(self, sys_exit=True):
         """Shut down the bot violently"""
         #Close all modules
         self.closeAllModules()
         
         self.irc.kill()
         
-        sys.exit(0)
+        if sys_exit:
+            sys.exit(0)
     
     def connection_closed(self, args, prefix, trailing):
         """Called when the socket is disconnected. We will want to reconnect. """
