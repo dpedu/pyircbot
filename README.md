@@ -31,4 +31,4 @@ TODO
 ----
 
 * Improve/complete docs
-* Add a way to pass additional directories where modules are stored
+* Write config checker
