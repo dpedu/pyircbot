@@ -1,0 +1,30 @@
+{
+    "channels": [
+        "#mychannel",
+        "#myotherchannel"
+    ],
+    "words": [
+        "fuck",
+        "shit",
+        "crap",
+        "bitch",
+        "php"
+    ],
+    "responses": [
+        "AHHHHHHHH",
+        "HELP",
+        "AHHHHHHHHHHHHH",
+        "OH GOD PLEASE NO MORE",
+        "AHHHH",
+        "FOR THE LOVE OF DOG STOP",
+        "I HAVE A FAMILY NOOO",
+        "NOOOOOO",
+        "AHHHHH",
+        "NO",
+        "AGHHHHHHH",
+        "NO GOD! PLEASE NO!!! NOOOOOOOOOO"
+    ],
+    "mindelay": 5,
+    "maxdelay": 180,
+    "quiet": 6000
+}
