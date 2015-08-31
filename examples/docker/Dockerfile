@@ -20,4 +20,4 @@ RUN easy_install3 pip ; \
 
 ADD pyircbot.conf /etc/supervisor/conf.d/pyircbot.conf
 
-CMD ["/start"]
+CMD ["supervisord"]
