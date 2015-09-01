@@ -90,33 +90,49 @@ class LinkTitler(ModuleBase):
 						self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02" % (sender.nick, title))
 			return
 	
-	# For youtbue
+	# For youtube
+	def getISOdurationseconds(self, stamp):
+		ISO_8601_period_rx = re.compile(
+			'P'   # designates a period
+			'(?:(?P<years>\d+)Y)?'   # years
+			'(?:(?P<months>\d+)M)?'  # months
+			'(?:(?P<weeks>\d+)W)?'   # weeks
+			'(?:(?P<days>\d+)D)?'    # days
+			'(?:T' # time part must begin with a T
+			'(?:(?P<hours>\d+)H)?'   # hours
+			'(?:(?P<minutes>\d+)M)?' # minutes
+			'(?:(?P<seconds>\d+)S)?' # seconds
+			')?'   # end of time part
+		) # http://stackoverflow.com/a/16742742
+		return ISO_8601_period_rx.match(stamp).groupdict()
 	def get_video_description(self, vid_id):
-		j = get("http://gdata.youtube.com/feeds/api/videos/%s?v=2&alt=jsonc" % vid_id).json()
-		if j.get('error'):
+		apidata = get('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s&key=%s' % (vid_id, self.config["youtube_api_key"])).json()
+		
+		if not apidata['pageInfo']['totalResults']:
 			return
-		j = j['data']
-		out = '\x02\x031,0You\x0f\x030,4Tube\x02\x0f :: \x02%s\x02' % j['title']
-		if not j.get('duration'):
-			return out
+		
+		video = apidata['items'][0]
+		snippet = video["snippet"]
+		duration = self.getISOdurationseconds(video["contentDetails"]["duration"])
+		
+		out = '\x02\x031,0You\x0f\x030,4Tube\x02\x0f :: \x02%s\x02' % snippet["title"]
+		
 		out += ' - length \x02'
-		length = j['duration']
-		if length / 3600:  # > 1 hour
-			out += '%dh ' % (length / 3600)
-		if length / 60:
-			out += '%dm ' % (length / 60 % 60)
-		out += "%ds\x02" % (length % 60)
-		if 'rating' in j:
-			out += ' - rated \x02%.2f/5.0\x02 (%d)' % (j['rating'],
-													   j['ratingCount'])
-		if 'viewCount' in j:
-			out += ' - \x02%s\x02 views' % self.group_int_digits(j['viewCount'])
-		upload_time = time.strptime(j['uploaded'], "%Y-%m-%dT%H:%M:%S.000Z")
-		out += ' - \x02%s\x02 on \x02%s\x02' % (
-							j['uploader'], time.strftime("%Y.%m.%d", upload_time))
-		if 'contentRating' in j:
-			out += ' - \x034NSFW\x02'
+		if duration["hours"]!=None:
+			out += '%dh ' % int(duration["hours"])
+		if duration["minutes"]!=None:
+			out += '%dm ' % int(duration["minutes"])
+		out += "%ds\x02" % int(duration["seconds"])
+		
+		totalvotes = float(video["statistics"]["dislikeCount"])+float(video["statistics"]["likeCount"])
+		rating = float(video["statistics"]["likeCount"]) / totalvotes
+		out += ' - rated \x02%.2f/5\x02' % round(rating*5,1)
+		out += ' - \x02%s\x02 views' % self.group_int_digits(video["statistics"]["viewCount"])
+		upload_time = time.strptime(snippet['publishedAt'], "%Y-%m-%dT%H:%M:%S.000Z")
+		out += ' - by \x02%s\x02 on \x02%s\x02' % (snippet['channelTitle'], time.strftime("%Y.%m.%d", upload_time))
+		
 		return out
+	
 	def group_int_digits(self, number, delimiter=',', grouping=3):
 		base = str(number).strip()
 		builder = []

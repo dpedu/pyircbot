@@ -104,6 +104,7 @@ class PyIRCBot:
         :type moduleName: str"""
         " check if already exists "
         if not name in self.modules:
+            self.log.debug("Importing %s" % name)
             " attempt to load "
             try:
                 moduleref = __import__(name)
@@ -123,6 +124,7 @@ class PyIRCBot:
         
         :param moduleName: Name of the module to import
         :type moduleName: str"""
+        self.log.debug("Deporting %s" % name)
         " unload if necessary "
         if name in self.moduleInstances:
             self.unloadmodule(name)
