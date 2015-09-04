@@ -16,6 +16,7 @@ class TextCDC(ModuleBase):
 		ModuleBase.__init__(self, bot, moduleName)
 		self.hooks.append(ModuleHook("PRIVMSG",self.handleMessage))	
 		self.loadConfig()
+		self.bot = bot
 		self.timer = None
 		self.setupTimer()
 
@@ -25,6 +26,7 @@ class TextCDC(ModuleBase):
 
 	def handleMessage(self, args, prefix, trailing):
 		channel = args[0]
+		prefix = self.bot.decodePrefix(prefix)
 		if self.bot.messageHasCommand(".textstatus", trailing):
 			#self.bot.act_PRIVMSG(channel, "POP: %s" % "Good" if setupPop() != None else "Failed.")
 			self.bot.act_PRIVMSG(channel, "SMTP: %s" % "Good" if setupSMTP() != None else "Failed.")
@@ -32,7 +34,7 @@ class TextCDC(ModuleBase):
 			message = ' '.join(trailing.split(" ")[1:])
 			smtp = self.setupSMTP()
 			try:
-				smtp.sendmail(self.config["account"]["auth"]["username"], self.config["email-addr"], "Subject:\n\n%s" % message)
+				smtp.sendmail(self.config["account"]["auth"]["username"], self.config["email-addr"], "Subject:\n\n%s -%s" % (message, prefix.nick))
 				smtp.quit()
 				self.bot.act_PRIVMSG(channel, "Message sent.")
 			except Exception as e:
