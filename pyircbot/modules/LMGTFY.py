@@ -6,6 +6,7 @@
 .. moduleauthor::Nick Krichevsky <nick@ollien.com>
 """
 
+import urllib.parse
 from pyircbot.modulebase import ModuleBase, ModuleHook
 
 BASE_URL = "http://lmgtfy.com/?q="
@@ -30,36 +31,7 @@ class LMGTFY(ModuleBase):
 			message = message.split(" ")
 
 		for word in message:
-			subs = {
-				"@": "%40",
-				"#": "%23",
-				"$": "%24",
-				"%": "%25",
-				"^": "%26",
-				"=": "%3D",
-				"+": "%2B",
-				"\\": "%5C",
-				"/": "%2F",
-				":": "%3A",
-				";": "%3B",
-				"'": "%27",
-				"\"": "%28", 
-				",": "%2C",
-				"?": "%3F",
-				"<": "%3C",
-				">": "%3E",
-				"[": "%5B", 
-				"]": "%5D", 
-				"{": "%7B",
-				"}": "%7D",
-				"|": "%7C",
-				"`": "%60"
-			}
-
-			if word in subs:
-				word = subs[word]
-
-			finalUrl+=word
+			finalUrl += urllib.parse.quote(word)
 			if word != message[-1]:
 				finalUrl+="+"
 
