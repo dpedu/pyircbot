@@ -47,7 +47,9 @@ class Youtube(ModuleBase):
                 self.bot.act_PRIVMSG(args[0], "YouTube: No results found.")
             else:
                 vid_id = j['data']['items'][0]['id']
-                self.bot.act_PRIVMSG(args[0], "http://youtu.be/%s :: %s" % (vid_id, self.get_video_description(vid_id)))
+                vidinfo = self.get_video_description(vid_id)
+                if vidinfo:
+                    self.bot.act_PRIVMSG(args[0], "http://youtu.be/%s :: %s" % (vid_id, vidinfo))
     
     def get_video_description(self, vid_id):
         apidata = get('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s&key=%s' % (vid_id, self.config["api_key"])).json()

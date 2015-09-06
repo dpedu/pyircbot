@@ -36,7 +36,9 @@ class LinkTitler(ModuleBase):
             done = []
             for item in matches:
                 if not item in done:
-                    self.bot.act_PRIVMSG(args[0], self.get_video_description(item))
+                    vidinfo =  self.get_video_description(item)
+                    if vidinfo:
+                        self.bot.act_PRIVMSG(args[0], vidinfo)
                     done.append(item)
             return
         
@@ -122,7 +124,8 @@ class LinkTitler(ModuleBase):
             out += '%dh ' % int(duration["hours"])
         if duration["minutes"]!=None:
             out += '%dm ' % int(duration["minutes"])
-        out += "%ds\x02" % int(duration["seconds"])
+        if duration["seconds"]!=None:
+            out += "%ds\x02" % int(duration["seconds"])
         
         totalvotes = float(video["statistics"]["dislikeCount"])+float(video["statistics"]["likeCount"])
         rating = float(video["statistics"]["likeCount"]) / totalvotes
