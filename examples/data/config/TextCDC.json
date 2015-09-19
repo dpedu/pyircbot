@@ -1,11 +1,31 @@
 {
-	"email-addr":"5555555555@carrier.com.com",
+	"people": {
+
+		"one": {
+			"email-addr": "5555555555@vtext.com"
+		},
+		"two": {
+			"email-addr": "5555555555@vtext.com"
+		},
+		"three": {
+			"email-addr": "5555555555@vtext.com"
+		},
+		"four": {
+			"email-addr": "5555555555@txt.att.net"	
+		}
+	}, 
 	"output-channels":["#yourchannel"],
 	"interval": 30,
 	"account": {
 		"auth": {
 			"username": "example@gmail.com",
 			"password": "Password"
+		},
+
+		"pop": {
+			"host": "pop.gmail.com",
+			"ssl": true,
+			"port": 995
 		},
 
 		"imap": {
