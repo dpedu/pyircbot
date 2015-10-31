@@ -80,10 +80,10 @@ class PyIRCBot:
     
     def connection_closed(self, args, prefix, trailing):
         """Called when the socket is disconnected. We will want to reconnect. """
-        if self.alive:
+        if self.irc.alive:
             self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
             time.sleep(5)
-            self._connect()
+            self.connect()
     
     def initModules(self):
         """load modules specified in instance config"""
