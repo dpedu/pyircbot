@@ -96,11 +96,18 @@ class LinkTitler(ModuleBase):
                     title = self.url_htmltitle(match[0])
                     if title:
                         self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02" % (sender.nick, title))
-                
-                if "image/" in headers["Content-Type"]:
-                    self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02, %s" % (sender.nick, headers["Content-Type"], str(int(int(headers["Content-Length"])/1024))+"KB" if "Content-Length" in headers else "unknown size"))
+                else:
+                    # Unknown types, just print type and size
+                    self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02, %s" % (sender.nick, headers["Content-Type"], self.nicesize(int(headers["Content-Length"])) if "Content-Length" in headers else "unknown size"))
             
             return
+    
+    def nicesize(self, numBytes):
+        "Return kb or plain bytes"
+        if numBytes > 1024:
+            return "%skb" % str(int(numBytes/1024))
+        else:
+            return "<1kb"
     
     def url_headers(self, url):
         "HEAD requests a url to check content type & length, returns something like: {'type': 'image/jpeg', 'size': '90583'}"
@@ -121,7 +128,7 @@ class LinkTitler(ModuleBase):
                 break
         
         titleMatches = re.findall(r'<title>([^<]+)</title>', data, re.I)
-        if len(titleMatches)>0 and resp.status_code==200:
+        if len(titleMatches)>0:# and resp.status_code==200:
             h = html.parser.HTMLParser()
             title = h.unescape(titleMatches[0]).strip()
             if len(title)>0:
