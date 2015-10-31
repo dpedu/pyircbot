@@ -13,13 +13,14 @@ import re
 import time
 import praw #TODO: enable/disable modules
 import datetime
-from requests import get
+from requests import get,head
 import html.parser
 from threading import Thread
 
 class LinkTitler(ModuleBase):
     def __init__(self, bot, moduleName):
-        ModuleBase.__init__(self, bot, moduleName);
+        ModuleBase.__init__(self, bot, moduleName)
+        self.REQUEST_SIZE_LIMIT = 10*1024
         self.hooks=[ModuleHook("PRIVMSG", self.searches)]
     
     def searches(self, args, prefix, trailing):
@@ -83,14 +84,49 @@ class LinkTitler(ModuleBase):
                 if match[0] in done:
                     continue
                 done.append(match[0])
-                d = get(match[0])
-                titleMatches = re.findall(r'<title>([^<]+)</title>', d.text, re.I)
-                if len(titleMatches)>0 and d.status_code==200:
-                    h = html.parser.HTMLParser()
-                    title = h.unescape(titleMatches[0]).strip()
-                    if len(title)>0:
+                
+                headers = self.url_headers(match[0])
+                
+                # Don't mess with unknown content types
+                if not "Content-Type" in headers:
+                    continue
+                
+                if "text/html" in headers["Content-Type"]:
+                    # Fetch HTML title
+                    title = self.url_htmltitle(match[0])
+                    if title:
                         self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02" % (sender.nick, title))
+                
+                if "image/" in headers["Content-Type"]:
+                    self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02, %s" % (sender.nick, headers["Content-Type"], str(int(int(headers["Content-Length"])/1024))+"KB" if "Content-Length" in headers else "unknown size"))
+            
             return
+    
+    def url_headers(self, url):
+        "HEAD requests a url to check content type & length, returns something like: {'type': 'image/jpeg', 'size': '90583'}"
+        self.log.debug("url_headers(%s)" % (url,))
+        resp = head(url=url, allow_redirects=True)
+        return resp.headers
+    
+    def url_htmltitle(self, url):
+        "Requests page html and returns title in a safe way"
+        self.log.debug("url_htmltitle(%s)" % (url,))
+        resp = get(url=url, stream=True)
+        # Fetch no more than first 10kb
+        # if the title isn't seen by then, you're doing it wrong
+        data = ""
+        for chunk in resp.iter_content(1024):
+            data += str(chunk)
+            if len(data) > self.REQUEST_SIZE_LIMIT:
+                break
+        
+        titleMatches = re.findall(r'<title>([^<]+)</title>', data, re.I)
+        if len(titleMatches)>0 and resp.status_code==200:
+            h = html.parser.HTMLParser()
+            title = h.unescape(titleMatches[0]).strip()
+            if len(title)>0:
+                return title
+        return None
     
     # For youtube
     def getISOdurationseconds(self, stamp):

@@ -114,8 +114,9 @@ class IRCCore(asynchat.async_chat):
             socket_type = socket.AF_INET6
         socketInfo = socket.getaddrinfo(self.server, self.port, socket_type)
         self.create_socket(socket_type, socket.SOCK_STREAM)
-        
+        self.log.debug("Socket created")
         self.connect(socketInfo[0][4])
+        self.log.debug("Connection established")
         self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
     
     def handle_connect(self):
