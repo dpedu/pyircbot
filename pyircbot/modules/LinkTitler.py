@@ -121,11 +121,13 @@ class LinkTitler(ModuleBase):
         resp = get(url=url, stream=True)
         # Fetch no more than first 10kb
         # if the title isn't seen by then, you're doing it wrong
-        data = ""
+        data = b""
         for chunk in resp.iter_content(1024):
-            data += str(chunk)
+            data += chunk
             if len(data) > self.REQUEST_SIZE_LIMIT:
                 break
+        
+        data = data.decode('utf-8', "ignore")
         
         titleMatches = re.findall(r'<title>([^<]+)</title>', data, re.I)
         if len(titleMatches)>0:# and resp.status_code==200:
