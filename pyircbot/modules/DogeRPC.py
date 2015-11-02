@@ -64,6 +64,8 @@ class DogeController:
     
     def ping(self):
         "Test connection and re-establish if necessary"
+        if not self.con:
+            self.connect()
         try:
             self.con.getinfo()
         except:
