@@ -3,7 +3,7 @@ FROM ubuntu:trusty
 COPY start /start
 
 RUN apt-get update ; \
-    apt-get install -y python3 python3-sphinx python3-setuptools python3-dev python3-requests python3-pip python3-yaml python3-lxml make wget unzip libmysqlclient-dev ; \
+    apt-get install -y python3 python3-sphinx python3-setuptools python3-dev python3-requests python3-pip python3-lxml make wget unzip libmysqlclient-dev ; \
     pip3 install pytz praw ; \
     cd /tmp ; \ 
     wget https://github.com/jgarzik/python-bitcoinrpc/archive/master.zip ; \
