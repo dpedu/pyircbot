@@ -17,13 +17,14 @@ class AttributeStorageLite(ModuleBase):
         self.db = None
         serviceProviders = self.bot.getmodulesbyservice("sqlite")
         if len(serviceProviders)==0:
-            self.log.error("AttributeStorage: Could not find a valid sqlite service provider")
+            self.log.error("Could not find a valid sqlite service provider")
+            raise Exception("No sqlite provider available")
         else:
-            self.log.info("AttributeStorage: Selecting sqlite service provider: %s" % serviceProviders[0])
+            self.log.info("Selecting sqlite service provider: %s" % serviceProviders[0])
             self.db = serviceProviders[0].opendb("attributes.db")
         
         if not self.db.tableExists("attribute"):
-            self.log.info("AttributeStorage: Creating table: attribute")
+            self.log.info("Creating table: attribute")
             c = self.db.query("""CREATE TABLE IF NOT EXISTS `attribute` (
             `id` INTEGER PRIMARY KEY,
             `attribute` varchar(128) UNIQUE
@@ -31,7 +32,7 @@ class AttributeStorageLite(ModuleBase):
             c.close()
         
         if not self.db.tableExists("items"):
-            self.log.info("AttributeStorage: Creating table: items")
+            self.log.info("Creating table: items")
             c = self.db.query("""CREATE TABLE IF NOT EXISTS `items` (
             `id` INTEGER PRIMARY KEY,
             `item` varchar(512)
@@ -39,7 +40,7 @@ class AttributeStorageLite(ModuleBase):
             c.close()
         
         if not self.db.tableExists("values"):
-            self.log.info("AttributeStorage: Creating table: values")
+            self.log.info("Creating table: values")
             c = self.db.query("""CREATE TABLE IF NOT EXISTS `values` (
             `itemid` INTEGER NOT NULL,
             `attributeid` INTEGER NOT NULL,
@@ -160,9 +161,9 @@ class AttributeStorageLite(ModuleBase):
         if value == None:
             # delete it
             c = self.db.query("DELETE FROM `values` WHERE `itemid`=? AND `attributeid`=? ;", (itemId, attributeId))
-            self.log.debug("AttributeStorage: Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
+            self.log.debug("Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
         else:
             # add attribute
             c = self.db.query("REPLACE INTO `values` (`itemid`, `attributeid`, `value`) VALUES (?, ?, ?);", (itemId, attributeId, value))
-            self.log.debug("AttributeStorage: Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
+            self.log.debug("Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
         c.close()

@@ -1,7 +1,7 @@
 :mod:`AttributeStorageLite` --- Item key/value storage
 ======================================================
 
-With a SQLite backend.
+:doc:`AttributeStorage </api/modules/attributestorage>` with a SQLite backend.
 
 Class Reference
 ---------------
