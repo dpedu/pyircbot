@@ -17,7 +17,7 @@ class PyIRCBot:
     """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
     :type botconfig: dict
     """
-    version = "4.0.0-r02"
+    version = "4.0.0-r03"
     
     def __init__(self, botconfig):
         self.log = logging.getLogger('PyIRCBot')
