@@ -1,0 +1,6 @@
+{
+    "channelWhitelistOn": true,
+    "channelWhitelist": [
+        "test"
+    ]
+}

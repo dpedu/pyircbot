@@ -1,5 +1,5 @@
 ************
-Dependancies
+Dependencies
 ************
 
 PyIRCBot is designed to run on Python 3, and is usually tested with 3.4. Python
@@ -23,3 +23,10 @@ them.
  - **bitcoinrpc** - https://github.com/jgarzik/python-bitcoinrpc
  - **pymysql** - https://github.com/dpedu/MySQL-for-Python-3 (needs \
    libmysqlclient-dev on your system)
+
+At time of writing there is a bug that will prevent the bitcoinrpc module from 
+working with Python 3. When  pull `#55`_ is merged, the bug will be fixed. 
+Until then, using my `fork`_ is recommended.
+
+.. _#55: https://github.com/jgarzik/python-bitcoinrpc/pull/55
+.. _fork: https://github.com/dpedu/python-bitcoinrpc

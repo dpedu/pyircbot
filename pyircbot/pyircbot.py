@@ -301,9 +301,7 @@ class PyIRCBot:
         
         basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
         
-        if os.path.exists("%s.yml"%basepath):
-            return "%s.yml"%basepath 
-        elif os.path.exists("%s.json"%basepath):
+        if os.path.exists("%s.json"%basepath):
             return "%s.json"%basepath 
         return None
     
@@ -360,15 +358,12 @@ class PyIRCBot:
     def load(filepath):
         """Return an object from the passed filepath
         
-        :param filepath: path to a file of json or yaml format. filename must end with .json or .yml
+        :param filepath: path to a json file. filename must end with .json
         :type filepath: str
         :Returns:    | dict
         """
-        if filepath.endswith(".yml"):
-            from yaml import load
-            return load(open(filepath, 'r'))
-            
-        elif filepath.endswith(".json"):
+        
+        if filepath.endswith(".json"):
             from json import load
             return load(open(filepath, 'r'))
         else:

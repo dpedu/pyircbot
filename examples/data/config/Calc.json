@@ -1,0 +1,16 @@
+{
+    "allowDelete": true,
+    "delaySubmit": 0,
+    "delayCalc": 0,
+    "delayCalcSpecific": 0,
+    "delayMatch": 0,
+    "cmd_calc": [
+        ".calc",
+        "calc",
+        ".quote"
+    ],
+    "cmd_match": [
+        ".match",
+        "match"
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "minBet": 0.01,
+    "lobbyIdleSeconds": 15,
+    "channelWhitelistOn": true,
+    "channelWhitelist": [
+        "dogegamestest",
+        "test"
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "hintDelay": 15,
+    "delayNext": 5,
+    "maxHints": 5,
+    "abortAfterNoGuesses": 2,
+    "categoryduration": 10,
+    "winAmount": 5,
+    "decreaseFactor": 0.75
+}

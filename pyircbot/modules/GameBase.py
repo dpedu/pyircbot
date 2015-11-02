@@ -9,7 +9,6 @@
 
 from pyircbot.modulebase import ModuleBase,ModuleHook
 import random
-import yaml
 import os
 import time
 from threading import Timer

@@ -34,7 +34,7 @@ class ModuleBase:
 		here"""
 		
 		self.config={}
-		"""Configuration dictionary. Autoloaded from `%(datadir)s/%(modulename)s.yml`"""
+		"""Configuration dictionary. Autoloaded from `%(datadir)s/%(modulename)s.json`"""
 		
 		self.log = logging.getLogger("Module.%s" % self.moduleName)
 		"""Logger object for this module"""
@@ -57,7 +57,7 @@ class ModuleBase:
 		pass
 	
 	def getConfigPath(self):
-		"""Returns the absolute path of this module's YML config file"""
+		"""Returns the absolute path of this module's json config file"""
 		return self.bot.getConfigPath(self.moduleName)
 	
 	def getFilePath(self, f=None):

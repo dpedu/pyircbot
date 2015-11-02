@@ -1,7 +1,7 @@
 Setup Tutorial
 ==============
 
-Installing and runnig PyIRCBot requires installing the needed dependancies and
+Installing and runnig PyIRCBot requires installing the needed dependencies and
 providing some environmental information about where the bot is being run.
 
 Contents:
@@ -9,6 +9,6 @@ Contents:
 .. toctree::
    :maxdepth: 8
    
-   dependancies.rst
+   dependencies.rst
    initial_config.rst
    running.rst

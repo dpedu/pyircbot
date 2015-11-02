@@ -19,7 +19,7 @@
 		"ghost_cmd":"ghost %(nick)s %(password)s"
 	},
 	"channels":[
-		"#xmopx"
+		"##xmopx"
 	],
 	"privatechannels":{
 		"to":"chanserv",
