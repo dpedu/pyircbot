@@ -4,8 +4,12 @@
 Commands
 --------
 
- - *.youtube <query>*, *.yt <query>* - search youtube for keywords <query>
-    Example: *.yt cute cats*
+.. cmdoption:: .youtube <query>
+.. cmdoption:: .yt <query>
+
+    Search youtube for keywords <query>
+    
+    Example: ``.yt cute cats``
 
 Class Reference
 ---------------

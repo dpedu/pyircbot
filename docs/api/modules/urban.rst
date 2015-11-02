@@ -4,7 +4,9 @@
 Commands
 --------
 
- - *.urban* - fetch a random fact from Urban Dictionary
+.. cmdoption:: .urban
+
+    fetch a random fact from Urban Dictionary
 
 Class Reference
 ---------------

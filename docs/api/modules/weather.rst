@@ -4,13 +4,26 @@
 Commands
 --------
 
- - *.weather <location>*, *.w <location>* - fetch weather for a locaiton. If no location is passed, the user's preferred location will be used.
-    Example: *.w 95051*
- - *.setloc <location>* - set your preferred location
-    Example: *.setloc Rochester, NY*
-    *.setloc 14623*
- - *.wunit <type>* - set your preference between fahrenheit or celsius.
-    Example: *.setloc F*
+.. cmdoption:: .weather <location>
+.. cmdoption:: .w <location>
+
+    Fetch weather for a location. If no location is passed, the user's 
+    preferred location will be used.
+    
+    Example: ``.w 95051``
+
+.. cmdoption:: .setloc <location>
+
+    Set your preferred location
+    
+    Example: ``.setloc Rochester, NY``, ``.setloc 14623``
+
+
+.. cmdoption:: .wunit <type>
+
+    Set your preference between fahrenheit or celsius.
+    
+    Example: ``.setloc F``
 
 Class Reference
 ---------------

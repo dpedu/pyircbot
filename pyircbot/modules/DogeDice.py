@@ -261,6 +261,7 @@ class gameObj:
     def gamePlayTimeoutExpired(self):
         # Time out - return doges
         self.master.bot.act_PRIVMSG(self.channel, "Time expired! Returning all doges.")
+        # TODO: Option beteen this and user surrenders their coins on timeout
         if self.step == 3:
             # In game step. Refund doges
             for player in self.players:

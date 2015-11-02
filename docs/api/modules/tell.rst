@@ -1,11 +1,14 @@
-:mod:`Tell` --- Pass messages to a user when they're next seen
-==============================================================
+:mod:`Tell` --- Message passer
+==============================
+
+Queue messages to pass a user when they're next seen.
 
 Commands
 --------
 
- - *.tell <user> <message>* - When <user> is next seen online, they will be
-    a PM with <message>.
+.. cmdoption:: .tell <user> <message>
+
+    When <user> is next seen online, they will be sent a PM with <message>.
 
 Class Reference
 ---------------

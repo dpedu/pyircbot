@@ -1,10 +1,14 @@
 :mod:`Seen` --- !seen <username>
 ================================
 
+Tracks when nicks were last seen online.
+
 Commands
 --------
 
- - *!seen <username>* - finds the last time <username> was online
+.. cmdoption:: !seen <username>
+
+    Finds the last time <username> was online
 
 Class Reference
 ---------------

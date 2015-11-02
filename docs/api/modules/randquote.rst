@@ -4,7 +4,10 @@
 Commands
 --------
 
- - *.randomquote .randquote .rq* - fetch and say a random quote
+.. cmdoption:: .rq
+.. cmdoption:: .randquote
+
+    fetch and say a random quote
 
 Class Reference
 ---------------

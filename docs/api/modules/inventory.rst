@@ -4,8 +4,13 @@
 Commands
 --------
 
- - *botnick: inventory* - print current inventory
- - *botnick: have a x* - give the bot an item
+.. cmdoption:: botnick: inventory
+
+    Print current inventory
+
+.. cmdoption:: botnick: have a <item>
+
+    Give the bot an item
 
 Class Reference
 ---------------

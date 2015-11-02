@@ -4,10 +4,21 @@
 Commands
 --------
 
- - *calc* - returns a random fact
- - *calc something = some definition* - add a fact
- - *calc something =* - delete a fact
- - *match keyword* - search facts
+.. cmdoption:: calc
+
+     Returns a random fact
+
+.. cmdoption:: calc <something> = <some definition>
+
+    Add a fact
+
+.. cmdoption:: calc <something> =
+
+    Delete a fact
+
+.. cmdoption:: match <keyword>
+
+    Search facts
 
 Class Reference
 ---------------
