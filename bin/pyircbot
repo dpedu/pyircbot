@@ -7,29 +7,29 @@ from pyircbot import PyIRCBot
 
 
 if __name__ == "__main__":
-	" logging level and facility "
-	logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(message)s")
-	log = logging.getLogger('main')
-	
-	" parse command line args "
-	parser = OptionParser()
-	parser.add_option("-c", "--config", action="store", type="string", dest="config", help="Path to config file")
-	
-	(options, args) = parser.parse_args()
-	
-	log.debug(options)
-	
-	if not options.config:
-		log.critical("No bot config file specified (-c). Exiting.")
-		sys.exit(0)
-	
-	botconfig = PyIRCBot.load(options.config)
-	
-	log.debug(botconfig)
-	
-	bot = PyIRCBot(botconfig)
-	try:
-		bot.loop()
-	except KeyboardInterrupt:
-		bot.kill()
-	
+    " logging level and facility "
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(message)s")
+    log = logging.getLogger('main')
+    
+    " parse command line args "
+    parser = OptionParser()
+    parser.add_option("-c", "--config", action="store", type="string", dest="config", help="Path to config file")
+    
+    (options, args) = parser.parse_args()
+    
+    log.debug(options)
+    
+    if not options.config:
+        log.critical("No bot config file specified (-c). Exiting.")
+        sys.exit(0)
+    
+    botconfig = PyIRCBot.load(options.config)
+    
+    log.debug(botconfig)
+    
+    bot = PyIRCBot(botconfig)
+    try:
+        bot.loop()
+    except KeyboardInterrupt:
+        bot.kill()
+    

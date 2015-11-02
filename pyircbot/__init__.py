@@ -1,6 +1,6 @@
 """
 .. module:: Core
-	:synopsis: Core module of the bot
+    :synopsis: Core module of the bot
 
 .. moduleauthor:: Dave Pedu <dave@davepedu.com>
 
