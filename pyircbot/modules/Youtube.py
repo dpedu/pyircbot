@@ -63,7 +63,7 @@ class Youtube(ModuleBase):
         
         out = '\x02\x031,0You\x0f\x030,4Tube\x02\x0f :: \x02%s\x02' % snippet["title"]
         
-        out += ' - length \x02'
+        out += ' - \x02'
         if duration["hours"]!=None:
             out += '%dh ' % int(duration["hours"])
         if duration["minutes"]!=None:
