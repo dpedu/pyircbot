@@ -63,21 +63,38 @@ class IRCCore(asynchat.async_chat):
         self.asynmap = {}
     
     def loop(self):
-        asyncore.loop(map=self.asynmap)
+        while self.alive:
+            try:
+                asyncore.loop(map=self.asynmap, timeout=1)
+            except Exception as e:
+                self.log.error("Loop error: %s" % str(e))
+            # Remove from asynmap
+            for key in list(self.asynmap.keys())[:]:
+                del self.asynmap[key]
+            if self.alive:
+                self._connect()
     
-    def kill(self):
-        """Send quit message and close the socket"""
+    def kill(self, message="Help! Another thread is killing me :(", alive=False):
+        """Send quit message, flush queue, and close the socket
+        
+        :param message: Quit message
+        :type message: str
+        :param alive: True causes a reconnect after disconnecting
+        :type alive: bool
+        """
         # Pauses output queue
-        self.outputQueueRunner.paused = True
+        self.outputQueueRunner.paused = not alive
         # Clear any pending messages
         self.outputQueueRunner.clear()
         # Send quit message and flush queue
-        self.act_QUIT("Help! Another thread is killing me :(")
+        self.act_QUIT(message) # TODO will this hang if the socket is having issues?
         self.outputQueueRunner.flush()
         # Signal disconnection
-        self.alive=False
+        self.alive=alive
         # Close socket
+        self.shutdown(SHUT_RDWR)
         self.close()
+        self.log.info("Kill complete")
     
     " Net related code here on down "
     
@@ -133,10 +150,12 @@ class IRCCore(asynchat.async_chat):
             socket_type = socket.AF_INET6
         socketInfo = socket.getaddrinfo(self.server, self.port, socket_type)
         self.create_socket(socket_type, socket.SOCK_STREAM)
-        self.log.debug("Socket created")
+        self.log.debug("Socket created: %s" % self.socket.fileno())
         self.connect(socketInfo[0][4])
         self.log.debug("Connection established")
+        self._fileno = self.socket.fileno()
         self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
+        self.log.info("_connect: Socket map: %s" % str(self.asynmap))
     
     def handle_connect(self):
         """When asynchat indicates our socket is connected, fire the _CONNECT hook"""

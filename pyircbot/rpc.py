@@ -178,7 +178,6 @@ class BotRPC(Thread):
         
         :param message: Quit message
         :type moduleName: str"""
-        self.bot.act_QUIT(message)
-        self.bot.kill()
+        self.bot.kill(message=message)
         return (True, "Shutdown ordered")
         

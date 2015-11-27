@@ -68,12 +68,29 @@ class PyIRCBot:
     def loop(self):
         self.irc.loop()
     
-    def kill(self, sys_exit=True):
-        """Shut down the bot violently"""
+    def disconnect(self, message, reconnect=True):
+        """Send quit message and disconnect from IRC.
+        
+        :param message: Quit message
+        :type message: str
+        :param reconnect: True causes a reconnection attempt to be made after the disconnect
+        :type reconnect: bool
+        """
+        self.log.info("disconnect")
+        self.irc.kill(message=message, alive=reconnect)
+    
+    def kill(self, sys_exit=True, message="Help! Another thread is killing me :("):
+        """Shut down the bot violently
+        
+        :param sys_exit: True causes sys.exit(0) to be called
+        :type sys_exit: bool
+        :param message: Quit message
+        :type message: str
+        """
         #Close all modules
         self.closeAllModules()
         
-        self.irc.kill()
+        self.irc.kill(message=message, alive=not sys_exit)
         
         if sys_exit:
             sys.exit(0)
