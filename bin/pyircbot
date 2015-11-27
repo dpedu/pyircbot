@@ -4,11 +4,11 @@ import sys
 import logging
 from optparse import OptionParser
 from pyircbot import PyIRCBot
-
+from time import sleep
 
 if __name__ == "__main__":
     " logging level and facility "
-    logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(message)s")
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
     log = logging.getLogger('main')
     
     " parse command line args "
@@ -31,5 +31,4 @@ if __name__ == "__main__":
     try:
         bot.loop()
     except KeyboardInterrupt:
-        bot.kill()
-    
+        bot.kill(message="Ctrl-C pressed!")
