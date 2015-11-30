@@ -476,7 +476,7 @@ class OutputQueueRunner(Thread):
                 except queue.Empty:
                     #self.log.debug("Queue is empty")
                     pass
-            sleep(0) # yield
+            sleep(0.01)
     
     def process_queue_item(self):
         """Remove 1 item from queue and process it"""
