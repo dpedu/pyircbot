@@ -37,7 +37,7 @@ class PyIRCBot:
         
         self.irc = IRCCore()
         """IRC protocol class"""
-        self.irc.server = self.botconfig["connection"]["server"]
+        self.irc.servers = self.botconfig["connection"]["servers"]
         self.irc.port = self.botconfig["connection"]["port"]
         self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"]=="on" else False
         

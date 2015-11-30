@@ -40,8 +40,10 @@ class IRCCore(asynchat.async_chat):
         self.alive = True
         """True if we should try to stay connected"""
         
-        self.server = None
-        """Server address"""
+        self.server = 0
+        """Current server index"""
+        self.servers = []
+        """List of server address"""
         self.port = 0
         """Server port"""
         self.ipv6 = False
@@ -143,12 +145,16 @@ class IRCCore(asynchat.async_chat):
     
     def _connect(self):
         """Connect to IRC"""
-        self.log.debug("Connecting to %(server)s:%(port)i", {"server":self.server, "port":self.port})
+        self.server+=1
+        if self.server >= len(self.servers):
+            self.server=0
+        serverHostname = self.servers[self.server]
+        self.log.debug("Connecting to %(server)s:%(port)i", {"server":serverHostname, "port":self.port})
         socket_type = socket.AF_INET
         if self.ipv6:
             self.log.info("IPv6 is enabled.")
             socket_type = socket.AF_INET6
-        socketInfo = socket.getaddrinfo(self.server, self.port, socket_type)
+        socketInfo = socket.getaddrinfo(serverHostname, self.port, socket_type)
         self.create_socket(socket_type, socket.SOCK_STREAM)
         self.log.debug("Socket created: %s" % self.socket.fileno())
         self.connect(socketInfo[0][4])
@@ -383,7 +389,7 @@ class IRCCore(asynchat.async_chat):
         :type hostname: str
         :param realname: the bot's realname
         :type realname: str"""
-        self.sendRaw("USER %s %s %s :%s" % (username, hostname, self.server, realname))
+        self.sendRaw("USER %s %s %s :%s" % (username, hostname, self.servers[self.server], realname))
     
     def act_NICK(self, newNick):
         """Use the `/nick` command

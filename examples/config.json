@@ -6,7 +6,13 @@
 		"usermodules": [ "./data/modules/" ]
 	},
 	"connection":{
-		"server":"irc.freenode.net",
+		"servers": [
+			"weber.freenode.net",
+			"asimov.freenode.net",
+			"card.freenode.net",
+			"dickson.freenode.net",
+			"morgan.freenode.net"
+		],
 		"ipv6":"off",
 		"port":6667
 	},
