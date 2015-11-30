@@ -31,7 +31,13 @@ Instance Configuration
             "usermodules": [ "./data/modules/" ]
         },
         "connection":{
-            "server":"irc.freenode.net",
+            "servers": [
+                "weber.freenode.net",
+                "asimov.freenode.net",
+                "card.freenode.net",
+                "dickson.freenode.net",
+                "morgan.freenode.net"
+            ],
             "ipv6":"off",
             "port":6667
         },
@@ -66,9 +72,11 @@ options:
 
     Paths to directories where modules where also be included from
 
-.. cmdoption:: connection.server
+.. cmdoption:: connection.servers
 
-    Hostname or IP of the IRC server to connection to
+    List of hostnames or IP addresses of the IRC server to connection to. First
+    entry will be used for the initial connection on startup. If we the bot 
+    must reconnect to the IRC server later, the next server will be used.
 
 .. cmdoption:: connection.ipv6
 
