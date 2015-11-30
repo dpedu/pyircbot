@@ -120,7 +120,7 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(args[0], "%s: .withdraw: %s %s sent to %s. "% (prefix.nick, withdrawamount, client.name, withdrawaddr))
             self.bot.act_PRIVMSG(prefix.nick, "Withdrawal: (You)->%s: Transaction ID: %s" % (prefix.nick, withdrawaddr, txn))
         else:
-            self.bot.act_PRIVMSG(args[0], "%s: .withdraw: Transaction create failed. Maybe the transaction was too large for the network? Try a smaller increment."prefix.nick)
+            self.bot.act_PRIVMSG(args[0], "%s: .withdraw: Transaction create failed. Maybe the transaction was too large for the network? Try a smaller increment." % prefix.nick)
     
     def handle_send(self, args, prefix, trailing, cmd):
         usage = ".send <currency> <amount> <nick or address>"
