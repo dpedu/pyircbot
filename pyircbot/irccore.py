@@ -94,7 +94,7 @@ class IRCCore(asynchat.async_chat):
         # Signal disconnection
         self.alive=alive
         # Close socket
-        self.shutdown(SHUT_RDWR)
+        self.socket.shutdown(SHUT_RDWR)
         self.close()
         self.log.info("Kill complete")
     
@@ -205,6 +205,7 @@ class IRCCore(asynchat.async_chat):
             args = data.split(" ")
         for index,arg in enumerate(args):
             args[index]=arg.strip()
+        self.fire_hook("_RECV", args=args, prefix=prefix, trailing=trailing)
         if not command in self.hookcalls:
             self.log.warning("Unknown command: cmd='%s' prefix='%s' args='%s' trailing='%s'" % (command, prefix, args, trailing))
         else:
@@ -217,6 +218,7 @@ class IRCCore(asynchat.async_chat):
         self.hooks = [
             '_CONNECT', # Called when the bot connects to IRC on the socket level
             '_DISCONNECT', # Called when the irc socket is forcibly closed
+            '_RECV',       # Called on network activity
             'NOTICE',    # :irc.129irc.com NOTICE AUTH :*** Looking up your hostname...
             'MODE',        # :CloneABCD MODE CloneABCD :+iwx
             'PING',        # PING :irc.129irc.com
@@ -250,9 +252,7 @@ class IRCCore(asynchat.async_chat):
             '433',        # :nova.esper.net 433 * pyircbot3 :Nickname is already in use.
         ]
         " mapping of hooks to methods "
-        self.hookcalls = {}
-        for command in self.hooks:
-            self.hookcalls[command]=[]
+        self.hookcalls = {command:[] for command in self.hooks}
     
     def fire_hook(self, command, args=None, prefix=None, trailing=None):
         """Run any listeners for a specific hook
@@ -319,7 +319,7 @@ class IRCCore(asynchat.async_chat):
         
         return type('IRCEvent', (object,), {
             "args": args,
-            "prefix": IRCCore.decodePrefix(prefix),
+            "prefix": IRCCore.decodePrefix(prefix) if prefix else None,
             "trailing": trailing
         })
     
