@@ -15,15 +15,28 @@ class PingResponder(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName);
         self.timer = PingRespondTimer(self)
-        self.hooks=[ModuleHook("PING", self.pingrespond)]
+        self.hooks=[
+            ModuleHook("PING", self.pingrespond),
+            ModuleHook("_RECV", self.resettimer)
+        ]
+
+
     def pingrespond(self, args, prefix, trailing):
         """Respond to the PING command"""
         # got a ping? send it right back
         self.bot.act_PONG(trailing)
         self.log.info("%s Responded to a ping: %s" % (self.bot.get_nick(), trailing))
+
+
+    def resettimer(self, msg):
+        """Resets the connection failure timer"""
         self.timer.reset()
+
+
     def ondisable(self):
         self.timer.disable()
+
+
 
 class PingRespondTimer(Thread):
     "Tracks last ping from server, and reconnects if over a threshold"
