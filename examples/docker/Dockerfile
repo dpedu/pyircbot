@@ -23,5 +23,6 @@ COPY . /tmp/pyircbot/
 RUN cd /tmp/pyircbot/ ; \
     python3 setup.py install ; \
     su -c "cp -r /tmp/pyircbot/examples/config.json /tmp/pyircbot/examples/data/ /srv/bot/" bot ; \
+    cp examples/docker/pyircbot.conf /etc/supervisor/conf.d/pyircbot.conf ; \
     cd / ; \
     rm -rf /tmp/pyircbot
