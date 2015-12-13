@@ -9,6 +9,10 @@ Quick start
 * Configure: `cd examples ; vim config.json data/config/Services.json`
 * Run: `pyircbot -c config.json`
 
+Running in docker
+-----------------
+
+A dockerfile is included at `examples/docker/`. From the *root* of this repository, run `docker build -t pyircbot -f examples/docker/Dockerfile .` to build it. Typical use is mounting a directory from the host onto `/srv/bot`; this dir should contain config.json and any other dirs it references.
 
 Building Docs
 -------------
