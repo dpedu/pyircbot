@@ -69,12 +69,20 @@ class IRCCore(asynchat.async_chat):
             try:
                 asyncore.loop(map=self.asynmap, timeout=1)
             except Exception as e:
-                self.log.error("Loop error: %s" % str(e))
-            # Remove from asynmap
-            for key in list(self.asynmap.keys())[:]:
-                del self.asynmap[key]
-            if self.alive:
-                self._connect()
+                self.log.error("Loop error: ")
+                self.log.error(IRCCore.trace())
+
+                # Remove from asynmap
+                for key in list(self.asynmap.keys())[:]:
+                    del self.asynmap[key]
+
+                if self.alive:
+                    logging.info("Loop: reconnecting")
+                    try:
+                        self._connect()
+                    except Exception as e2:
+                        self.log.error("Error reconnecting: ")
+                        self.log.error(IRCCore.trace())
     
     def kill(self, message="Help! Another thread is killing me :(", alive=False):
         """Send quit message, flush queue, and close the socket
