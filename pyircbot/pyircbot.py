@@ -9,6 +9,7 @@
 import logging
 import time
 import sys
+import traceback
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
 import os.path
@@ -63,7 +64,11 @@ class PyIRCBot:
         self.connect()
     
     def connect(self):
-        self.irc._connect()
+        try:
+            self.irc._connect()
+        except:
+            self.log.error("Pyircbot attempted to connect and failed!")
+            self.log.error(traceback.format_exc())
     
     def loop(self):
         self.irc.loop()
