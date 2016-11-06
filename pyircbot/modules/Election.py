@@ -85,7 +85,7 @@ class ElectionGame:
         if sum([len(i) for i in self.votes.values()]) > 0:
             self.cooldown_timer = Timer(self.cooldown_length_s, self.start_election)
             self.cooldown_timer.start()
-            self.bot.act_PRIVMSG(self.channel, "Next election starts in: {}s".format(self.format_seconds(self.cooldown_length_s)))
+            self.bot.act_PRIVMSG(self.channel, "Next election starts in: {}".format(self.format_seconds(self.cooldown_length_s)))
         else:
             self.state = game_phases.halted
 
