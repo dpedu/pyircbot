@@ -73,7 +73,7 @@ class DogeController:
     
     def connect(self):
         "Connect to RPC endpoint"
-        self.log.debug("DogeRPC: Connecting to dogecoind")
+        self.log.info("DogeRPC: Connecting to dogecoind")
         self.con = AuthServiceProxy("http://%s:%s@%s:%s" % (self.config["username"], self.config["password"], self.config["host"], self.config["port"]))
         self.con.getinfo()
-        self.log.debug("DogeRPC: Connected to %s:%s" % (self.config["host"], self.config["port"]))
+        self.log.info("DogeRPC: Connected to %s:%s" % (self.config["host"], self.config["port"]))

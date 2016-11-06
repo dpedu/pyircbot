@@ -41,6 +41,6 @@ class Triggered(ModuleBase):
 
     def scream(self, channel):
         delay = randrange(self.config["mindelay"], self.config["maxdelay"])
-        self.log.debug("Sleeping for %s seconds" % delay)
+        self.log.info("Sleeping for %s seconds" % delay)
         sleep(delay)
         self.bot.act_PRIVMSG(channel, choice(self.config["responses"]))

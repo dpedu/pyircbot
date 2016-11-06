@@ -111,13 +111,13 @@ class LinkTitler(ModuleBase):
     
     def url_headers(self, url):
         "HEAD requests a url to check content type & length, returns something like: {'type': 'image/jpeg', 'size': '90583'}"
-        self.log.debug("url_headers(%s)" % (url,))
+        self.log.info("url_headers(%s)" % (url,))
         resp = head(url=url, allow_redirects=True)
         return resp.headers
     
     def url_htmltitle(self, url):
         "Requests page html and returns title in a safe way"
-        self.log.debug("url_htmltitle(%s)" % (url,))
+        self.log.info("url_htmltitle(%s)" % (url,))
         resp = get(url=url, stream=True)
         # Fetch no more than first 10kb
         # if the title isn't seen by then, you're doing it wrong

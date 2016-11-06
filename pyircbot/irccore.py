@@ -16,30 +16,36 @@ import sys
 from inspect import getargspec
 from socket import SHUT_RDWR
 from threading import Thread
-from time import sleep,time
+from time import sleep, time
+from collections import namedtuple
 
 try:
     from cStringIO import StringIO
 except:
     from io import BytesIO as StringIO
 
+IRCEvent = namedtuple("IRCEvent", "args prefix trailing")
+UserPrefix = namedtuple("UserPrefix", "nick username hostname")
+ServerPrefix = namedtuple("ServerPrefix", "hostname")
+
+
 class IRCCore(asynchat.async_chat):
-    
+
     def __init__(self):
         asynchat.async_chat.__init__(self)
-        
+
         self.connected=False
         """If we're connected or not"""
-        
+
         self.log = logging.getLogger('IRCCore')
         """Reference to logger object"""
-        
+
         self.buffer = StringIO()
         """cStringIO used as a buffer"""
-        
+
         self.alive = True
         """True if we should try to stay connected"""
-        
+
         self.server = 0
         """Current server index"""
         self.servers = []
@@ -48,22 +54,22 @@ class IRCCore(asynchat.async_chat):
         """Server port"""
         self.ipv6 = False
         """Use IPv6?"""
-        
+
         self.OUTPUT_BUFFER_SIZE = 1000
         self.SEND_WAIT = 0.800
         self.outputQueue = queue.PriorityQueue(self.OUTPUT_BUFFER_SIZE)
         self.outputQueueRunner = OutputQueueRunner(self)
         self.outputQueueRunner.start()
-        
+
         # IRC Messages are terminated with \r\n
         self.set_terminator(b"\r\n")
-        
+
         # Set up hooks for modules
         self.initHooks()
-        
+
         # Map for asynchat
         self.asynmap = {}
-    
+
     def loop(self):
         while self.alive:
             try:
@@ -83,10 +89,10 @@ class IRCCore(asynchat.async_chat):
                     except Exception as e2:
                         self.log.error("Error reconnecting: ")
                         self.log.error(IRCCore.trace())
-    
+
     def kill(self, message="Help! Another thread is killing me :(", alive=False):
         """Send quit message, flush queue, and close the socket
-        
+
         :param message: Quit message
         :type message: str
         :param alive: True causes a reconnect after disconnecting
@@ -105,24 +111,24 @@ class IRCCore(asynchat.async_chat):
         self.socket.shutdown(SHUT_RDWR)
         self.close()
         self.log.info("Kill complete")
-    
+
     " Net related code here on down "
-    
+
     def getBuf(self):
         """Return the network buffer and clear it"""
         self.buffer.seek(0)
         data = self.buffer.read()
         self.buffer = StringIO()
         return data
-    
+
     def collect_incoming_data(self, data):
         """Recieve data from the IRC server, append it to the buffer
-        
+
         :param data: the data that was recieved
         :type data: str"""
-        #self.log.debug("<< %(message)s", {"message":repr(data)})
+        #self.log.info("<< %(message)s", {"message":repr(data)})
         self.buffer.write(data)
-    
+
     def found_terminator(self):
         """A complete command was pushed through, so clear the buffer and process it."""
         line = None
@@ -135,70 +141,71 @@ class IRCCore(asynchat.async_chat):
             self.log.error("found_terminator(): repr(data): %s" % repr(line))
             self.log.error("found_terminator(): error: %s" % str(ude))
             return
+        self.log.debug("< {}".format(line))
         self.process_data(line)
-    
+
     def handle_close(self):
         """Called when the socket is disconnected. Triggers the _DISCONNECT hook"""
-        self.log.debug("handle_close")
+        self.log.info("handle_close")
         self.connected=False
         self.close()
         self.fire_hook("_DISCONNECT")
-    
+
     def handle_error(self, *args, **kwargs):
         """Called on fatal network errors."""
         self.log.error("Connection failed (handle_error)")
         self.log.error(str(args))
         self.log.error(str(kwargs))
         self.log.error(IRCCore.trace());
-    
+
     def _connect(self):
         """Connect to IRC"""
         self.server+=1
         if self.server >= len(self.servers):
             self.server=0
         serverHostname = self.servers[self.server]
-        self.log.debug("Connecting to %(server)s:%(port)i", {"server":serverHostname, "port":self.port})
+        self.log.info("Connecting to %(server)s:%(port)i", {"server":serverHostname, "port":self.port})
         socket_type = socket.AF_INET
         if self.ipv6:
             self.log.info("IPv6 is enabled.")
             socket_type = socket.AF_INET6
         socketInfo = socket.getaddrinfo(serverHostname, self.port, socket_type)
         self.create_socket(socket_type, socket.SOCK_STREAM)
-        self.log.debug("Socket created: %s" % self.socket.fileno())
+        self.log.info("Socket created: %s" % self.socket.fileno())
         self.connect(socketInfo[0][4])
-        self.log.debug("Connection established")
+        self.log.info("Connection established")
         self._fileno = self.socket.fileno()
         self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
         self.log.info("_connect: Socket map: %s" % str(self.asynmap))
-    
+
     def handle_connect(self):
         """When asynchat indicates our socket is connected, fire the _CONNECT hook"""
         self.connected=True
-        self.log.debug("handle_connect: connected")
+        self.log.info("handle_connect: connected")
         self.fire_hook("_CONNECT")
-        self.log.debug("handle_connect: complete")
-    
+        self.log.info("handle_connect: complete")
+
     def sendRaw(self, text, prio=2):
         """Queue messages (raw string) to be sent to the IRC server
-        
+
         :param text: the string to send
         :type text: str"""
         text = (text+"\r\n").encode("UTF-8").decode().encode("UTF-8")
         self.outputQueue.put((prio, text), block=False)
-    
+
     def process_data(self, data):
         """Process one line of tet irc sent us
-        
+
         :param data: the data to process
         :type data: str"""
         if data.strip() == "":
             return
-            
+
         prefix = None
         command = None
         args=[]
         trailing=None
-        
+
         if data[0]==":":
             prefix=data.split(" ")[0][1:]
             data=data[data.find(" ")+1:]
@@ -218,8 +225,8 @@ class IRCCore(asynchat.async_chat):
             self.log.warning("Unknown command: cmd='%s' prefix='%s' args='%s' trailing='%s'" % (command, prefix, args, trailing))
         else:
             self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
-    
-    
+
+
     " Module related code "
     def initHooks(self):
         """Defines hooks that modules can listen for events of"""
@@ -251,7 +258,7 @@ class IRCCore(asynchat.async_chat):
             '266',        # :irc.129irc.com 266 CloneABCD :Current Global Users: 49  Max: 53
             '332',        # :chaos.esper.net 332 xBotxShellTest #xMopx2 :/ #XMOPX2 / https://code.google.com/p/pyircbot/ (Channel Topic)
             '333',        # :chaos.esper.net 333 xBotxShellTest #xMopx2 xMopxShell!~rduser@108.170.60.242 1344370109
-            '353',        # :irc.129irc.com 353 CloneABCD = #clonea :CloneABCD CloneABC 
+            '353',        # :irc.129irc.com 353 CloneABCD = #clonea :CloneABCD CloneABC
             '366',        # :irc.129irc.com 366 CloneABCD #clonea :End of /NAMES list.
             '372',        # :chaos.esper.net 372 xBotxShell :motd text here
             '375',        # :chaos.esper.net 375 xBotxShellTest :- chaos.esper.net Message of the Day -
@@ -261,10 +268,10 @@ class IRCCore(asynchat.async_chat):
         ]
         " mapping of hooks to methods "
         self.hookcalls = {command:[] for command in self.hooks}
-    
+
     def fire_hook(self, command, args=None, prefix=None, trailing=None):
         """Run any listeners for a specific hook
-        
+
         :param command: the hook to fire
         :type command: str
         :param args: the list of arguments, if any, the command was passed
@@ -273,20 +280,20 @@ class IRCCore(asynchat.async_chat):
         :type prefix: str
         :param trailing: data payload of the command
         :type trailing: str"""
-        
+
         for hook in self.hookcalls[command]:
             try:
                 if len(getargspec(hook).args) == 2:
                     hook(IRCCore.packetAsObject(args, prefix, trailing))
                 else:
                     hook(args, prefix, trailing)
-                
+
             except:
                 self.log.warning("Error processing hook: \n%s"% self.trace())
-    
+
     def addHook(self, command, method):
         """**Internal.** Enable (connect) a single hook of a module
-        
+
         :param command: command this hook will trigger on
         :type command: str
         :param method: callable method object to hook in
@@ -297,10 +304,10 @@ class IRCCore(asynchat.async_chat):
         else:
             self.log.warning("Invalid hook - %s" % command)
             return False
-    
+
     def removeHook(self, command, method):
         """**Internal.** Disable (disconnect) a single hook of a module
-        
+
         :param command: command this hook triggers on
         :type command: str
         :param method: callable method that should be removed
@@ -313,10 +320,10 @@ class IRCCore(asynchat.async_chat):
         else:
             self.log.warning("Invalid hook - %s" % command)
             return False
-    
+
     def packetAsObject(args, prefix, trailing):
         """Given an irc message's args, prefix, and trailing data return an object with these properties
-        
+
         :param args: list of args from the IRC packet
         :type args: list
         :param prefix: prefix object parsed from the IRC packet
@@ -324,38 +331,31 @@ class IRCCore(asynchat.async_chat):
         :param trailing: trailing data from the IRC packet
         :type trailing: str
         :returns: object -- a IRCEvent object with the ``args``, ``prefix``, ``trailing``"""
-        
-        return type('IRCEvent', (object,), {
-            "args": args,
-            "prefix": IRCCore.decodePrefix(prefix) if prefix else None,
-            "trailing": trailing
-        })
-    
+
+        return IRCEvent(args,
+                        IRCCore.decodePrefix(prefix) if prefix else None,
+                        trailing)
+
     " Utility methods "
     @staticmethod
     def decodePrefix(prefix):
         """Given a prefix like nick!username@hostname, return an object with these properties
-        
+
         :param prefix: the prefix to disassemble
         :type prefix: str
         :returns: object -- an UserPrefix object with the properties `nick`, `username`, `hostname` or a ServerPrefix object with the property `hostname`"""
         if "!" in prefix:
-            ob = type('UserPrefix', (object,), {})
-            ob.str = prefix
-            ob.nick, prefix = prefix.split("!")
-            ob.username, ob.hostname = prefix.split("@")
-            return ob
+            nick, prefix = prefix.split("!")
+            username, hostname = prefix.split("@")
+            return UserPrefix(nick, username, hostname)
         else:
-            ob = type('ServerPrefix', (object,), {})
-            ob.str = prefix
-            ob.hostname = prefix
-            return ob
-    
+            return ServerPrefix(prefix)
+
     @staticmethod
     def trace():
         """Return the stack trace of the bot as a string"""
         return traceback.format_exc()
-    
+
     @staticmethod
     def fulltrace():
         """Return the stack trace of the bot as a string"""
@@ -372,25 +372,25 @@ class IRCCore(asynchat.async_chat):
             result += line + "\n"
         result += "\n*** STACKTRACE - END ***\n"
         return result
-    
+
     " Data Methods "
     def get_nick(self):
         """Get the bot's current nick
-        
+
         :returns: str - the bot's current nickname"""
         return self.nick
-    
+
     " Action Methods "
     def act_PONG(self, data):
         """Use the `/pong` command - respond to server pings
-        
+
         :param data: the string or number the server sent with it's ping
         :type data: str"""
         self.sendRaw("PONG :%s" % data)
-    
+
     def act_USER(self, username, hostname, realname):
         """Use the USER protocol command. Used during connection
-        
+
         :param username: the bot's username
         :type username: str
         :param hostname: the bot's hostname
@@ -398,34 +398,34 @@ class IRCCore(asynchat.async_chat):
         :param realname: the bot's realname
         :type realname: str"""
         self.sendRaw("USER %s %s %s :%s" % (username, hostname, self.servers[self.server], realname))
-    
+
     def act_NICK(self, newNick):
         """Use the `/nick` command
-        
+
         :param newNick: new nick for the bot
         :type newNick: str"""
         self.nick = newNick
         self.sendRaw("NICK %s" % newNick)
-    
+
     def act_JOIN(self, channel):
         """Use the `/join` command
-        
+
         :param channel: the channel to attempt to join
         :type channel: str"""
         self.sendRaw("JOIN %s"%channel)
-    
+
     def act_PRIVMSG(self, towho, message):
         """Use the `/msg` command
-        
+
         :param towho: the target #channel or user's name
         :type towho: str
         :param message: the message to send
         :type message: str"""
         self.sendRaw("PRIVMSG %s :%s"%(towho,message))
-    
+
     def act_MODE(self, channel, mode, extra=None):
         """Use the `/mode` command
-        
+
         :param channel: the channel this mode is for
         :type channel: str
         :param mode: the mode string. Example: +b
@@ -436,19 +436,19 @@ class IRCCore(asynchat.async_chat):
             self.sendRaw("MODE %s %s %s" % (channel,mode,extra))
         else:
             self.sendRaw("MODE %s %s" % (channel,mode))
-    
+
     def act_ACTION(self, channel, action):
         """Use the `/me <action>` command
-        
+
         :param channel: the channel name or target's name the message is sent to
         :type channel: str
         :param action: the text to send
         :type action: str"""
         self.sendRaw("PRIVMSG %s :\x01ACTION %s"%(channel,action))
-    
+
     def act_KICK(self, channel, who, comment=""):
         """Use the `/kick <user> <message>` command
-        
+
         :param channel: the channel from which the user will be kicked
         :type channel: str
         :param who: the nickname of the user to kick
@@ -456,14 +456,14 @@ class IRCCore(asynchat.async_chat):
         :param comment: the kick message
         :type comment: str"""
         self.sendRaw("KICK %s %s :%s" % (channel, who, comment))
-    
+
     def act_QUIT(self, message):
         """Use the `/quit` command
-        
+
         :param message: quit message
         :type message: str"""
         self.sendRaw("QUIT :%s" % message, prio=0)
-    
+
 class OutputQueueRunner(Thread):
     """Rate-limited output queue"""
     def __init__(self, bot):
@@ -471,7 +471,7 @@ class OutputQueueRunner(Thread):
         self.bot = bot #reference to main bot thread
         self.log = logging.getLogger('OutputQueueRunner')
         self.paused = False
-    
+
     def run(self):
         """Constantly sends messages unless bot is disconnecting/ed"""
         lastSend = time()
@@ -481,24 +481,25 @@ class OutputQueueRunner(Thread):
             if sinceLast < self.bot.SEND_WAIT:
                 toSleep = self.bot.SEND_WAIT - sinceLast
                 sleep(toSleep)
-            
+
             # Pop item and execute
             if self.bot.connected and not self.paused:
                 try:
                     self.process_queue_item()
                     lastSend = time()
                 except queue.Empty:
-                    #self.log.debug("Queue is empty")
+                    #self.log.info("Queue is empty")
                     pass
             sleep(0.01)
-    
+
     def process_queue_item(self):
         """Remove 1 item from queue and process it"""
         prio,text = self.bot.outputQueue.get(block=True, timeout=10)
-        #self.log.debug("%s>> %s" % (prio,text))
+        #self.log.info("%s>> %s" % (prio,text))
         self.bot.outputQueue.task_done()
+        self.log.debug("> {}".format(text.decode('UTF-8')))
         self.bot.send(text)
-    
+
     def clear(self):
         """Discard all items from queue"""
         length = self.bot.outputQueue.qsize()
@@ -507,9 +508,9 @@ class OutputQueueRunner(Thread):
                 self.bot.outputQueue.get(block=False)
         except queue.Empty:
             pass
-        #self.log.debug("output queue cleared")
+        #self.log.info("output queue cleared")
         return length
-    
+
     def flush(self):
         """Process all items in queue"""
         for i in range(0, self.bot.outputQueue.qsize()):
@@ -517,4 +518,4 @@ class OutputQueueRunner(Thread):
                 self.process_queue_item()
             except:
                 pass
-        #self.log.debug("output queue flushed")
+        #self.log.info("output queue flushed")

@@ -121,13 +121,13 @@ class BitcoinRPC:
     
     def connect(self):
         # internal. connect to the service
-        self.log.debug("CryptoWalletRPC: %s: Connecting to %s:%s" % (self.name, self.host,self.port))
+        self.log.info("CryptoWalletRPC: %s: Connecting to %s:%s" % (self.name, self.host,self.port))
         try:
             self.con = AuthServiceProxy("http://%s:%s@%s:%s" % (self.username, self.password, self.host, self.port))
         except Exception as e:
-            self.log.debug("CryptoWalletRPC: %s: Could not connect to %s:%s: %s" % (self.name, self.host, self.port, str(e)))
+            self.log.info("CryptoWalletRPC: %s: Could not connect to %s:%s: %s" % (self.name, self.host, self.port, str(e)))
             return
         
-        self.log.debug("CryptoWalletRPC: %s: Connected to %s:%s" % (self.name, self.host, self.port))
+        self.log.info("CryptoWalletRPC: %s: Connected to %s:%s" % (self.name, self.host, self.port))
     
 

@@ -161,9 +161,9 @@ class AttributeStorageLite(ModuleBase):
         if value == None:
             # delete it
             c = self.db.query("DELETE FROM `values` WHERE `itemid`=? AND `attributeid`=? ;", (itemId, attributeId))
-            self.log.debug("Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
+            self.log.info("Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
         else:
             # add attribute
             c = self.db.query("REPLACE INTO `values` (`itemid`, `attributeid`, `value`) VALUES (?, ?, ?);", (itemId, attributeId, value))
-            self.log.debug("Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
+            self.log.info("Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
         c.close()

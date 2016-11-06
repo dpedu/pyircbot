@@ -12,38 +12,42 @@ import sys
 import traceback
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
+from collections import namedtuple
 import os.path
+
+ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
+
 
 class PyIRCBot:
     """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
     :type botconfig: dict
     """
     version = "4.0.0-r03"
-    
+
     def __init__(self, botconfig):
         self.log = logging.getLogger('PyIRCBot')
         """Reference to logger object"""
-        
+
         self.botconfig = botconfig
         """saved copy of the instance config"""
-        
+
         """storage of imported modules"""
         self.modules = {}
-        
+
         """instances of modules"""
         self.moduleInstances = {}
-        
+
         self.rpc = BotRPC(self)
         """Reference to BotRPC thread"""
-        
+
         self.irc = IRCCore()
         """IRC protocol class"""
         self.irc.servers = self.botconfig["connection"]["servers"]
         self.irc.port = self.botconfig["connection"]["port"]
         self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"]=="on" else False
-        
+
         self.irc.addHook("_DISCONNECT", self.connection_closed)
-        
+
         # legacy support
         self.act_PONG = self.irc.act_PONG
         self.act_USER = self.irc.act_USER
@@ -56,26 +60,26 @@ class PyIRCBot:
         self.act_QUIT    = self.irc.act_QUIT
         self.get_nick    = self.irc.get_nick
         self.decodePrefix = IRCCore.decodePrefix
-        
-        # Load modules 
+
+        # Load modules
         self.initModules()
-        
+
         # Connect to IRC
         self.connect()
-    
+
     def connect(self):
         try:
             self.irc._connect()
         except:
             self.log.error("Pyircbot attempted to connect and failed!")
             self.log.error(traceback.format_exc())
-    
+
     def loop(self):
         self.irc.loop()
-    
+
     def disconnect(self, message, reconnect=True):
         """Send quit message and disconnect from IRC.
-        
+
         :param message: Quit message
         :type message: str
         :param reconnect: True causes a reconnection attempt to be made after the disconnect
@@ -83,10 +87,10 @@ class PyIRCBot:
         """
         self.log.info("disconnect")
         self.irc.kill(message=message, alive=reconnect)
-    
+
     def kill(self, sys_exit=True, message="Help! Another thread is killing me :("):
         """Shut down the bot violently
-        
+
         :param sys_exit: True causes sys.exit(0) to be called
         :type sys_exit: bool
         :param message: Quit message
@@ -94,39 +98,39 @@ class PyIRCBot:
         """
         #Close all modules
         self.closeAllModules()
-        
+
         self.irc.kill(message=message, alive=not sys_exit)
-        
+
         if sys_exit:
             sys.exit(0)
-    
+
     def connection_closed(self, args, prefix, trailing):
         """Called when the socket is disconnected. We will want to reconnect. """
         if self.irc.alive:
             self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
             time.sleep(5)
             self.connect()
-    
+
     def initModules(self):
         """load modules specified in instance config"""
         " append module location to path "
         sys.path.append(os.path.dirname(__file__)+"/modules/")
-        
+
         " append usermodule dir to beginning of path"
         for path in self.botconfig["bot"]["usermodules"]:
             sys.path.insert(0, path+"/")
-        
+
         for modulename in self.botconfig["modules"]:
             self.loadmodule(modulename)
-    
+
     def importmodule(self, name):
         """Import a module
-        
+
         :param moduleName: Name of the module to import
         :type moduleName: str"""
         " check if already exists "
         if not name in self.modules:
-            self.log.debug("Importing %s" % name)
+            self.log.info("Importing %s" % name)
             " attempt to load "
             try:
                 moduleref = __import__(name)
@@ -140,13 +144,13 @@ class PyIRCBot:
         else:
             self.log.warning("Module %s already imported" % name)
             return (False, "Module already imported")
-    
+
     def deportmodule(self, name):
         """Remove a module's code from memory. If the module is loaded it will be unloaded silently.
-        
+
         :param moduleName: Name of the module to import
         :type moduleName: str"""
-        self.log.debug("Deporting %s" % name)
+        self.log.info("Deporting %s" % name)
         " unload if necessary "
         if name in self.moduleInstances:
             self.unloadmodule(name)
@@ -158,10 +162,10 @@ class PyIRCBot:
             " delete copy that python stores in sys.modules "
             if name in sys.modules:
                 del sys.modules[name]
-    
+
     def loadmodule(self, name):
         """Activate a module.
-        
+
         :param moduleName: Name of the module to activate
         :type moduleName: str"""
         " check if already loaded "
@@ -177,10 +181,10 @@ class PyIRCBot:
         self.moduleInstances[name] = getattr(self.modules[name], name)(self, name)
         " load hooks "
         self.loadModuleHooks(self.moduleInstances[name])
-    
+
     def unloadmodule(self, name):
         """Deactivate a module.
-        
+
         :param moduleName: Name of the module to deactivate
         :type moduleName: str"""
         if name in self.moduleInstances:
@@ -197,10 +201,10 @@ class PyIRCBot:
         else:
             self.log.info("Module %s not loaded" % name)
             return (False, "Module not loaded")
-    
+
     def reloadmodule(self, name):
         """Deactivate and activate a module.
-        
+
         :param moduleName: Name of the target module
         :type moduleName: str"""
         " make sure it's imporeted"
@@ -215,10 +219,10 @@ class PyIRCBot:
                 self.loadmodule(name)
             return (True, None)
         return (False, "Module is not loaded")
-    
+
     def redomodule(self, name):
         """Reload a running module from disk
-        
+
         :param moduleName: Name of the target module
         :type moduleName: str"""
         " remember if it was loaded before "
@@ -233,10 +237,10 @@ class PyIRCBot:
         if loadedbefore:
             self.loadmodule(name)
         return (True, None)
-    
+
     def loadModuleHooks(self, module):
         """**Internal.** Enable (connect) hooks of a module
-        
+
         :param module: module object to hook in
         :type module: object"""
         " activate a module's hooks "
@@ -246,10 +250,10 @@ class PyIRCBot:
                     self.irc.addHook(hookcmd, hook.method)
             else:
                 self.irc.addHook(hook.hook, hook.method)
-    
+
     def unloadModuleHooks(self, module):
         """**Internal.** Disable (disconnect) hooks of a module
-        
+
         :param module: module object to unhook
         :type module: object"""
         " remove a modules hooks "
@@ -259,20 +263,20 @@ class PyIRCBot:
                     self.irc.removeHook(hookcmd, hook.method)
             else:
                 self.irc.removeHook(hook.hook, hook.method)
-    
+
     def getmodulebyname(self, name):
         """Get a module object by name
-        
+
         :param name: name of the module to return
         :type name: str
         :returns: object -- the module object"""
         if not name in self.moduleInstances:
             return None
         return self.moduleInstances[name]
-    
+
     def getmodulesbyservice(self, service):
-        """Get a list of modules that provide the specified service 
-        
+        """Get a list of modules that provide the specified service
+
         :param service: name of the service searched for
         :type service: str
         :returns: list -- a list of module objects"""
@@ -281,10 +285,10 @@ class PyIRCBot:
             if service in self.moduleInstances[module].services:
                 validModules.append(self.moduleInstances[module])
         return validModules
-    
+
     def getBestModuleForService(self, service):
-        """Get the first module that provides the specified service 
-        
+        """Get the first module that provides the specified service
+
         :param service: name of the service searched for
         :type service: str
         :returns: object -- the module object, if found. None if not found."""
@@ -292,7 +296,7 @@ class PyIRCBot:
         if len(m)>0:
             return m[0]
         return None
-    
+
     def closeAllModules(self):
         """ Deport all modules (for shutdown). Modules are unloaded in the opposite order listed in the config. """
         loaded = list(self.moduleInstances.keys())
@@ -304,41 +308,41 @@ class PyIRCBot:
                 self.deportmodule(key)
         for key in loaded:
             self.deportmodule(key)
-    
+
     " Filesystem Methods "
     def getDataPath(self, moduleName):
         """Return the absolute path for a module's data dir
-        
+
         :param moduleName: the module who's data dir we want
         :type moduleName: str"""
         if not os.path.exists("%s/data/%s" % (self.botconfig["bot"]["datadir"], moduleName)):
             os.mkdir("%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName))
         return "%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName)
-    
+
     def getConfigPath(self, moduleName):
         """Return the absolute path for a module's config file
-        
+
         :param moduleName: the module who's config file we want
         :type moduleName: str"""
-        
+
         basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
-        
+
         if os.path.exists("%s.json"%basepath):
-            return "%s.json"%basepath 
+            return "%s.json"%basepath
         return None
-    
+
     " Utility methods "
     @staticmethod
     def messageHasCommand(command, message, requireArgs=False):
         """Check if a message has a command with or without args in it
-        
+
         :param command: the command string to look for, like !ban. If a list is passed, the first match is returned.
         :type command: str or list
         :param message: the message string to look in, like "!ban Lil_Mac"
         :type message: str
         :param requireArgs: if true, only validate if the command use has any amount of trailing text
         :type requireArgs: bool"""
-        
+
         if not type(command)==list:
             command = [command]
         for item in command:
@@ -346,7 +350,7 @@ class PyIRCBot:
             if cmd:
                 return cmd
         return False
-    
+
     @staticmethod
     def messageHasCommandSingle(command, message, requireArgs=False):
         # Check if the message at least starts with the command
@@ -357,34 +361,31 @@ class PyIRCBot:
         subsetCheck = message[len(command):len(command)+1]
         if subsetCheck!=" " and subsetCheck!="":
             return False
-        
+
         # We've got the command! Do we need args?
         argsStart = len(command)
         args = ""
         if argsStart > 0:
             args = message[argsStart+1:]
-        
+
         if requireArgs and args.strip() == '':
             return False
-        
+
         # Verified! Return the set.
-        ob = type('ParsedCommand', (object,), {})
-        ob.command = command
-        ob.args = [] if args=="" else args.split(" ")
-        ob.args_str = args
-        ob.message = message
-        return ob
-        # return (True, command, args, message)
-    
+        return ParsedCommand(command,
+                             args.split(" "),
+                             args,
+                             message)
+
     @staticmethod
     def load(filepath):
         """Return an object from the passed filepath
-        
+
         :param filepath: path to a json file. filename must end with .json
         :type filepath: str
         :Returns:    | dict
         """
-        
+
         if filepath.endswith(".json"):
             from json import load
             return load(open(filepath, 'r'))

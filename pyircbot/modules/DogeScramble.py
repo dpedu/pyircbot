@@ -145,7 +145,7 @@ class scrambleGame:
             self.nextTimer.start()
             self.guesses=0
             self.category_count+=1
-            self.master.log.debug("DogeScramble: category_count is: %s" % (self.category_count))
+            self.master.log.info("DogeScramble: category_count is: %s" % (self.category_count))
             if self.category_count >= self.change_category_after_words:
                 self.should_change_category = True
         else:
@@ -247,7 +247,7 @@ class scrambleGame:
             picked = f.readline().strip().lower()
             f.close()
         
-        self.master.log.debug("DogeScramble: picked %s for %s" % (picked, self.channel))
+        self.master.log.info("DogeScramble: picked %s for %s" % (picked, self.channel))
         self.lastwords.append(picked)
         if len(self.lastwords) > 5:
             self.lastwords.pop(0)

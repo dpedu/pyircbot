@@ -166,9 +166,9 @@ class AttributeStorage(ModuleBase):
         if value == None:
             # delete it
             c = self.db.connection.query("DELETE FROM `values` WHERE `itemid`=%s AND `attributeid`=%s ;", (itemId, attributeId))
-            self.log.debug("AttributeStorage: Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
+            self.log.info("AttributeStorage: Stored item %s attribute %s value: %s (Deleted)" % (itemId, attributeId, value))
         else:
             # add attribute
             c = self.db.connection.query("REPLACE INTO `values` (`itemid`, `attributeid`, `value`) VALUES (%s, %s, %s);", (itemId, attributeId, value))
-            self.log.debug("AttributeStorage: Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
+            self.log.info("AttributeStorage: Stored item %s attribute %s value: %s" % (itemId, attributeId, value))
         c.close()
