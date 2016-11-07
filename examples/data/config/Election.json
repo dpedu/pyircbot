@@ -1,6 +1,7 @@
 {
     "channelWhitelistOn": false,
     "choices": ["hillary", "trump"],
-    "duration": 3600,
-    "cooldown": 900
+    "allow_writeins": true,
+    "duration": 900,
+    "cooldown": 1800
 }

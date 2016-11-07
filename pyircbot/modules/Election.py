@@ -13,7 +13,7 @@ import os
 import time
 import math
 from threading import Timer
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 
 class Election(ModuleBase):
@@ -30,8 +30,6 @@ class Election(ModuleBase):
             self.games[event.args[0]].gotMsg(event)
 
     def join_ch(self, event):
-        print("---------")
-
         if event.prefix.nick == self.bot.get_nick():
             joined_ch = event.trailing
             if joined_ch not in self.games:
@@ -68,7 +66,7 @@ class ElectionGame:
 
     def start_election(self):
         self.cooldown_timer = None
-        self.votes = dict(**{i: [] for i in self.master.config["choices"]})
+        self.votes = defaultdict(list, dict(**{i: [] for i in self.master.config["choices"]}))
         self.state = game_phases.election
         self.end_timer = Timer(self.election_length_s, self.end_election)
         self.end_timer.start()
@@ -79,7 +77,7 @@ class ElectionGame:
     def end_election(self):
         self.end_timer = None
         self.state = game_phases.cooldown
-        self.print_results(prefix="[Election finished] ")
+        self.print_results(prefix="[Election finished] ", show_writeins=True)
 
         # Only start a new game if someone voted
         if sum([len(i) for i in self.votes.values()]) > 0:
@@ -87,6 +85,7 @@ class ElectionGame:
             self.cooldown_timer.start()
             self.bot.act_PRIVMSG(self.channel, "Next election starts in: {}".format(self.format_seconds(self.cooldown_length_s)))
         else:
+            self.bot.act_PRIVMSG(self.channel, "Nobody voted! To turn me on again, type .election")
             self.state = game_phases.halted
 
     def gotMsg(self, event):
@@ -98,34 +97,44 @@ class ElectionGame:
         if self.state == game_phases.election:
             cmd = self.master.bot.messageHasCommand(".vote", event.trailing, requireArgs=True)
             if cmd:
-                if cmd.args[0] in self.votes.keys():
-                    for target in self.votes:
-                        try:
-                            self.votes[target].remove(event.prefix.nick)
-                        except ValueError:
-                            pass
+                if self.master.config.get('allow_writeins', True) or cmd.args[0] in self.votes.keys():
+                    self.annul_voter(event.prefix.nick)
                     self.votes[cmd.args[0]].append(event.prefix.nick)
                 else:
                     # Invalid candidate
                     pass
 
             cmd = self.master.bot.messageHasCommand(".votes", event.trailing)
-
             if cmd:
-                self.print_results(show_remaining_time=True)
+                self.print_results(show_remaining_time=True, show_writeins=True)
 
         else:
             # No election running, pass
             pass
 
-    def print_results(self, prefix='', postfix='', show_remaining_time=False):
-        results = ['{} - {}'.format(candidate, len(voters)) for candidate, voters in self.votes.items()]
+    def annul_voter(self, voter_nick):
+        for target in self.votes:
+            try:
+                self.votes[target].remove(voter_nick)
+            except ValueError:
+                pass
+
+    def print_results(self, prefix='', postfix='', show_remaining_time=False, show_writeins=False):
+        results = ['{} - {}'.format(candidate, len(voters)) for candidate, voters in self.votes.items() if candidate in self.master.config["choices"]]
+
+        writeins = [(candidate, len(voters)) for candidate, voters in self.votes.items()
+                    if candidate not in self.master.config["choices"]]
+        writeins = sorted(writeins, reverse=True, key=lambda item: item[1])
+
+        writein_results = ['{} - {}'.format(candidate, voters) for candidate, voters in writeins if voters > 0]
 
         togo_info = ""
         if show_remaining_time:
             togo_info = " | ends in {}".format(self.format_seconds(self.ends_at - time.time()))
 
         self.bot.act_PRIVMSG(self.channel, "{}{}{}{}".format(prefix, ', '.join(results), postfix, togo_info))
+        if show_writeins and writein_results:
+            self.bot.act_PRIVMSG(self.channel, "Top write-ins: {}".format(', '.join(writein_results[0:5])))
 
     def gameover(self):
         for t in [self.end_timer, self.cooldown_timer]:
@@ -144,7 +153,6 @@ class ElectionGame:
         secs -= minutes * 60
 
         output += "{}s".format(round(secs))
-
 
         return output
 

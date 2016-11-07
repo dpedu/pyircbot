@@ -57,7 +57,7 @@ class IRCCore(asynchat.async_chat):
 
         self.OUTPUT_BUFFER_SIZE = 1000
         self.SEND_WAIT = 0.800
-        self.outputQueue = queue.PriorityQueue(self.OUTPUT_BUFFER_SIZE)
+        self.outputQueue = queue.Queue(self.OUTPUT_BUFFER_SIZE)
         self.outputQueueRunner = OutputQueueRunner(self)
         self.outputQueueRunner.start()
 
