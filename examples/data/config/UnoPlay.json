@@ -1,0 +1,15 @@
+{
+    "unobot": "BTN-Uno",
+    "unochannel": "#BTN-uno",
+    "streak_max": 3,
+    "enable_autojoin": true,
+    "enable_trigger": false,
+    "enable_delays": true,
+    "enable_randomhuman": true,
+    "randomhuman_chance": 15,
+    "randomhuman_sleep": 4,
+    "delay_joingame":        [1.2, 12.0],
+    "delay_beforepickcolor": [1.0, 4.0],
+    "delay_beforedraw":      [1.0, 3.0],
+    "delay_beforemove":      [1.0, 4.0]
+}

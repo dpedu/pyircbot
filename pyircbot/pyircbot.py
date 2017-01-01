@@ -372,10 +372,20 @@ class PyIRCBot:
             return False
 
         # Verified! Return the set.
+<<<<<<< HEAD
         return ParsedCommand(command,
                              args.split(" "),
                              args,
                              message)
+=======
+        ob = type('ParsedCommand', (object,), {})
+        ob.command = command
+        ob.args = [] if args=="" else args.split(" ")
+        ob.args_str = args
+        ob.message = message
+        return ob
+        # return (True, command, args, message)
+>>>>>>> Add unoplayer module
 
     @staticmethod
     def load(filepath):
