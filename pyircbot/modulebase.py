@@ -7,7 +7,6 @@
 """
 
 import logging
-import os
 from .pyircbot import PyIRCBot
 
 
@@ -21,20 +20,20 @@ class ModuleBase:
     """
 
     def __init__(self, bot, moduleName):
-        self.moduleName=moduleName
+        self.moduleName = moduleName
         """Assigned name of this module"""
 
         self.bot = bot
         """Reference to the master PyIRCBot object"""
 
-        self.hooks=[]
+        self.hooks = []
         """Hooks (aka listeners) this module has"""
 
-        self.services=[]
+        self.services = []
         """If this module provides services usable by another module, they're listed
         here"""
 
-        self.config={}
+        self.config = {}
         """Configuration dictionary. Autoloaded from `%(datadir)s/%(modulename)s.json`"""
 
         self.log = logging.getLogger("Module.%s" % self.moduleName)
@@ -70,7 +69,8 @@ class ModuleBase:
             writable. The bot's data dir *should* always be writable"""
         return self.bot.getDataPath(self.moduleName) + (f if f else '')
 
+
 class ModuleHook:
     def __init__(self, hook, method):
-        self.hook=hook
-        self.method=method
+        self.hook = hook
+        self.method = method

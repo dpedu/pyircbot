@@ -18,7 +18,6 @@ class UnoPlay(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
         self.servicesModule = self.bot.getmodulebyname("Services")
-        self.mynick = self.servicesModule.config["user"]["nick"][0]
         self.hooks = [ModuleHook("PRIVMSG", self.unoplay),
                       ModuleHook("PRIVMSG", self.trigger),
                       ModuleHook("NOTICE", self.decklisten)]
@@ -30,6 +29,8 @@ class UnoPlay(ModuleBase):
         self.cards = []
 
     def trigger(self, args, prefix, trailing):
+        if trailing.startswith("["):  # anti-znc buffer playback
+            return
         if self.config["enable_trigger"] and "!jo" in trailing:
             self.bot.act_PRIVMSG(self.config["unochannel"], "jo")
         elif trailing == "jo":
@@ -44,10 +45,10 @@ class UnoPlay(ModuleBase):
             self.bot.act_PRIVMSG(self.config["unochannel"], "jo")
 
     def unoplay(self, args, prefix, trailing):
-        ogtrailing = trailing
+        if trailing.startswith("["):  # anti-znc buffer playback
+            return
+
         trailing = self.stripcolors(trailing)
-        self.log.debug("> %s" % ogtrailing)
-        self.log.debug("> %s" % trailing)
 
         if self.config["unobot"] not in prefix:
             return
@@ -60,15 +61,15 @@ class UnoPlay(ModuleBase):
             self.current_card = self.parsecard(message)
             self.log.debug(">> top card: %s" % str(self.current_card))
 
-            if self.mynick in trailing:
+            if self.bot.get_nick() in trailing:
                 self.shouldgo = True
 
         # See if someone passed to us
-        if "passes" in trailing and self.mynick in trailing:
+        if "passes" in trailing and self.bot.get_nick() in trailing:
             self.shouldgo = True
 
         # Play after someone was droppped
-        if "continuing with" in trailing and self.mynick in trailing:
+        if "continuing with" in trailing and self.bot.get_nick() in trailing:
             self.shouldgo = True
 
         # Parse misc played cards
@@ -79,7 +80,7 @@ class UnoPlay(ModuleBase):
             self.log.debug(">> current card: %s" % str(self.current_card))
 
         # After someone plays to us
-        if "to %s" % self.mynick in trailing:
+        if "to %s" % self.bot.get_nick() in trailing:
             self.shouldgo = True
 
         # After color change
@@ -98,15 +99,15 @@ class UnoPlay(ModuleBase):
             self.current_card[2]['number'] = -1
             self.current_card[2]['type'] = None
             self.log.debug("Color changed to %s " % self.current_card[2]['color'])
-            if "urrent player %s" % self.mynick in trailing:
+            if "urrent player %s" % self.bot.get_nick() in trailing:
                 self.shouldgo = True
 
         # After color change to us
-        if "play continues with %s" % self.mynick in trailing:
+        if "play continues with %s" % self.bot.get_nick() in trailing:
             self.shouldgo = True
 
         # We need to choose a color
-        if "hoose a color %s" % self.mynick in trailing:
+        if "hoose a color %s" % self.bot.get_nick() in trailing:
             self.pickcolor()
 
         # Reset
@@ -225,13 +226,12 @@ class UnoPlay(ModuleBase):
         self.bot.act_PRIVMSG(self.config["unochannel"], "pl %s" % card)
 
     def decklisten(self, args, prefix, trailing):
+        if trailing.startswith("["):  # anti-znc buffer playback
+            return
         if self.config["unobot"] not in prefix:
             return
 
-        ogtrailing = trailing
         trailing = self.stripcolors(trailing)
-        self.log.debug("> %s" % (ogtrailing, ))
-        self.log.debug("> %s" % (trailing, ))
 
         cards = []
 

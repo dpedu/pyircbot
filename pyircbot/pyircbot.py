@@ -17,8 +17,7 @@ import os.path
 
 ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
 
-
-class PyIRCBot:
+class PyIRCBot(object):
     """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
     :type botconfig: dict
     """
@@ -44,7 +43,7 @@ class PyIRCBot:
         """IRC protocol class"""
         self.irc.servers = self.botconfig["connection"]["servers"]
         self.irc.port = self.botconfig["connection"]["port"]
-        self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"]=="on" else False
+        self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"] == "on" else False
 
         self.irc.addHook("_DISCONNECT", self.connection_closed)
 
@@ -57,8 +56,9 @@ class PyIRCBot:
         self.act_MODE = self.irc.act_MODE
         self.act_ACTION = self.irc.act_ACTION
         self.act_KICK = self.irc.act_KICK
-        self.act_QUIT    = self.irc.act_QUIT
-        self.get_nick    = self.irc.get_nick
+        self.act_QUIT = self.irc.act_QUIT
+        self.act_PASS = self.irc.act_PASS
+        self.get_nick = self.irc.get_nick
         self.decodePrefix = IRCCore.decodePrefix
 
         # Load modules
@@ -96,7 +96,6 @@ class PyIRCBot:
         :param message: Quit message
         :type message: str
         """
-        #Close all modules
         self.closeAllModules()
 
         self.irc.kill(message=message, alive=not sys_exit)
@@ -114,11 +113,11 @@ class PyIRCBot:
     def initModules(self):
         """load modules specified in instance config"""
         " append module location to path "
-        sys.path.append(os.path.dirname(__file__)+"/modules/")
+        sys.path.append(os.path.dirname(__file__) + "/modules/")
 
         " append usermodule dir to beginning of path"
         for path in self.botconfig["bot"]["usermodules"]:
-            sys.path.insert(0, path+"/")
+            sys.path.insert(0, path + "/")
 
         for modulename in self.botconfig["modules"]:
             self.loadmodule(modulename)
@@ -129,12 +128,12 @@ class PyIRCBot:
         :param moduleName: Name of the module to import
         :type moduleName: str"""
         " check if already exists "
-        if not name in self.modules:
+        if name not in self.modules:
             self.log.info("Importing %s" % name)
             " attempt to load "
             try:
                 moduleref = __import__(name)
-                self.modules[name]=moduleref
+                self.modules[name] = moduleref
                 return (True, None)
             except Exception as e:
                 " on failure (usually syntax error in Module code) print an error "
@@ -156,9 +155,7 @@ class PyIRCBot:
             self.unloadmodule(name)
         " delete all references to the module"
         if name in self.modules:
-            item = self.modules[name]
             del self.modules[name]
-            del item
             " delete copy that python stores in sys.modules "
             if name in sys.modules:
                 del sys.modules[name]
@@ -170,10 +167,10 @@ class PyIRCBot:
         :type moduleName: str"""
         " check if already loaded "
         if name in self.moduleInstances:
-            self.log.warning( "Module %s already loaded" % name )
+            self.log.warning("Module %s already loaded" % name)
             return False
         " check if needs to be imported, and verify it was "
-        if not name in self.modules:
+        if name not in self.modules:
             importResult = self.importmodule(name)
             if not importResult[0]:
                 return importResult
@@ -192,11 +189,9 @@ class PyIRCBot:
             self.moduleInstances[name].ondisable()
             " unload all hooks "
             self.unloadModuleHooks(self.moduleInstances[name])
-            " remove the instance "
-            item = self.moduleInstances.pop(name)
-            " delete the instance"
-            del item
-            self.log.info( "Module %s unloaded" % name )
+            " remove & delete the instance "
+            self.moduleInstances.pop(name)
+            self.log.info("Module %s unloaded" % name)
             return (True, None)
         else:
             self.log.info("Module %s not loaded" % name)
@@ -270,7 +265,7 @@ class PyIRCBot:
         :param name: name of the module to return
         :type name: str
         :returns: object -- the module object"""
-        if not name in self.moduleInstances:
+        if name not in self.moduleInstances:
             return None
         return self.moduleInstances[name]
 
@@ -293,7 +288,7 @@ class PyIRCBot:
         :type service: str
         :returns: object -- the module object, if found. None if not found."""
         m = self.getmodulesbyservice(service)
-        if len(m)>0:
+        if len(m) > 0:
             return m[0]
         return None
 
@@ -327,8 +322,8 @@ class PyIRCBot:
 
         basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
 
-        if os.path.exists("%s.json"%basepath):
-            return "%s.json"%basepath
+        if os.path.exists("%s.json" % basepath):
+            return "%s.json" % basepath
         return None
 
     " Utility methods "
@@ -343,7 +338,7 @@ class PyIRCBot:
         :param requireArgs: if true, only validate if the command use has any amount of trailing text
         :type requireArgs: bool"""
 
-        if not type(command)==list:
+        if not type(command) == list:
             command = [command]
         for item in command:
             cmd = PyIRCBot.messageHasCommandSingle(item, message, requireArgs)
@@ -355,37 +350,27 @@ class PyIRCBot:
     def messageHasCommandSingle(command, message, requireArgs=False):
         # Check if the message at least starts with the command
         messageBeginning = message[0:len(command)]
-        if messageBeginning!=command:
+        if messageBeginning != command:
             return False
         # Make sure it's not a subset of a longer command (ie .meme being set off by .memes)
-        subsetCheck = message[len(command):len(command)+1]
-        if subsetCheck!=" " and subsetCheck!="":
+        subsetCheck = message[len(command):len(command) + 1]
+        if subsetCheck != " " and subsetCheck != "":
             return False
 
         # We've got the command! Do we need args?
         argsStart = len(command)
         args = ""
         if argsStart > 0:
-            args = message[argsStart+1:]
+            args = message[argsStart + 1:]
 
         if requireArgs and args.strip() == '':
             return False
 
         # Verified! Return the set.
-<<<<<<< HEAD
         return ParsedCommand(command,
                              args.split(" "),
                              args,
                              message)
-=======
-        ob = type('ParsedCommand', (object,), {})
-        ob.command = command
-        ob.args = [] if args=="" else args.split(" ")
-        ob.args_str = args
-        ob.message = message
-        return ob
-        # return (True, command, args, message)
->>>>>>> Add unoplayer module
 
     @staticmethod
     def load(filepath):

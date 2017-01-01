@@ -24,6 +24,7 @@ try:
 except:
     from io import BytesIO as StringIO
 
+
 IRCEvent = namedtuple("IRCEvent", "args prefix trailing")
 UserPrefix = namedtuple("UserPrefix", "nick username hostname")
 ServerPrefix = namedtuple("ServerPrefix", "hostname")
@@ -34,7 +35,7 @@ class IRCCore(asynchat.async_chat):
     def __init__(self):
         asynchat.async_chat.__init__(self)
 
-        self.connected=False
+        self.connected = False
         """If we're connected or not"""
 
         self.log = logging.getLogger('IRCCore')
@@ -74,7 +75,8 @@ class IRCCore(asynchat.async_chat):
         while self.alive:
             try:
                 asyncore.loop(map=self.asynmap, timeout=1)
-            except Exception as e:
+            except Exception:
+
                 self.log.error("Loop error: ")
                 self.log.error(IRCCore.trace())
 
@@ -86,7 +88,7 @@ class IRCCore(asynchat.async_chat):
                     logging.info("Loop: reconnecting")
                     try:
                         self._connect()
-                    except Exception as e2:
+                    except Exception:
                         self.log.error("Error reconnecting: ")
                         self.log.error(IRCCore.trace())
 
@@ -103,10 +105,10 @@ class IRCCore(asynchat.async_chat):
         # Clear any pending messages
         self.outputQueueRunner.clear()
         # Send quit message and flush queue
-        self.act_QUIT(message) # TODO will this hang if the socket is having issues?
+        self.act_QUIT(message)  # TODO will this hang if the socket is having issues?
         self.outputQueueRunner.flush()
         # Signal disconnection
-        self.alive=alive
+        self.alive = alive
         # Close socket
         self.socket.shutdown(SHUT_RDWR)
         self.close()
@@ -126,7 +128,7 @@ class IRCCore(asynchat.async_chat):
 
         :param data: the data that was recieved
         :type data: str"""
-        #self.log.info("<< %(message)s", {"message":repr(data)})
+
         self.buffer.write(data)
 
     def found_terminator(self):
@@ -147,7 +149,7 @@ class IRCCore(asynchat.async_chat):
     def handle_close(self):
         """Called when the socket is disconnected. Triggers the _DISCONNECT hook"""
         self.log.info("handle_close")
-        self.connected=False
+        self.connected = False
         self.close()
         self.fire_hook("_DISCONNECT")
 
@@ -156,15 +158,15 @@ class IRCCore(asynchat.async_chat):
         self.log.error("Connection failed (handle_error)")
         self.log.error(str(args))
         self.log.error(str(kwargs))
-        self.log.error(IRCCore.trace());
+        self.log.error(IRCCore.trace())
 
     def _connect(self):
         """Connect to IRC"""
-        self.server+=1
+        self.server += 1
         if self.server >= len(self.servers):
-            self.server=0
+            self.server = 0
         serverHostname = self.servers[self.server]
-        self.log.info("Connecting to %(server)s:%(port)i", {"server":serverHostname, "port":self.port})
+        self.log.info("Connecting to %(server)s:%(port)i", {"server": serverHostname, "port": self.port})
         socket_type = socket.AF_INET
         if self.ipv6:
             self.log.info("IPv6 is enabled.")
@@ -175,12 +177,13 @@ class IRCCore(asynchat.async_chat):
         self.connect(socketInfo[0][4])
         self.log.info("Connection established")
         self._fileno = self.socket.fileno()
-        self.asynmap[self._fileno] = self # http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
+        # See http://willpython.blogspot.com/2010/08/multiple-event-loops-with-asyncore-and.html
+        self.asynmap[self._fileno] = self
         self.log.info("_connect: Socket map: %s" % str(self.asynmap))
 
     def handle_connect(self):
         """When asynchat indicates our socket is connected, fire the _CONNECT hook"""
-        self.connected=True
+        self.connected = True
         self.log.info("handle_connect: connected")
         self.fire_hook("_CONNECT")
         self.log.info("handle_connect: complete")
@@ -190,7 +193,7 @@ class IRCCore(asynchat.async_chat):
 
         :param text: the string to send
         :type text: str"""
-        text = (text+"\r\n").encode("UTF-8").decode().encode("UTF-8")
+        text = (text + "\r\n").encode("UTF-8").decode().encode("UTF-8")
         self.outputQueue.put((prio, text), block=False)
 
     def process_data(self, data):
@@ -203,71 +206,71 @@ class IRCCore(asynchat.async_chat):
 
         prefix = None
         command = None
-        args=[]
-        trailing=None
+        args = []
+        trailing = None
 
-        if data[0]==":":
-            prefix=data.split(" ")[0][1:]
-            data=data[data.find(" ")+1:]
+        if data[0] == ":":
+            prefix = data.split(" ")[0][1:]
+            data = data[data.find(" ") + 1:]
         command = data.split(" ")[0]
-        data=data[data.find(" ")+1:]
-        if(data[0]==":"):
+        data = data[data.find(" ") + 1:]
+        if(data[0] == ":"):
             # no args
             trailing = data[1:].strip()
         else:
-            trailing = data[data.find(" :")+2:].strip()
+            trailing = data[data.find(" :") + 2:].strip()
             data = data[:data.find(" :")]
             args = data.split(" ")
-        for index,arg in enumerate(args):
-            args[index]=arg.strip()
+        for index, arg in enumerate(args):
+            args[index] = arg.strip()
         self.fire_hook("_RECV", args=args, prefix=prefix, trailing=trailing)
-        if not command in self.hookcalls:
-            self.log.warning("Unknown command: cmd='%s' prefix='%s' args='%s' trailing='%s'" % (command, prefix, args, trailing))
+        if command not in self.hookcalls:
+            self.log.warning("Unknown command: cmd='%s' prefix='%s' args='%s' trailing='%s'" % (command, prefix, args,
+                                                                                                trailing))
         else:
             self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
-
 
     " Module related code "
     def initHooks(self):
         """Defines hooks that modules can listen for events of"""
         self.hooks = [
-            '_CONNECT', # Called when the bot connects to IRC on the socket level
-            '_DISCONNECT', # Called when the irc socket is forcibly closed
-            '_RECV',       # Called on network activity
-            'NOTICE',    # :irc.129irc.com NOTICE AUTH :*** Looking up your hostname...
-            'MODE',        # :CloneABCD MODE CloneABCD :+iwx
-            'PING',        # PING :irc.129irc.com
-            'JOIN',        # :CloneA!dave@hidden-B4F6B1AA.rit.edu JOIN :#clonea
-            'QUIT',        # :HCSMPBot!~HCSMPBot@108.170.48.18 QUIT :Quit: Disconnecting!
-            'NICK',        # :foxiAway!foxi@irc.hcsmp.com NICK :foxi
-            'PART',        # :CloneA!dave@hidden-B4F6B1AA.rit.edu PART #clonea
-            'PRIVMSG',    # :CloneA!dave@hidden-B4F6B1AA.rit.edu PRIVMSG #clonea :aaa
-            'KICK',        # :xMopxShell!~rduser@host KICK #xMopx2 xBotxShellTest :xBotxShellTest
-            'INVITE',    # :gmx!~gmxgeek@irc.hcsmp.com INVITE Tyrone :#hcsmp'
-            '001',        # :irc.129irc.com 001 CloneABCD :Welcome to the 129irc IRC Network CloneABCD!CloneABCD@djptwc-laptop1.rit.edu
-            '002',        # :irc.129irc.com 002 CloneABCD :Your host is irc.129irc.com, running version Unreal3.2.8.1
-            '003',        # :irc.129irc.com 003 CloneABCD :This server was created Mon Jul 19 2010 at 03:12:01 EDT
-            '004',        # :irc.129irc.com 004 CloneABCD irc.129irc.com Unreal3.2.8.1 iowghraAsORTVSxNCWqBzvdHtGp lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGj
-            '005',        # :irc.129irc.com 005 CloneABCD CMDS=KNOCK,MAP,DCCALLOW,USERIP UHNAMES NAMESX SAFELIST HCN MAXCHANNELS=10 CHANLIMIT=#:10 MAXLIST=b:60,e:60,I:60 NICKLEN=30 CHANNELLEN=32 TOPICLEN=307 KICKLEN=307 AWAYLEN=307 :are supported by this server
-            '250',        # :chaos.esper.net 250 xBotxShellTest :Highest connection count: 1633 (1632 clients) (186588 connections received)
-            '251',        # :irc.129irc.com 251 CloneABCD :There are 1 users and 48 invisible on 2 servers
-            '252',        # :irc.129irc.com 252 CloneABCD 9 :operator(s) online
-            '254',        # :irc.129irc.com 254 CloneABCD 6 :channels formed
-            '255',        # :irc.129irc.com 255 CloneABCD :I have 42 clients and 1 servers
-            '265',        # :irc.129irc.com 265 CloneABCD :Current Local Users: 42  Max: 47
-            '266',        # :irc.129irc.com 266 CloneABCD :Current Global Users: 49  Max: 53
-            '332',        # :chaos.esper.net 332 xBotxShellTest #xMopx2 :/ #XMOPX2 / https://code.google.com/p/pyircbot/ (Channel Topic)
-            '333',        # :chaos.esper.net 333 xBotxShellTest #xMopx2 xMopxShell!~rduser@108.170.60.242 1344370109
-            '353',        # :irc.129irc.com 353 CloneABCD = #clonea :CloneABCD CloneABC
-            '366',        # :irc.129irc.com 366 CloneABCD #clonea :End of /NAMES list.
-            '372',        # :chaos.esper.net 372 xBotxShell :motd text here
-            '375',        # :chaos.esper.net 375 xBotxShellTest :- chaos.esper.net Message of the Day -
-            '376',        # :chaos.esper.net 376 xBotxShell :End of /MOTD command.
-            '422',        # :irc.129irc.com 422 CloneABCD :MOTD File is missing
-            '433',        # :nova.esper.net 433 * pyircbot3 :Nickname is already in use.
+            '_CONNECT',     # Called when the bot connects to IRC on the socket level
+            '_DISCONNECT',  # Called when the irc socket is forcibly closed
+            '_RECV',        # Called on network activity
+            'NOTICE',       # :irc.129irc.com NOTICE AUTH :*** Looking up your hostname...
+            'MODE',         # :CloneABCD MODE CloneABCD :+iwx
+            'PING',         # PING :irc.129irc.com
+            'JOIN',         # :CloneA!dave@hidden-B4F6B1AA.rit.edu JOIN :#clonea
+            'QUIT',         # :HCSMPBot!~HCSMPBot@108.170.48.18 QUIT :Quit: Disconnecting!
+            'NICK',         # :foxiAway!foxi@irc.hcsmp.com NICK :foxi
+            'PART',         # :CloneA!dave@hidden-B4F6B1AA.rit.edu PART #clonea
+            'PRIVMSG',      # :CloneA!dave@hidden-B4F6B1AA.rit.edu PRIVMSG #clonea :aaa
+            'KICK',         # :xMopxShell!~rduser@host KICK #xMopx2 xBotxShellTest :xBotxShellTest
+            'INVITE',       # :gmx!~gmxgeek@irc.hcsmp.com INVITE Tyrone :#hcsmp'
+            '001',          # :irc.129irc.com 001 CloneABCD :Welcome to the 129irc IRC Network CloneABCD!CloneABCD@djptwc-laptop1.rit.edu
+            '002',          # :irc.129irc.com 002 CloneABCD :Your host is irc.129irc.com, running version Unreal3.2.8.1
+            '003',          # :irc.129irc.com 003 CloneABCD :This server was created Mon Jul 19 2010 at 03:12:01 EDT
+            '004',          # :irc.129irc.com 004 CloneABCD irc.129irc.com Unreal3.2.8.1 iowghraAsORTVSxNCWqBzvdHtGp lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGj
+            '005',          # :irc.129irc.com 005 CloneABCD CMDS=KNOCK,MAP,DCCALLOW,USERIP UHNAMES NAMESX SAFELIST HCN MAXCHANNELS=10 CHANLIMIT=#:10 MAXLIST=b:60,e:60,I:60 NICKLEN=30 CHANNELLEN=32 TOPICLEN=307 KICKLEN=307 AWAYLEN=307 :are supported by this server
+            '250',          # :chaos.esper.net 250 xBotxShellTest :Highest connection count: 1633 (1632 clients) (186588 connections received)
+            '251',          # :irc.129irc.com 251 CloneABCD :There are 1 users and 48 invisible on 2 servers
+            '252',          # :irc.129irc.com 252 CloneABCD 9 :operator(s) online
+            '254',          # :irc.129irc.com 254 CloneABCD 6 :channels formed
+            '255',          # :irc.129irc.com 255 CloneABCD :I have 42 clients and 1 servers
+            '265',          # :irc.129irc.com 265 CloneABCD :Current Local Users: 42  Max: 47
+            '266',          # :irc.129irc.com 266 CloneABCD :Current Global Users: 49  Max: 53
+            '332',          # :chaos.esper.net 332 xBotxShellTest #xMopx2 :/ #XMOPX2 / https://code.google.com/p/pyircbot/ (Channel Topic)
+            '333',          # :chaos.esper.net 333 xBotxShellTest #xMopx2 xMopxShell!~rduser@108.170.60.242 1344370109
+            '353',          # :irc.129irc.com 353 CloneABCD = #clonea :CloneABCD CloneABC
+            '366',          # :irc.129irc.com 366 CloneABCD #clonea :End of /NAMES list.
+            '372',          # :chaos.esper.net 372 xBotxShell :motd text here
+            '375',          # :chaos.esper.net 375 xBotxShellTest :- chaos.esper.net Message of the Day -
+            '376',          # :chaos.esper.net 376 xBotxShell :End of /MOTD command.
+            '422',          # :irc.129irc.com 422 CloneABCD :MOTD File is missing
+            '433',          # :nova.esper.net 433 * pyircbot3 :Nickname is already in use.
         ]
         " mapping of hooks to methods "
-        self.hookcalls = {command:[] for command in self.hooks}
+        self.hookcalls = {command: [] for command in self.hooks}
 
     def fire_hook(self, command, args=None, prefix=None, trailing=None):
         """Run any listeners for a specific hook
@@ -289,7 +292,7 @@ class IRCCore(asynchat.async_chat):
                     hook(args, prefix, trailing)
 
             except:
-                self.log.warning("Error processing hook: \n%s"% self.trace())
+                self.log.warning("Error processing hook: \n%s" % self.trace())
 
     def addHook(self, command, method):
         """**Internal.** Enable (connect) a single hook of a module
@@ -343,7 +346,9 @@ class IRCCore(asynchat.async_chat):
 
         :param prefix: the prefix to disassemble
         :type prefix: str
-        :returns: object -- an UserPrefix object with the properties `nick`, `username`, `hostname` or a ServerPrefix object with the property `hostname`"""
+        :returns: object -- an UserPrefix object with the properties `nick`, `username`, `hostname` or a ServerPrefix
+        object with the property `hostname`
+        """
         if "!" in prefix:
             nick, prefix = prefix.split("!")
             username, hostname = prefix.split("@")
@@ -412,7 +417,7 @@ class IRCCore(asynchat.async_chat):
 
         :param channel: the channel to attempt to join
         :type channel: str"""
-        self.sendRaw("JOIN %s"%channel)
+        self.sendRaw("JOIN %s" % channel)
 
     def act_PRIVMSG(self, towho, message):
         """Use the `/msg` command
@@ -421,7 +426,7 @@ class IRCCore(asynchat.async_chat):
         :type towho: str
         :param message: the message to send
         :type message: str"""
-        self.sendRaw("PRIVMSG %s :%s"%(towho,message))
+        self.sendRaw("PRIVMSG %s :%s" % (towho, message))
 
     def act_MODE(self, channel, mode, extra=None):
         """Use the `/mode` command
@@ -432,10 +437,10 @@ class IRCCore(asynchat.async_chat):
         :type mode: str
         :param extra: additional argument if the mode needs it. Example: user@*!*
         :type extra: str"""
-        if extra != None:
-            self.sendRaw("MODE %s %s %s" % (channel,mode,extra))
+        if extra is not None:
+            self.sendRaw("MODE %s %s %s" % (channel, mode, extra))
         else:
-            self.sendRaw("MODE %s %s" % (channel,mode))
+            self.sendRaw("MODE %s %s" % (channel, mode))
 
     def act_ACTION(self, channel, action):
         """Use the `/me <action>` command
@@ -444,7 +449,7 @@ class IRCCore(asynchat.async_chat):
         :type channel: str
         :param action: the text to send
         :type action: str"""
-        self.sendRaw("PRIVMSG %s :\x01ACTION %s"%(channel,action))
+        self.sendRaw("PRIVMSG %s :\x01ACTION %s" % (channel, action))
 
     def act_KICK(self, channel, who, comment=""):
         """Use the `/kick <user> <message>` command
@@ -464,11 +469,18 @@ class IRCCore(asynchat.async_chat):
         :type message: str"""
         self.sendRaw("QUIT :%s" % message, prio=0)
 
+    def act_PASS(self, password):
+        """
+        Send server password, for use on connection
+        """
+        self.sendRaw("PASS %s" % password, prio=0)
+
+
 class OutputQueueRunner(Thread):
     """Rate-limited output queue"""
     def __init__(self, bot):
         Thread.__init__(self, daemon=True)
-        self.bot = bot #reference to main bot thread
+        self.bot = bot  # reference to main bot thread
         self.log = logging.getLogger('OutputQueueRunner')
         self.paused = False
 
@@ -488,14 +500,14 @@ class OutputQueueRunner(Thread):
                     self.process_queue_item()
                     lastSend = time()
                 except queue.Empty:
-                    #self.log.info("Queue is empty")
+                    # self.log.debug("Queue is empty")
                     pass
             sleep(0.01)
 
     def process_queue_item(self):
         """Remove 1 item from queue and process it"""
-        prio,text = self.bot.outputQueue.get(block=True, timeout=10)
-        #self.log.info("%s>> %s" % (prio,text))
+        prio, text = self.bot.outputQueue.get(block=True, timeout=10)
+        # self.log.debug("%s>> %s" % (prio,text))
         self.bot.outputQueue.task_done()
         self.log.debug("> {}".format(text.decode('UTF-8')))
         self.bot.send(text)
@@ -508,7 +520,7 @@ class OutputQueueRunner(Thread):
                 self.bot.outputQueue.get(block=False)
         except queue.Empty:
             pass
-        #self.log.info("output queue cleared")
+        # self.log.debug("output queue cleared")
         return length
 
     def flush(self):
@@ -518,4 +530,4 @@ class OutputQueueRunner(Thread):
                 self.process_queue_item()
             except:
                 pass
-        #self.log.info("output queue flushed")
+        # self.log.debug("output queue flushed")

@@ -6,14 +6,14 @@
 """
 
 from threading import Thread
-from time import sleep,time
+from time import sleep, time
 from pyircbot.modulebase import ModuleBase, ModuleHook
-from random import randrange,choice
+from random import randrange, choice
+
 
 class Triggered(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.loadConfig()
         self.quietuntil = time()
         self.hooks.append(ModuleHook("PRIVMSG", self.check))
 
@@ -22,21 +22,21 @@ class Triggered(ModuleBase):
             return
         if not args.args[0].lower() in self.config["channels"]:
             return
-        
+
         message = args.trailing.lower()
         triggered = False
         for word in self.config["words"]:
             if word.lower() in message:
                 triggered = True
                 break
-        
+
         if not triggered:
             return
-        
+
         msg = Thread(target=self.scream, args=(args.args[0],))
         msg.daemon = True
         msg.start()
-        
+
         self.quietuntil = time() + self.config["quiet"]
 
     def scream(self, channel):

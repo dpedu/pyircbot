@@ -6,7 +6,8 @@ from pyircbot import PyIRCBot
 
 if __name__ == "__main__":
     " logging level and facility "
-    logging.basicConfig(level=logging.INFO, format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
     log = logging.getLogger('main')
 
     " parse command line args "
