@@ -10,7 +10,6 @@ from pyircbot.modulebase import ModuleBase, ModuleHook
 from random import randint
 import time
 import re
-from operator import itemgetter
 from threading import Thread
 from pprint import pprint
 import logging
@@ -108,7 +107,6 @@ class UnoPlay(ModuleBase):
 
         # After color change by bot
         if "Current player " in trailing and "and chooses" in trailing:
-            print("BOT WILD")
             color = trailing.split(" and chooses  ")[1].split(" Current ")[0].strip()
             self.current_card[2]['color'] = {'Blue': 'b', 'Red': 'r', 'Yellow': 'y', 'Green': 'g'}[color]
             self.current_card[2]['number'] = -1
@@ -208,7 +206,7 @@ class UnoPlay(ModuleBase):
                     child_chain.append(card)
                     child_cards = cards[:]
                     child_cards.remove(card)
-                    child_cards.sort(reverse=True, key=lambda x: x[1])  # Explore high value cards first (does this help?)
+                    child_cards.sort(reverse=True, key=lambda x: x[1])  # Explore high value cards first (this helps?)
                     assert len(child_cards) == len(cards) - 1
                     for subchain in chain_next(child_cards, child_chain):
                         subchains.append(subchain)
