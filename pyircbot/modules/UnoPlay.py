@@ -87,12 +87,16 @@ class UnoPlay(ModuleBase):
         # See if we play first
         if "plays first..." in trailing:
             message = trailing.split("The top card is")[1]
-            self.log.debug(">> we play first!")
+            self.log.info("we play first!")
             self.current_card = self.parsecard(message)
-            self.log.debug(">> top card: %s" % str(self.current_card))
+            self.log.debug("top card: %s" % str(self.current_card))
 
             if self.bot.get_nick() in trailing:
                 self.shouldgo = True
+
+        # We need to choose a color
+        if "hoose a color %s" % self.bot.get_nick() in trailing:
+            self.pickcolor()
 
         # See if someone passed to us
         if "passes" in trailing and self.bot.get_nick() in trailing:
@@ -102,16 +106,17 @@ class UnoPlay(ModuleBase):
         if "continuing with" in trailing and self.bot.get_nick() in trailing:
             self.shouldgo = True
 
-        # Parse misc played cards
-        # bug
-        if " plays  " in trailing:
-            message = trailing.split(" plays  ")[1].split("   ")[0]
-            self.current_card = self.parsecard(message)
-            self.log.debug(">> current card: %s" % str(self.current_card))
-
-        # After someone plays to us
-        if "to %s" % self.bot.get_nick() in trailing:
-            self.shouldgo = True
+        # After color change by bot
+        if "Current player " in trailing and "and chooses" in trailing:
+            print("BOT WILD")
+            color = trailing.split(" and chooses  ")[1].split(" Current ")[0].strip()
+            self.current_card[2]['color'] = {'Blue': 'b', 'Red': 'r', 'Yellow': 'y', 'Green': 'g'}[color]
+            self.current_card[2]['number'] = -1
+            self.current_card[2]['type'] = None
+            self.log.info("Color changed to %s " % self.current_card[2]['color'])
+            if "urrent player %s" % self.bot.get_nick() in trailing:
+                self.shouldgo = True
+                return
 
         # After color change
         if "play continues with " in trailing:
@@ -119,30 +124,30 @@ class UnoPlay(ModuleBase):
             self.current_card[2]['color'] = {'Blue': 'b', 'Red': 'r', 'Yellow': 'y', 'Green': 'g'}[color]
             self.current_card[2]['number'] = -1
             self.current_card[2]['type'] = None
+            self.log.info("Color changed to %s " % self.current_card[2]['color'])
 
-            self.log.debug("Color changed to %s " % self.current_card[2]['color'])
-
-        # After color change by bot
-        if "Current player " in trailing and "and chooses" in trailing:
-            color = trailing.split(" and chooses  ")[1].split(" Current ")[0].strip()
-            self.current_card[2]['color'] = {'Blue': 'b', 'Red': 'r', 'Yellow': 'y', 'Green': 'g'}[color]
-            self.current_card[2]['number'] = -1
-            self.current_card[2]['type'] = None
-            self.log.debug("Color changed to %s " % self.current_card[2]['color'])
-            if "urrent player %s" % self.bot.get_nick() in trailing:
+            if self.bot.get_nick() in trailing:
                 self.shouldgo = True
+                return
+
+        # Parse misc played cards
+        # bug
+        if " plays  " in trailing and "four cards" not in trailing:
+            message = trailing.split(" plays  ")[1].split("   ")[0]
+            self.current_card = self.parsecard(message)
+            self.log.info("current card: %s" % str(self.current_card))
+
+        # After someone plays to us
+        if "to %s" % self.bot.get_nick() in trailing:
+            self.shouldgo = True
 
         # After color change to us
         if "play continues with %s" % self.bot.get_nick() in trailing:
             self.shouldgo = True
 
-        # We need to choose a color
-        if "hoose a color %s" % self.bot.get_nick() in trailing:
-            self.pickcolor()
-
         # Reset
         if " by Marky" in trailing or "cards played in" in trailing:
-            self.log.debug(">> Reset")
+            self.log.info("System reset")
             self.current_card = None
             self.shouldgo = False
             self.has_drawn = False
@@ -183,6 +188,8 @@ class UnoPlay(ModuleBase):
         Find all legal permutations starting with the card in play based on our hand. The first card of the chain with
         the highest point sum will be selected for play.
         """
+        start = time.time()
+
         def chain_next(cards, chain):
             """
             Given some cards,  (Cards == list of card-like data structures)
@@ -223,7 +230,9 @@ class UnoPlay(ModuleBase):
         # Where chain is a list of card structs and chain_value is the point value of that chain.
         # The list is sorted by chain_value
         # pprint(chains)
-        self.log.info("Cards in hand: {}. Considering {} possible outcomes...".format(len(self.cards), len(chains)))
+        end = time.time()
+        self.log.info("Cards in hand: {}. Considered {} possible outcomes in {}ms..."
+                      .format(len(self.cards), len(chains), round((end - start) * 1000, 2)))
 
         if not chains:
             return None  # No valid moves :(
@@ -260,7 +269,7 @@ class UnoPlay(ModuleBase):
         mycolors = sorted(mycolors.items(), key=lambda x: x[1])
         mycolors.reverse()
 
-        self.log.debug("Sorted: %s" % str(mycolors))
+        self.log.info("Color pick weights: %s" % str(mycolors))
 
         self.sleep("beforepickcolor")
         self.bot.act_PRIVMSG(self.config["unochannel"], "co %s" % mycolors[0][0])
@@ -288,7 +297,7 @@ class UnoPlay(ModuleBase):
                 if self.config["enable_delays"]:
                     time.sleep(self.config["randomhuman_sleep"])
         self.sleep("beforemove")
-        self.log.debug(">> playing %s" % move[0])
+        self.log.debug("playing %s" % move[0])
         self.playcard(move[0])
 
     def getbestmove(self):
