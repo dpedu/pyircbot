@@ -7,7 +7,7 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase ModuleHook
+from pyircbot.modulebase import ModuleBase, ModuleHook
 import random
 import math
 from threading import Timer
