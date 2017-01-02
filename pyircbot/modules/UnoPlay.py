@@ -12,6 +12,8 @@ import time
 import re
 from operator import itemgetter
 from threading import Thread
+from pprint import pprint
+import logging
 
 
 class UnoPlay(ModuleBase):
@@ -26,6 +28,9 @@ class UnoPlay(ModuleBase):
         self.has_drawn = False
         self.has_joined = False
         self.games_played = 0
+        self.strategies = {"play_high_value": self.play_high_value,
+                           "play_by_chains": self.play_by_chains}
+        assert self.config["strategy"] in self.strategies
         self.cards = []
 
     def trigger(self, args, prefix, trailing):
@@ -38,11 +43,36 @@ class UnoPlay(ModuleBase):
             self.games_played = 0
             self.join_game()
 
-    def join_game(self):
-        if not self.has_joined:
-            self.sleep("joingame")
-            self.has_joined = True
-            self.bot.act_PRIVMSG(self.config["unochannel"], "jo")
+    def decklisten(self, args, prefix, trailing):
+        """
+        Listen for messages sent via NOTICe to the bot, this is usually a list of cards in our hand. Parse them.
+        """
+        if trailing.startswith("["):  # anti-znc buffer playback
+            return
+        if self.config["unobot"] not in prefix:
+            return
+
+        if "You don't have that card" in trailing:
+            self.log.error("played invalid card!")
+            return
+
+        trailing = self.stripcolors(trailing)
+
+        cards = []
+
+        for carddata in trailing.split("   "):
+            carddata = carddata.strip()
+            cards.append(self.parsecard(carddata))
+        cards.sort(key=lambda tup: tup[1])
+        cards.reverse()
+
+        self.cards = cards
+
+        self.log.debug(cards)
+
+        if self.shouldgo:
+            self.shouldgo = False
+            self.taketurn()
 
     def unoplay(self, args, prefix, trailing):
         if trailing.startswith("["):  # anti-znc buffer playback
@@ -127,6 +157,86 @@ class UnoPlay(ModuleBase):
                 else:
                     self.join_game()
 
+    def play_high_value(self):
+        """
+        Self.cards is sorted by card value by default. This strategy searches for a move by finding the mostly highly
+        valued card that is a valid move.
+        """
+        # Play anything thats not a wild
+        for card in self.cards:
+            # Skip wilds for now
+            if card[0] in ["wd4", "w"]:
+                continue
+            if self.validate(card, self.current_card):
+                return card
+
+        # Play anything
+        for card in self.cards:
+            if self.validate(card, self.current_card):
+                return card
+
+        # Give up
+        return None
+
+    def play_by_chains(self):
+        """
+        Find all legal permutations starting with the card in play based on our hand. The first card of the chain with
+        the highest point sum will be selected for play.
+        """
+        def chain_next(cards, chain):
+            """
+            Given some cards,  (Cards == list of card-like data structures)
+            And given a chain,  (chain == list of cards where the last entry is the card we play on top of)
+            Return a list of all chains formed by appending valid moves to the chain
+            """
+            # Find cards we can legally append to the chain - all wilds and valid moves are accepted
+            valid_nexts = [card for card in cards if chain[-1][0].startswith("w") or
+                           self.validate(card, chain[-1], cards)]
+
+            if valid_nexts:
+                # If we can make a move, permutate subchains per valid move
+                subchains = []
+                for card in valid_nexts:
+                    child_chain = chain[:]
+                    child_chain.append(card)
+                    child_cards = cards[:]
+                    child_cards.remove(card)
+                    child_cards.sort(reverse=True, key=lambda x: x[1])  # Explore high value cards first (does this help?)
+                    assert len(child_cards) == len(cards) - 1
+                    for subchain in chain_next(child_cards, child_chain):
+                        subchains.append(subchain)
+                return subchains
+            else:
+                # If we can't play, we found the end of a chain. Return the chain
+                return [chain]
+
+        # Get chains with at least one card added by us
+        chains = [[i, 0] for i in chain_next(self.cards, [self.current_card]) if len(i) > 1]
+        for chain in chains:
+            for card in chain[0][1:]:
+                chain[1] += card[1]
+
+        chains.sort(key=lambda x: x[1], reverse=True)
+
+        # We now have a list of sets like:
+        # (chain, chain_value)
+        # Where chain is a list of card structs and chain_value is the point value of that chain.
+        # The list is sorted by chain_value
+        # pprint(chains)
+        self.log.info("Cards in hand: {}. Considering {} possible outcomes...".format(len(self.cards), len(chains)))
+
+        if not chains:
+            return None  # No valid moves :(
+
+        selected_chain, value = chains[0]
+        return selected_chain[1]
+
+    def join_game(self):
+        if not self.has_joined:
+            self.sleep("joingame")
+            self.has_joined = True
+            self.bot.act_PRIVMSG(self.config["unochannel"], "jo")
+
     def send_later(self, channel, msg, area):
         Thread(target=self._send_later, args=(self.bot.act_PRIVMSG, (channel, msg, ), area)).start()
 
@@ -147,7 +257,7 @@ class UnoPlay(ModuleBase):
             if card[2]["color"] in mycolors.keys():
                 mycolors[card[2]["color"]] += 1
 
-        mycolors = sorted(mycolors.items(), key=itemgetter(1))
+        mycolors = sorted(mycolors.items(), key=lambda x: x[1])
         mycolors.reverse()
 
         self.log.debug("Sorted: %s" % str(mycolors))
@@ -182,29 +292,33 @@ class UnoPlay(ModuleBase):
         self.playcard(move[0])
 
     def getbestmove(self):
-        # Play anything thats not a wild
-        for card in self.cards:
-            # Skip wilds for now
-            if card[0] in ["wd4", "w"]:
-                continue
-            if self.validate(card, self.current_card):
-                return card
+        """
+        Depend inon the set strategy, determine the best card to play
+        """
+        return self.strategies[self.config["strategy"]]()
 
-        # Play anything
-        for card in self.cards:
-            if self.validate(card, self.current_card):
-                return card
-
-        # Give up
-        return None
-
-    def validate(self, newcard, basecard):
+    def validate(self, newcard, basecard, other_cards=None, colors_only=False):
+        """
+        Determine if it is a legal move to play newcard on top of basecard
+        :param newcard: the card you want to try to play
+        :param basecard: the card you play on top of
+        :param other_cards: if WD4 rule enforcement is on, consider these other cards in-hand when selecting a WD4
+        """
         nc = newcard[2]
         bc = basecard[2]
 
-        # Wilds can always be played
-        if nc["type"] in ["wd4", "w"]:
+        if nc["type"] in ["w"]:
             return True
+
+        # Wilds can always be played
+        if nc["type"] in ["wd4"]:
+            # WD4 can only be played if there are no non-wd4 moves playable
+            if self.config["enforce_wd4"] and other_cards:
+                other_valid = any([self.validate(i, basecard) for i in other_cards if i[0] != "wd4"])
+                if not other_valid:
+                    return True
+            else:
+                return True
 
         # Color matches can always be played
         if nc["color"] == bc["color"]:
@@ -225,32 +339,18 @@ class UnoPlay(ModuleBase):
     def playcard(self, card):
         self.bot.act_PRIVMSG(self.config["unochannel"], "pl %s" % card)
 
-    def decklisten(self, args, prefix, trailing):
-        if trailing.startswith("["):  # anti-znc buffer playback
-            return
-        if self.config["unobot"] not in prefix:
-            return
-
-        trailing = self.stripcolors(trailing)
-
-        cards = []
-
-        for carddata in trailing.split("   "):
-            carddata = carddata.strip()
-            cards.append(self.parsecard(carddata))
-        cards.sort(key=lambda tup: tup[1])
-        cards.reverse()
-
-        self.cards = cards
-
-        self.log.debug(cards)
-
-        if self.shouldgo:
-            self.shouldgo = False
-            self.taketurn()
-
     def parsecard(self, input):
-        # returns a card, weight tuple
+        try:
+            return self._parsecard(input)
+        except:
+            logging.error("Failed to parse card: {}".format(repr(input)))
+            raise
+
+    def _parsecard(self, input):
+        """
+        Given a card PMed to our bot, parse it into a card data structure, e.g.:
+        ('r1',1, {'type': 'num', 'number': 1, 'color': 'r'}),
+        """
         self.log.debug("Parse %s" % input)
         # Colors
         colors = {
@@ -319,7 +419,23 @@ class UnoPlay(ModuleBase):
                 return (color + card, weight, cardinfo)
 
     def stripcolors(self, input):
+        """
+        Strip color codes from an IRC messages
+        """
         return re.sub(r'\\x0([23])(([0-9]{1,2}((,[0-9]{1,2})?))?)', '', repr(input))[1:-1]
 
-    # def ondisable(self):
-    #     pass
+
+class TestStrategy(UnoPlay):
+    def __init__(self):
+        self.current_card = ('y1', 1, {'type': 'num', 'color': 'y', 'number': 1})
+        self.cards = [('wd4', 30, {'type': 'wd4', 'color': None, 'number': None}),
+                      ('br', 14, {'type': 'r', 'color': 'b', 'number': None}),
+                      ('br', 14, {'type': 'r', 'color': 'b', 'number': None}),
+                      ('g1', 1, {'type': 'num', 'color': 'g', 'number': 1}),
+                      ('b2', 2, {'type': 'num', 'color': 'b', 'number': 2}),
+                      ('r1', 1, {'type': 'num', 'color': 'r', 'number': 1})]
+        self.log = logging.getLogger('TestLog')
+
+if __name__ == '__main__':
+    t = TestStrategy()
+    pprint(t.play_by_chains())
