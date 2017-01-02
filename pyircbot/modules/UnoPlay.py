@@ -96,6 +96,7 @@ class UnoPlay(ModuleBase):
         # We need to choose a color
         if "hoose a color %s" % self.bot.get_nick() in trailing:
             self.pickcolor()
+            return
 
         # See if someone passed to us
         if "passes" in trailing and self.bot.get_nick() in trailing:
