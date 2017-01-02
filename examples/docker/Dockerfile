@@ -1,10 +1,13 @@
 FROM ubuntu:trusty
 
-CMD ["supervisord"]
+ENTRYPOINT /usr/local/bin/pyircbot
+WORKDIR /srv/bot/
+CMD ["-c config.json"]
 
-RUN sed -i -e 's/archive.ubuntu.com/mirrors.digitalocean.com/' /etc/apt/sources.list ; \
+RUN useradd bot ; \
+    sed -i -e 's/archive.ubuntu.com/mirrors.digitalocean.com/' /etc/apt/sources.list ; \
     apt-get update ; \
-    apt-get install -y python3 python3-setuptools python3-requests curl unzip sqlite3 supervisor ; \
+    apt-get install -y python3 python3-setuptools python3-requests curl unzip sqlite3 ; \
     easy_install3 pip ; \
     pip3 install praw pytz ; \
     curl -o /tmp/bitcoinrpc.zip https://codeload.github.com/dpedu/python-bitcoinrpc/zip/master ; \
@@ -14,8 +17,6 @@ RUN sed -i -e 's/archive.ubuntu.com/mirrors.digitalocean.com/' /etc/apt/sources.
     useradd bot ; \
     mkdir /srv/bot ; \
     chown bot /srv/bot ; \
-    echo "[supervisord]" >  /etc/supervisor/conf.d/supervisor.conf ; \
-    echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisor.conf ; \
     rm -rf /var/lib/apt/lists/* /tmp/bitcoinrpc.zip /tmp/python-bitcoinrpc-master
 
 COPY . /tmp/pyircbot/
@@ -23,6 +24,7 @@ COPY . /tmp/pyircbot/
 RUN cd /tmp/pyircbot/ ; \
     python3 setup.py install ; \
     su -c "cp -r /tmp/pyircbot/examples/config.json /tmp/pyircbot/examples/data/ /srv/bot/" bot ; \
-    cp examples/docker/pyircbot.conf /etc/supervisor/conf.d/pyircbot.conf ; \
     cd / ; \
     rm -rf /tmp/pyircbot
+
+USER bot
