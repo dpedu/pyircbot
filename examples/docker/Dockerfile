@@ -1,6 +1,6 @@
 FROM ubuntu:trusty
 
-ENTRYPOINT /usr/local/bin/pyircbot
+ENTRYPOINT ["/usr/local/bin/pyircbot"]
 WORKDIR /srv/bot/
 CMD ["-c", "config.json"]
 
