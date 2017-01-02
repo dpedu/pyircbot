@@ -2,7 +2,7 @@ FROM ubuntu:trusty
 
 ENTRYPOINT /usr/local/bin/pyircbot
 WORKDIR /srv/bot/
-CMD ["-c config.json"]
+CMD ["-c", "config.json"]
 
 RUN useradd bot ; \
     sed -i -e 's/archive.ubuntu.com/mirrors.digitalocean.com/' /etc/apt/sources.list ; \
