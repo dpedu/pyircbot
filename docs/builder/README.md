@@ -10,4 +10,5 @@ A docker image for building pyircbot's docs.
 
 Or, use a local directory instead of git master and build docs into `docs/_build/html`:
 
-* `docker run -it --rm -v /localpath/to/pyircbot/repo/:/tmp/pyircbot pyircbotdocbuilder /start`
+* `mkdir docs/_build`
+* `docker run -it --rm -v /localpath/to/pyircbot/repo/:/tmp/pyircbot/ pybdocbuilder`
