@@ -32,14 +32,13 @@ Instance Configuration
         },
         "connection":{
             "servers": [
-                "weber.freenode.net",
-                "asimov.freenode.net",
-                "card.freenode.net",
-                "dickson.freenode.net",
-                "morgan.freenode.net"
+                ["weber.freenode.net", 6667],
+                ["asimov.freenode.net", 6667],
+                ["card.freenode.net", 6667],
+                ["dickson.freenode.net", 6667],
+                ["morgan.freenode.net", 6667]
             ],
-            "ipv6":"off",
-            "port":6667
+            "ipv6":"off"
         },
         "modules":[
             "PingResponder",
@@ -47,16 +46,16 @@ Instance Configuration
         ]
     }
 
-In the example directory, this is stored in `config.json`. This may be 
+In the example directory, this is stored in `config.json`. This may be
 substituted for a YML file with the same data structure. This contains several
 options:
 
 .. cmdoption:: bot.datadir
 
-    Location where module data will be stored. This directory must contains 
-    two directories: `config` and `data`. Config contains a config file for 
-    each module of the same name (for example: Services.json for ``Services`` 
-    module). Data can be empty, the bot will create directories for each 
+    Location where module data will be stored. This directory must contains
+    two directories: `config` and `data`. Config contains a config file for
+    each module of the same name (for example: Services.json for ``Services``
+    module). Data can be empty, the bot will create directories for each
     module as needed.
 
 .. cmdoption:: bot.rpcbind
@@ -74,17 +73,14 @@ options:
 
 .. cmdoption:: connection.servers
 
-    List of hostnames or IP addresses of the IRC server to connection to. First
-    entry will be used for the initial connection on startup. If we the bot 
-    must reconnect to the IRC server later, the next server will be used.
+    List of hostnames or IP addresses and ports of the IRC server to connection
+    to. First entry will be used for the initial connection on startup. If we
+    the bot must reconnect to the IRC server later, the next server will
+    be used.
 
 .. cmdoption:: connection.ipv6
 
     Enable or disable defaulting to IPv6 using the value "off" or "on"
-
-.. cmdoption:: connection.port
-
-    Port to connect to on the IRC server
 
 .. cmdoption:: modules
 

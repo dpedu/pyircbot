@@ -7,14 +7,13 @@
 	},
 	"connection":{
 		"servers": [
-			"weber.freenode.net",
-			"asimov.freenode.net",
-			"card.freenode.net",
-			"dickson.freenode.net",
-			"morgan.freenode.net"
+			["weber.freenode.net", 6667],
+			["asimov.freenode.net", 6667],
+			["card.freenode.net", 6667],
+			["dickson.freenode.net", 6667],
+			["morgan.freenode.net", 6667]
 		],
 		"ipv6":"off",
-		"port":6667
 	},
 	"modules":[
 		"PingResponder",

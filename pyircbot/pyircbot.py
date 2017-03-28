@@ -7,28 +7,29 @@
 """
 
 import logging
-import time
 import sys
-import traceback
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
 from collections import namedtuple
 import os.path
+import asyncio
+
 
 ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
+
 
 class PyIRCBot(object):
     """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
     :type botconfig: dict
     """
-    version = "4.0.0-r03"
+    version = "4.1.0"
 
     def __init__(self, botconfig):
         self.log = logging.getLogger('PyIRCBot')
         """Reference to logger object"""
 
-        self.botconfig = botconfig
         """saved copy of the instance config"""
+        self.botconfig = botconfig
 
         """storage of imported modules"""
         self.modules = {}
@@ -36,16 +37,11 @@ class PyIRCBot(object):
         """instances of modules"""
         self.moduleInstances = {}
 
-        self.rpc = BotRPC(self)
         """Reference to BotRPC thread"""
+        self.rpc = BotRPC(self)
 
-        self.irc = IRCCore()
-        """IRC protocol class"""
-        self.irc.servers = self.botconfig["connection"]["servers"]
-        self.irc.port = self.botconfig["connection"]["port"]
-        self.irc.ipv6 = True if self.botconfig["connection"]["ipv6"] == "on" else False
-
-        self.irc.addHook("_DISCONNECT", self.connection_closed)
+        """IRC protocol handler"""
+        self.irc = IRCCore(servers=self.botconfig["connection"]["servers"])
 
         # legacy support
         self.act_PONG = self.irc.act_PONG
@@ -64,20 +60,17 @@ class PyIRCBot(object):
         # Load modules
         self.initModules()
 
-        # Connect to IRC
-        self.connect()
+    def run(self):
+        self.loop = asyncio.get_event_loop()
 
-    def connect(self):
+        self.client = asyncio.ensure_future(self.irc.loop(self.loop), loop=self.loop)
         try:
-            self.irc._connect()
-        except:
-            self.log.error("Pyircbot attempted to connect and failed!")
-            self.log.error(traceback.format_exc())
+            self.loop.set_debug(True)
+            self.loop.run_until_complete(self.client)
+        finally:
+            logging.debug("Escaped main loop")
 
-    def loop(self):
-        self.irc.loop()
-
-    def disconnect(self, message, reconnect=True):
+    def disconnect(self, message):
         """Send quit message and disconnect from IRC.
 
         :param message: Quit message
@@ -86,9 +79,9 @@ class PyIRCBot(object):
         :type reconnect: bool
         """
         self.log.info("disconnect")
-        self.irc.kill(message=message, alive=reconnect)
+        self.kill(message=message)
 
-    def kill(self, sys_exit=True, message="Help! Another thread is killing me :("):
+    def kill(self, message="Help! Another thread is killing me :("):
         """Shut down the bot violently
 
         :param sys_exit: True causes sys.exit(0) to be called
@@ -97,18 +90,7 @@ class PyIRCBot(object):
         :type message: str
         """
         self.closeAllModules()
-
-        self.irc.kill(message=message, alive=not sys_exit)
-
-        if sys_exit:
-            sys.exit(0)
-
-    def connection_closed(self, args, prefix, trailing):
-        """Called when the socket is disconnected. We will want to reconnect. """
-        if self.irc.alive:
-            self.log.warning("Connection was lost. Reconnecting in 5 seconds.")
-            time.sleep(5)
-            self.connect()
+        asyncio.run_coroutine_threadsafe(self.irc.kill(message=message), self.loop)
 
     def initModules(self):
         """load modules specified in instance config"""

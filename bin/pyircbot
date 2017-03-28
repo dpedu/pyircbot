@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import sys
 import logging
+import signal
 from argparse import ArgumentParser
 from pyircbot import PyIRCBot
+
 
 if __name__ == "__main__":
     " logging level and facility "
@@ -30,7 +32,12 @@ if __name__ == "__main__":
     log.debug(botconfig)
 
     bot = PyIRCBot(botconfig)
-    try:
-        bot.loop()
-    except KeyboardInterrupt:
-        bot.kill(message="Ctrl-C pressed!")
+
+    def signal_handler(signum, stack):
+        print('Received:', signum)
+        bot.kill(message="received signal {}".format(signum))
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    bot.run()
