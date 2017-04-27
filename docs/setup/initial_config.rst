@@ -38,7 +38,9 @@ Instance Configuration
                 ["dickson.freenode.net", 6667],
                 ["morgan.freenode.net", 6667]
             ],
-            "ipv6":"off"
+            "force_ipv6": false,
+            "force_ipv4": false,
+            "bind": ["1.2.3.4", 5678]
         },
         "modules":[
             "PingResponder",
@@ -78,9 +80,22 @@ options:
     the bot must reconnect to the IRC server later, the next server will
     be used.
 
-.. cmdoption:: connection.ipv6
+.. cmdoption:: connection.force_ipv6
 
-    Enable or disable defaulting to IPv6 using the value "off" or "on"
+    Enable this option to force use of ipv6 connections and ignore ipv4 server addresses.
+
+.. cmdoption:: connection.force_ipv4
+
+    Enable this option to force use of ipv4 connections and ignore ipv6 server addresses. Enabling force_ipv6
+    overrides force_ipv4.
+
+.. cmdoption:: connection.bind
+
+    Set the local address and port to bind the connection to.
+
+.. note::
+
+    To bind to an address but no specific port, set the second tuple entry to `null`.
 
 .. cmdoption:: modules
 

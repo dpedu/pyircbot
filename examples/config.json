@@ -1,23 +1,23 @@
 {
-	"bot":{
-		"datadir":"./data/",
-		"rpcbind":"0.0.0.0",
-		"rpcport":1876,
-		"usermodules": [ "./data/modules/" ]
-	},
-	"connection":{
-		"servers": [
-			["weber.freenode.net", 6667],
-			["asimov.freenode.net", 6667],
-			["card.freenode.net", 6667],
-			["dickson.freenode.net", 6667],
-			["morgan.freenode.net", 6667]
-		],
-		"ipv6":"off",
-	},
-	"modules":[
-		"PingResponder",
-		"Services",
-		"UserModule"
-	]
+    "bot":{
+        "datadir":"./data/",
+        "rpcbind":"0.0.0.0",
+        "rpcport":1876,
+        "usermodules": [ "./data/modules/" ]
+    },
+    "connection":{
+        "servers": [
+            ["weber.freenode.net", 6667],
+            ["asimov.freenode.net", 6667],
+            ["card.freenode.net", 6667],
+            ["dickson.freenode.net", 6667],
+            ["morgan.freenode.net", 6667]
+        ],
+        "force_ipv6": false
+    },
+    "modules":[
+        "PingResponder",
+        "Services",
+        "UserModule"
+    ]
 }

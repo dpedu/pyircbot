@@ -43,8 +43,12 @@ class IRCCore(object):
         """List of server address"""
         self.port = 0
         """Server port"""
-        self.ipv6 = False
-        """Use IPv6?"""
+        self.connection_family = socket.AF_UNSPEC
+        """Socket family. 0 will auto-detect ipv4 or v6. Change this to socket.AF_INET or socket.AF_INET6 force use of
+           ipv4 or ipv6."""
+
+        self.bind_addr = None
+        """Optionally bind to a specific address. This should be a (host, port) tuple."""
 
         # Set up hooks for modules
         self.initHooks()
@@ -56,7 +60,9 @@ class IRCCore(object):
                 self.reader, self.writer = await asyncio.open_connection(self.servers[self.server][0],
                                                                          port=self.servers[self.server][1],
                                                                          loop=loop,
-                                                                         ssl=None)
+                                                                         ssl=None,
+                                                                         family=self.connection_family,
+                                                                         local_addr=self.bind_addr)
                 self.fire_hook("_CONNECT")
             except (socket.gaierror, ConnectionRefusedError):
                 traceback.print_exc()

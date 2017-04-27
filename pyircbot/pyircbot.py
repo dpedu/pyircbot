@@ -11,6 +11,7 @@ import sys
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
 from collections import namedtuple
+from socket import AF_INET, AF_INET6
 import os.path
 import asyncio
 
@@ -42,6 +43,11 @@ class PyIRCBot(object):
 
         """IRC protocol handler"""
         self.irc = IRCCore(servers=self.botconfig["connection"]["servers"])
+        if self.botconfig.get("connection").get("force_ipv6", False):
+            self.irc.connection_family = AF_INET6
+        elif self.botconfig.get("connection").get("force_ipv4", False):
+            self.irc.connection_family = AF_INET
+        self.irc.bind_addr = self.botconfig.get("connection").get("bind", None)
 
         # legacy support
         self.act_PONG = self.irc.act_PONG
