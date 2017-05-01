@@ -12,6 +12,7 @@ from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
 from collections import namedtuple
 from socket import AF_INET, AF_INET6
+from json import load
 import os.path
 import asyncio
 
@@ -370,7 +371,7 @@ class PyIRCBot(object):
         """
 
         if filepath.endswith(".json"):
-            from json import load
-            return load(open(filepath, 'r'))
+            with open(filepath, 'r') as f:
+                return load(f)
         else:
             raise Exception("Unknown config format")

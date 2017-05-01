@@ -4,6 +4,7 @@ import logging
 import signal
 from argparse import ArgumentParser
 from pyircbot import PyIRCBot
+from json import loads
 
 
 if __name__ == "__main__":
@@ -16,6 +17,8 @@ if __name__ == "__main__":
     parser = ArgumentParser(description="Run pyircbot")
     parser.add_argument("-c", "--config", help="Path to config file", required=True)
     parser.add_argument("--debug", action="store_true", help="Dump raw irc network")
+    parser.add_argument("-q", "--quit-message", help="Quit message if killed by signal",
+                        default="received signal {}")
 
     args = parser.parse_args()
 
@@ -25,9 +28,9 @@ if __name__ == "__main__":
 
     if not args.config:
         log.critical("No bot config file specified (-c). Exiting.")
-        sys.exit(0)
+        sys.exit(1)
 
-    botconfig = PyIRCBot.load(args.config)
+    botconfig = loads(sys.stdin.read()) if args.config == "-" else PyIRCBot.load(args.config)
 
     log.debug(botconfig)
 
@@ -35,7 +38,7 @@ if __name__ == "__main__":
 
     def signal_handler(signum, stack):
         print('Received:', signum)
-        bot.kill(message="received signal {}".format(signum))
+        bot.kill(message=args.quit_message.format(signum))
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
