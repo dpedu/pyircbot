@@ -84,7 +84,7 @@ class IRCCore(object):
             if self.alive:
                 # TODO ramp down reconnect attempts
                 logging.info("Reconnecting in 3s...")
-                sleep(3)
+                await asyncio.sleep(3)
 
     async def kill(self, message="Help! Another thread is killing me :("):
         """Send quit message, flush queue, and close the socket
