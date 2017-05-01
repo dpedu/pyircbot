@@ -45,10 +45,15 @@ class ModuleBase:
         self.log.info("Loaded module %s" % self.moduleName)
 
     def loadConfig(self):
-        """Loads this module's config into self.config"""
-        configPath = self.getConfigPath()
-        if configPath is not None:
-            self.config = PyIRCBot.load(configPath)
+        """
+        Loads this module's config into self.config. The bot's main config is checked for a section matching the module
+        name, which will be preferred. If not found, an individual config file will be loaded from the data dir
+        """
+        self.config = self.bot.botconfig.get("module_configs", {}).get(self.__class__.__name__, {})
+        if not self.config:
+            configPath = self.getConfigPath()
+            if configPath is not None:
+                self.config = PyIRCBot.load(configPath)
 
     def ondisable(self):
         """Called when the module should be disabled. Your module should do any sort

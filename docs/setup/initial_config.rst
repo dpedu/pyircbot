@@ -45,7 +45,8 @@ Instance Configuration
         "modules":[
             "PingResponder",
             "Services"
-        ]
+        ],
+        "module_configs": {}
     }
 
 In the example directory, this is stored in `config.json`. This may be
@@ -102,3 +103,9 @@ options:
     A list of modules to load. Modules are loaded in the order they are listed
     here. :doc:`PingResponder </api/modules/pingresponder>` and :doc:`Services </api/modules/services>` are the *bare minimum* needed to open and
     maintain and IRC connection.
+
+.. cmdoption:: module_configs
+
+    A dictionary mapping module names to module configs. If you prefer a monolithic config file instead of a json config
+    file per module, this can be populated with the same data as the separate config files. Entries here will be
+    preferred over separate config files.
