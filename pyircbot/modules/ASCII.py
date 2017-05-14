@@ -56,14 +56,16 @@ class ASCII(ModuleBase):
             if not self.config.get("allow_parallel") and any(self.running_asciis.values()):
                 return
 
-            ascii_name = cmd.args.pop()
+            ascii_name = cmd.args.pop(0)
             if not RE_ASCII_FNAME.match(ascii_name):
                 return
 
             ascii_path = self.getFilePath(ascii_name + ".txt")
             if os.path.exists(ascii_path):
-                self.running_asciis[msg.args[0]] = Thread(target=self.print_ascii, args=(ascii_path, msg.args[0]),
-                                                          daemon=True)
+                args = [ascii_path, msg.args[0]]
+                if self.config.get("allow_hilight", False) and len(cmd.args) >= 1:
+                    args.append(cmd.args.pop(0))
+                self.running_asciis[msg.args[0]] = Thread(target=self.print_ascii, args=args, daemon=True)
                 self.running_asciis[msg.args[0]].start()
             return
 
@@ -72,7 +74,7 @@ class ASCII(ModuleBase):
             if self.running_asciis[msg.args[0]]:
                 self.killed_channels[msg.args[0]] = True
 
-    def print_ascii(self, ascii_path, channel):
+    def print_ascii(self, ascii_path, channel, hilight=None):
         """
         Print the contents of ascii_path to channel
         :param ascii_path: file path to the ascii art file to read and print
@@ -86,6 +88,8 @@ class ASCII(ModuleBase):
                 break
             if not line:
                 line = " "
+            if hilight:
+                line = "{}: {}".format(hilight, line)
             self.bot.act_PRIVMSG(channel, line)
             if delay:
                 sleep(delay)

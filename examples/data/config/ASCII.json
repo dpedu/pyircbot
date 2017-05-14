@@ -1,5 +1,6 @@
 {
     "line_delay": 1.1,
     "allow_parallel": false,
+    "allow_hilight": true,
     "list_max": 15
 }
