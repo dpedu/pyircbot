@@ -57,7 +57,7 @@ class PingRespondTimer(Thread):
     def run(self):
         while self.alive:
             sleep(5)
-            if time() - self.lastping > self.config.get("activity_timeout", 300):
+            if time() - self.lastping > self.master.config.get("activity_timeout", 300):
                 self.master.log.info("No activity in %s seconds. Reconnecting" % str(time() - self.lastping))
                 self.master.bot.disconnect("Reconnecting...")
                 self.reset()
