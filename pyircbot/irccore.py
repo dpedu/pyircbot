@@ -134,10 +134,9 @@ class IRCCore(object):
             self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
 
     def sendRaw(self, data):
-        self.log.warning(">>> {}".format(repr(data)))
+        self.log.debug(">>> {}".format(repr(data)))
+        self.fire_hook('_SEND', args=None, prefix=None, trailing=None)
         self.writer.write((data + "\r\n").encode("UTF-8"))
-
-
 
     " Module related code "
     def initHooks(self):
@@ -146,6 +145,7 @@ class IRCCore(object):
             '_CONNECT',
             '_DISCONNECT',
             '_RECV',
+            '_SEND',
             'NOTICE',
             'MODE',
             'PING',
