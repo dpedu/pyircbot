@@ -42,7 +42,20 @@ class ModuleBase:
         # Autoload config if available
         self.loadConfig()
 
+        # Prepare any function hooking
+        self.init_hooks()
+
         self.log.info("Loaded module %s" % self.moduleName)
+
+    def init_hooks(self):
+        """
+        Scan the module for tagged methods and set up appropriate protocol hooks.
+        """
+        for attr_name in dir(self):
+            attr = getattr(self, attr_name)
+            if callable(attr) and hasattr(attr, ATTR_ACTION_HOOK):
+                for action in getattr(attr, ATTR_ACTION_HOOK):
+                    self.hooks.append(ModuleHook(action, attr))
 
     def loadConfig(self):
         """
@@ -79,3 +92,31 @@ class ModuleHook:
     def __init__(self, hook, method):
         self.hook = hook
         self.method = method
+
+
+ATTR_ACTION_HOOK = "__tag_hooks"
+
+
+class hook(object):
+    """
+    Decorating for calling module methods in response to IRC actions. Example:
+    ```
+    @hook("PRIVMSG")
+    def mymyethod(self, message):
+        print("IRC server sent PRIVMSG")
+    ```
+    This stores a list of IRC actions each function is tagged for in method.__tag_hooks. This attribute is scanned
+    during module init and appropriate hooks are set up.
+    """
+    def __init__(self, *args):
+        self.commands = args
+
+    def __call__(self, func):
+        """
+
+        """
+        if not hasattr(func, ATTR_ACTION_HOOK):
+            setattr(func, ATTR_ACTION_HOOK, list(self.commands))
+        else:
+            getattr(func, ATTR_ACTION_HOOK).extend(self.commands)
+        return func

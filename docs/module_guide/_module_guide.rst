@@ -13,13 +13,14 @@ file's name.
 
 .. code-block:: python
 
-    from pyircbot.modulebase import ModuleBase,ModuleHook
+    from pyircbot.modulebase import ModuleBase, hook
     class EchoExample(ModuleBase):
 
 The class's ``__init__`` method accepts 2 args - a reference to the bot's API
 and what the bot has decided to name this module. These are passed to
 ModuleBase. Module's init method should be as quick as possible. The bot loads
-modules one after the other so a long delay slows bot startup.
+modules sequentially on startup and you should avoid long operations here as it
+will undesirably slow bot startup time.
 
 .. code-block:: python
 
@@ -32,20 +33,29 @@ calling :py:meth:`pyircbot.modulebase.ModuleBase.loadConfig`:
 
 .. code-block:: python
 
-            self.loadConfig()
             print(self.config)
+            self.loadConfig()  # Manually reload config
 
-In ``__init__``, the module lists what hooks it wants to listen for. Hooks are
-executed when the corresponding IRC protocol command is received.
+Any other setup code should be placed in ``__init__``. Note that ``__init__``
+will be executed when the bot is starting up and before the irc connection is
+opened.
+
+Adding interaction
+------------------
+
+In order to make your module respond to various IRC commands, pyircbot uses a
+system of "hooks", which can be defined using decorators or programmatically.
+Note: in this case, "commands" refers to IRC protocol commands such as PRIVMSG,
+KICK, JOIN, etc. Pyircbot also provides some meta-events that are accessed in
+the same way. The complete list of supported commands can be seen in the source
+of :py:meth:`pyircbot.irccore.IRCCore.initHooks`.
+
+The easiest method is to use the ``hook`` decorator on any function your want
+called when an IRC command is received.
 
 .. code-block:: python
 
-            self.hooks=[ModuleHook("PRIVMSG", self.echo)]
-
-Then, a handler for this hook:
-
-.. code-block:: python
-
+        @hook("PRIVMSG")
         def echo(self, event):
 
 The handler is passed and IRCEvent object containing the data sent by the irc
@@ -88,17 +98,18 @@ shutdown handler is needed to ensure a clean shutdown.
 EchoExample module
 ------------------
 
+This is the snippets above combined into a usable module.
+
 .. code-block:: python
 
-    from pyircbot.modulebase import ModuleBase,ModuleHook
+    from pyircbot.modulebase import ModuleBase, hook
 
     class EchoExample(ModuleBase):
         def __init__(self, bot, moduleName):
             ModuleBase.__init__(self, bot, moduleName)
-            self.loadConfig()
             print(self.config)
-            self.hooks=[ModuleHook("PRIVMSG", self.echo)]
 
+        @hook("PRIVMSG")
         def echo(self, event):
             self.bot.act_PRIVMSG(event.args[0], event.trailing)
 

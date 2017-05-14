@@ -5,7 +5,7 @@
     :synopsis: Spam chat with awesome ascii texts
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 from threading import Thread
 from glob import iglob
 from collections import defaultdict
@@ -20,10 +20,10 @@ RE_ASCII_FNAME = re.compile(r'^[a-zA-Z0-9\-_]+$')
 class ASCII(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks.append(ModuleHook("PRIVMSG", self.listen_msg))
         self.running_asciis = defaultdict(lambda: None)
         self.killed_channels = defaultdict(lambda: False)
 
+    @hook("PRIVMSG")
     def listen_msg(self, msg):
         """
         Handle commands
