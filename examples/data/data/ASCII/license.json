@@ -1,0 +1,52 @@
+{
+   "areas":[
+      {
+         "name":"words",
+         "string":"",
+         "x":18,
+         "y":3,
+         "width":16,
+         "height":5
+      },
+      {
+         "name":"name",
+         "string":"code, c",
+         "format": "\"{}\"",
+         "props":[
+            "centered"
+         ],
+         "x":3,
+         "y":9,
+         "width":13,
+         "height":1
+      },
+      {
+         "name":"title",
+         "string":"LICENSED TO CHAT",
+         "props":[
+            "centered",
+            "upper"
+         ],
+         "x":2,
+         "y":1,
+         "width":32,
+         "height":1
+      },
+      {
+         "name":"expr",
+         "string":"exp 09-23-2017",
+         "x":19,
+         "y":9,
+         "width":14,
+         "height":1
+      },
+      {
+         "name":"expr2",
+         "string":"DSM-IV: 299.80",
+         "x":19,
+         "y":10,
+         "width":14,
+         "height":1
+      }
+   ]
+}
