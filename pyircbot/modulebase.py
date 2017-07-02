@@ -120,21 +120,23 @@ ATTR_COMMAND_HOOK = "__tag_commands"
 class hook(object):
     """
     Decorator for calling module methods in response to IRC actions. Example:
-    ```
-    @hook("PRIVMSG")
-    def mymyethod(self, message):
-        print("IRC server sent PRIVMSG")
-    ```
+
+    .. code-block:: python
+
+        @hook("PRIVMSG")
+        def mymyethod(self, message):
+            print("IRC server sent PRIVMSG")
+
     This stores a list of IRC actions each function is tagged for in method.__tag_hooks. This attribute is scanned
     during module init and appropriate hooks are set up.
+
+    :param args: irc protocol event to listen for. See :py:meth:`pyircbot.irccore.IRCCore.initHooks` for a complete list
+    :type args: str
     """
     def __init__(self, *args):
         self.commands = args
 
     def __call__(self, func):
-        """
-
-        """
         if not hasattr(func, ATTR_ACTION_HOOK):
             setattr(func, ATTR_ACTION_HOOK, list(self.commands))
         else:
@@ -159,16 +161,29 @@ class irchook(object):
 
 class command(irchook):
     """
-    Decorating for calling module methods in response to IRC actions. Example:
-    ```
-    @hook("PRIVMSG")
-    def mymyethod(self, message):
-        print("IRC server sent PRIVMSG")
-    ```
-    This stores a list of IRC actions each function is tagged for in method.__tag_hooks. This attribute is scanned
+    Decorator for calling module methods when a command is parsed from chat
+
+    .. code-block:: python
+
+        @command("ascii")
+        def cmd_ascii(self, cmd, msg):
+            print("Somebody typed .ascii with params {} in channel {}".format(str(cmd.args), msg.args[0]))
+
+    This stores a list of IRC actions each function is tagged for in method.__tag_commands. This attribute is scanned
     during module init and appropriate hooks are set up.
+
+    :param keywords: commands to listen for
+    :type keywords: str
+    :param require_args: only match if trailing data is passed with the command used
+    :type require_args: bool
+    :param allow_private: enable matching in private messages
+    :type allow_private: bool
     """
+
     prefix = "."
+    """
+    Hotkey that must appear before commands
+    """
 
     def __init__(self, *keywords, require_args=False, allow_private=False):
         self.keywords = keywords
@@ -177,12 +192,23 @@ class command(irchook):
         self.parsed_cmd = None
 
     def call(self, method, msg):
+        """
+        Internal use. Triggers the hooked function
+        """
         if len(getargspec(method).args) == 3:
-            method(self.parsed_cmd, msg)
+            return method(self.parsed_cmd, msg)
         else:
-            method(self.parsed_cmd)
+            return method(self.parsed_cmd)
 
     def validate(self, msg, bot):
+        """
+        Test a message and return true if matched.
+
+        :param msg: message to test against
+        :type msg: pyircbot.irccore.IRCEvent
+        :param bot: reference to main pyircbot
+        :type bot: pyircbot.pyircbot.PyIRCBot
+        """
         if not self.allow_private and msg.args[0] == "#":
             return False
         for keyword in self.keywords:

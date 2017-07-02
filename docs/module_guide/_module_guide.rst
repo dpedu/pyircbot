@@ -13,7 +13,7 @@ file's name.
 
 .. code-block:: python
 
-    from pyircbot.modulebase import ModuleBase, hook
+    from pyircbot.modulebase import ModuleBase, hook, command
     class EchoExample(ModuleBase):
 
 The class's ``__init__`` method accepts 2 args - a reference to the bot's API
@@ -47,7 +47,7 @@ In order to make your module respond to various IRC commands, pyircbot uses a
 system of "hooks", which can be defined using decorators or programmatically.
 Note: in this case, "commands" refers to IRC protocol commands such as PRIVMSG,
 KICK, JOIN, etc. Pyircbot also provides some meta-events that are accessed in
-the same way. The complete list of supported commands can be seen in the source
+the same way. The complete list of supported hooks can be seen in the source
 of :py:meth:`pyircbot.irccore.IRCCore.initHooks`.
 
 The easiest method is to use the ``hook`` decorator on any function your want
@@ -59,7 +59,7 @@ called when an IRC command is received.
         def echo(self, event):
 
 The handler is passed and IRCEvent object containing the data sent by the irc
-server. The values of these are can vary, but the format is alwaysthe same.
+server. The values of these are can vary, but the format is always the same.
 
 ``event.args`` is the list of arguments the IRC server sent. ``event.prefix``
 is the sender, parsed. ``trailing`` is arbitrary data associated
@@ -82,6 +82,17 @@ Since the module described above echos messages, let's do that:
 
 This sends a PRIVMSG to the originating channel or nick, with the same msg
 content that was received.
+
+Alternatively, if your module needs to respond to chat-based commands, a
+similar decorator :py:class:`pyircbot.modulebase.command`. can be used:
+
+.. code-block:: python
+
+        @command("echo")
+        def echo2(self, cmd, msg):
+            # If the message was ".echo bob asdf", cmd.args would look like:
+            # ["bob", "asdf"]
+            self.bot.act_PRIVMSG(msg.args[0], msg.trailing)
 
 Beyond this, a module's class can import or do anything python can to deliver
 responses. For modules that use threads or connect to external services, a
