@@ -8,6 +8,8 @@
 
 import logging
 from .pyircbot import PyIRCBot
+from inspect import getargspec
+import os
 
 
 class ModuleBase:
@@ -28,6 +30,9 @@ class ModuleBase:
 
         self.hooks = []
         """Hooks (aka listeners) this module has"""
+
+        self.irchooks = []
+        """IRC Hooks this module has"""
 
         self.services = []
         """If this module provides services usable by another module, they're listed
@@ -53,9 +58,14 @@ class ModuleBase:
         """
         for attr_name in dir(self):
             attr = getattr(self, attr_name)
-            if callable(attr) and hasattr(attr, ATTR_ACTION_HOOK):
+            if not callable(attr):
+                continue
+            if hasattr(attr, ATTR_ACTION_HOOK):
                 for action in getattr(attr, ATTR_ACTION_HOOK):
                     self.hooks.append(ModuleHook(action, attr))
+            if hasattr(attr, ATTR_COMMAND_HOOK):
+                for action in getattr(attr, ATTR_COMMAND_HOOK):
+                    self.irchooks.append(IRCHook(action, attr))
 
     def loadConfig(self):
         """
@@ -85,7 +95,7 @@ class ModuleBase:
         :type channel: str
         :Warning: .. Warning::  this does no error checking if the file exists or is\
             writable. The bot's data dir *should* always be writable"""
-        return self.bot.getDataPath(self.moduleName) + (f if f else '')
+        return os.path.join(self.bot.getDataPath(self.moduleName), (f if f else ''))
 
 
 class ModuleHook:
@@ -94,12 +104,22 @@ class ModuleHook:
         self.method = method
 
 
+class IRCHook:
+    def __init__(self, hook, method):
+        self.hook = hook
+        self.method = method
+
+    def call(self, msg):
+        self.hook.call(self.method, msg)
+
+
 ATTR_ACTION_HOOK = "__tag_hooks"
+ATTR_COMMAND_HOOK = "__tag_commands"
 
 
 class hook(object):
     """
-    Decorating for calling module methods in response to IRC actions. Example:
+    Decorator for calling module methods in response to IRC actions. Example:
     ```
     @hook("PRIVMSG")
     def mymyethod(self, message):
@@ -120,3 +140,60 @@ class hook(object):
         else:
             getattr(func, ATTR_ACTION_HOOK).extend(self.commands)
         return func
+
+
+class irchook(object):
+    def __call__(self, func):
+        if not hasattr(func, ATTR_COMMAND_HOOK):
+            setattr(func, ATTR_COMMAND_HOOK, [self])
+        else:
+            getattr(func, ATTR_COMMAND_HOOK).extend(self)
+        return func
+
+    def validate(self, msg, bot):
+        """
+        Return True if the message should be passed on. False otherwise.
+        """
+        return True
+
+
+class command(irchook):
+    """
+    Decorating for calling module methods in response to IRC actions. Example:
+    ```
+    @hook("PRIVMSG")
+    def mymyethod(self, message):
+        print("IRC server sent PRIVMSG")
+    ```
+    This stores a list of IRC actions each function is tagged for in method.__tag_hooks. This attribute is scanned
+    during module init and appropriate hooks are set up.
+    """
+    prefix = "."
+
+    def __init__(self, *keywords, require_args=False, allow_private=False):
+        self.keywords = keywords
+        self.require_args = require_args
+        self.allow_private = allow_private
+        self.parsed_cmd = None
+
+    def call(self, method, msg):
+        if len(getargspec(method).args) == 3:
+            method(self.parsed_cmd, msg)
+        else:
+            method(self.parsed_cmd)
+
+    def validate(self, msg, bot):
+        if not self.allow_private and msg.args[0] == "#":
+            return False
+        for keyword in self.keywords:
+            if self._validate_one(msg, keyword):
+                return True
+        return False
+
+    def _validate_one(self, msg, keyword):
+        with_prefix = "{}{}".format(self.prefix, keyword)
+        cmd = PyIRCBot.messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
+        if cmd:
+            self.parsed_cmd = cmd
+            return True
+        return False

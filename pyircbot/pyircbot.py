@@ -15,6 +15,7 @@ from socket import AF_INET, AF_INET6
 from json import load
 import os.path
 import asyncio
+import traceback
 
 
 ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
@@ -67,6 +68,9 @@ class PyIRCBot(object):
         # Load modules
         self.initModules()
 
+        # Internal usage hook
+        self.irc.addHook("PRIVMSG", self._hook_privmsg_internal)
+
     def run(self):
         self.loop = asyncio.get_event_loop()
 
@@ -111,6 +115,16 @@ class PyIRCBot(object):
         for modulename in self.botconfig["modules"]:
             self.loadmodule(modulename)
 
+    def _hook_privmsg_internal(self, msg):
+        """
+        IRC hook handler. Calling point for IRCHook based module hooks. This method is called when a PRIVMSG is
+        received. It tests all hooks in all modules against the message can calls the hooked function on hits.
+        """
+        for module_name, module in self.moduleInstances.items():
+            for hook in module.irchooks:
+                if hook.hook.validate(msg, self):
+                    hook.call(msg)
+
     def importmodule(self, name):
         """Import a module
 
@@ -128,6 +142,7 @@ class PyIRCBot(object):
                 " on failure (usually syntax error in Module code) print an error "
                 self.log.error("Module %s failed to load: " % name)
                 self.log.error("Module load failure reason: " + str(e))
+                traceback.print_exc()
                 return (False, str(e))
         else:
             self.log.warning("Module %s already imported" % name)
@@ -299,9 +314,10 @@ class PyIRCBot(object):
 
         :param moduleName: the module who's data dir we want
         :type moduleName: str"""
-        if not os.path.exists("%s/data/%s" % (self.botconfig["bot"]["datadir"], moduleName)):
-            os.mkdir("%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName))
-        return "%s/data/%s/" % (self.botconfig["bot"]["datadir"], moduleName)
+        module_dir = os.path.join(self.botconfig["bot"]["datadir"], "data", moduleName)
+        if not os.path.exists(module_dir):
+            os.mkdir(module_dir)
+        return module_dir
 
     def getConfigPath(self, moduleName):
         """Return the absolute path for a module's config file
