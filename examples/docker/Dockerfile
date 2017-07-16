@@ -8,7 +8,7 @@ RUN sed -i -e 's/archive.ubuntu.com/mirrors.digitalocean.com/' /etc/apt/sources.
     apt-get update && \
     apt-get install -y python3 python3-setuptools python3-requests curl unzip sqlite3 && \
     easy_install3 pip && \
-    pip3 install praw pytz && \
+    pip3 install praw==5.0.1 pytz && \
     cd /tmp && \
     curl -o bitcoinrpc.tar.gz https://codeload.github.com/dpedu/python-bitcoinrpc/tar.gz/master && \
     tar zxvf bitcoinrpc.tar.gz && \

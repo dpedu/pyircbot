@@ -1,4 +1,10 @@
 {
-    "agent": "pyircbot3 by /u/(changeme)",
+    "reddit": {
+        "user_agent": "pyircbot3 by /u/(changeme)",
+        "client_id": "",
+        "client_secret": "",
+        "username": "",
+        "password": ""
+    },
     "youtube_api_key": ""
 }

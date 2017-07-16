@@ -58,9 +58,8 @@ class LinkTitler(ModuleBase):
                 if submissionId in done:
                     continue
                 done.append(submissionId)
-                # TODO configurable user agent
-                r = praw.Reddit(self.config["agent"])
-                submission = r.get_submission(submission_id=submissionId)
+                r = praw.Reddit(**self.config["reddit"])
+                submission = r.submission(id=submissionId)
                 msg = "👽 \x02\x031,15REDDIT\x0f\x02 :: %(title)s \x02on \x02%(domain)s%(nsfw)s\x02 - points " \
                       "\x02%(points)s\x02 (%(percent)s↑) - comments \x02%(comments)s\x02 -  by \x02%(author)s\x02 on " \
                       "\x02%(date)s\x02" % {
