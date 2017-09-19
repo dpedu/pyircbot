@@ -182,6 +182,7 @@ class PyIRCBot(object):
         self.moduleInstances[name] = getattr(self.modules[name], name)(self, name)
         " load hooks "
         self.loadModuleHooks(self.moduleInstances[name])
+        self.moduleInstances[name].onenable()
 
     def unloadmodule(self, name):
         """Deactivate a module.

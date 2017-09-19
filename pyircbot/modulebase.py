@@ -78,6 +78,10 @@ class ModuleBase:
             if configPath is not None:
                 self.config = PyIRCBot.load(configPath)
 
+    def onenable(self):
+        """Called when the module is enabled"""
+        pass
+
     def ondisable(self):
         """Called when the module should be disabled. Your module should do any sort
         of clean-up operations here like ending child threads or saving data files.
