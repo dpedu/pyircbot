@@ -2,7 +2,7 @@
 Dependencies
 ************
 
-PyIRCBot is designed to run on Python 3.5+, and is usually tested with 3.5.
+PyIRCBot is designed to run on Python 3.6+, and is usually tested with 3.6.
 Python 2.x and older versions of 3.x are not supported.
 
 Although **no** non-core modules are needed to run PyIRCBot in it's most basic
@@ -23,6 +23,7 @@ them.
  - **bitcoinrpc** - https://github.com/jgarzik/python-bitcoinrpc
  - **pymysql** - https://github.com/dpedu/MySQL-for-Python-3 (needs \
    libmysqlclient-dev on your system)
+- **pymsgbus** - http://gitlab.davepedu.com/dave/pymsgbus
 
 At time of writing there is a bug that will prevent the bitcoinrpc module from
 working with Python 3. When  pull `#55`_ is merged, the bug will be fixed.

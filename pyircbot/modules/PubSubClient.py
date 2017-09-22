@@ -27,6 +27,9 @@ class PubSubClient(ModuleBase):
         self.bus_listener_thread.start()
 
     def bus_listener(self):
+        """
+        Listen to the bus for send messages and act on recv
+        """
         sleep(3)
         while True:#TODO clean exit onenable/ondisable etc
             if not self.bus:
@@ -39,10 +42,9 @@ class PubSubClient(ModuleBase):
                 continue
             try:
                 print(channel, "--", message)
-                tag, subcommand, message = message.split(" ", 2)
-                if tag != "default":
+                name, subcommand, message = message.split(" ", 2)
+                if name != self.config.get("name", "default") and name != "default":
                     continue
-
                 if subcommand == "privmsg":
                     dest, message = loads(message)
                     self.bot.act_PRIVMSG(dest, message)
@@ -50,27 +52,42 @@ class PubSubClient(ModuleBase):
                 print_exc()
 
     def publish(self, subchannel, message):
+        """
+        Abstracted callback for proxying irc messages to the bs
+        :param subchannel: event type such as "privmsg"
+        :type subchannel: str
+        :param message: message body
+        :type message: str
+        """
         self.bus.pub(self.config.get("publish").format(subchannel), "{} {}".format("default", message))
 
     @hook("PRIVMSG")
     def bus_privmsg(self, msg):
-        # msg.command msg.args msg.prefix msg.trailing
+        """
+        Relay a privmsg to the event bus
+        """
         self.publish("privmsg", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("JOIN")
     def bus_join(self, msg):
-        # msg.command msg.args msg.prefix msg.trailing
+        """
+        Relay a join message to the event bus
+        """
         self.publish("join", dumps([msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("PART")
     def bus_part(self, msg):
-        # msg.command msg.args msg.prefix msg.trailing
+        """
+        Relay a part message to the event bus
+        """
         self.publish("part", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("PRIVMSG")
     def bus_command(self, msg):
-        # msg.command msg.args msg.prefix msg.trailing
-        # self.publish("privmsg", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
+        """
+        Parse commands and publish as separate channels on the bus. Commands like `.seen nick` will be published
+        to channel `command_seen`.
+        """
         match = COMMAND_RE.match(msg.trailing)
         if match:
             cmd_name = match.groups()[1]
@@ -79,48 +96,18 @@ class PubSubClient(ModuleBase):
                          dumps([msg.args, msg.prefix[0], cmd_args, {"prefix": msg.prefix}]))
 
     def onenable(self):
+        """
+        Connect to the message bus when the module is enabled
+        """
         self.bus = MsgbusSubClient(self.host, int(self.port))
         for channel in self.config.get("subscriptions"):
             self.bus.sub(channel)
         self.publish("sys", "online")
 
     def ondisable(self):
+        """
+        Disconnect to the message bus on shutdown
+        """
         self.log.warning("clean it up")
         self.publish("sys", "offline")
         self.bus.close()
-
-"""
-
-Bot connects to the bus:
-
-    pyircbot_sys default online
-
-Bot disconnects from the bus:
-
-    pyircbot_sys default offline
-
-Bot relaying a privmsg:
-
-    pyircbot_privmsg default [["#clonebot"], "dave-irccloud", "message text",
-                              {"prefix": ["dave-irccloud", "sid36094", "Clk-247B1F43.irccloud.com"]}]
-
-User parts a channel:
-
-    pyircbot_part default [["#clonebot"], "dave-irccloud", "part msg",
-                           {"prefix": ["dave-irccloud", "sid36094", "Clk-247B1F43.irccloud.com"]}]
-
-User joins a channel:
-
-    pyircbot_join default ["dave-irccloud", "#clonebot",
-                           {"prefix": ["dave-irccloud", "sid36094", "Clk-247B1F43.irccloud.com"]}]
-
-User uses the command `.seen testbot`:
-
-    pyircbot_command_seen default [["#clonebot"], "dave-irccloud", "testbot",
-                                   {"prefix": ["dave-irccloud", "sid36094", "Clk-247B1F43.irccloud.com"]}]
-
-# Client sending a message that the bot will relay
-
-    pyircbot_send default privmsg ["#clonebot", "asdf1234"]
-
-"""
