@@ -79,6 +79,8 @@ class IRCCore(object):
                 except (ConnectionResetError, asyncio.streams.IncompleteReadError):
                     traceback.print_exc()
                     break
+                except (UnicodeDecodeError, ):
+                    traceback.print_exc()
             self.fire_hook("_DISCONNECT")
             self.writer.close()
             if self.alive:
