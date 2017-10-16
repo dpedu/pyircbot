@@ -48,7 +48,7 @@ class UnoPlay(ModuleBase):
         """
         if trailing.startswith("["):  # anti-znc buffer playback
             return
-        if self.config["unobot"] not in prefix:
+        if not prefix or self.config["unobot"] not in prefix:
             return
 
         if "You don't have that card" in trailing:
@@ -96,6 +96,10 @@ class UnoPlay(ModuleBase):
         # We need to choose a color
         if "hoose a color %s" % self.bot.get_nick() in trailing:
             self.pickcolor()
+            return
+
+        if "Choose a color" in trailing and self.bot.get_nick() not in trailing:
+            # Waiting for other guy to choose a color
             return
 
         # See if someone passed to us
@@ -281,6 +285,8 @@ class UnoPlay(ModuleBase):
             if self.has_drawn:
                 self.has_drawn = False
                 self.shouldgo = False
+                if self.config["enable_delays"]:
+                    time.sleep(self.config["randomhuman_sleep"])
                 self.bot.act_PRIVMSG(self.config["unochannel"], "pa")
             else:
                 self.has_drawn = True
