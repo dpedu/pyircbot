@@ -98,7 +98,7 @@ class UnoPlay(ModuleBase):
             self.pickcolor()
             return
 
-        if "Choose a color" in trailing and self.bot.get_nick() not in trailing:
+        if "hoose a color" in trailing and self.bot.get_nick() not in trailing:
             # Waiting for other guy to choose a color
             return
 
