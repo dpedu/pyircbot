@@ -92,16 +92,20 @@ class PyIRCBot(object):
         self.log.info("disconnect")
         self.kill(message=message)
 
-    def kill(self, message="Help! Another thread is killing me :("):
-        """Shut down the bot violently
+    def break_connection(self):
+        """Break the connection, e.g. in the case of an unresponsive server"""
+
+    def kill(self, message="Help! Another thread is killing me :(", forever=True):
+        """Close the connection violently
 
         :param sys_exit: True causes sys.exit(0) to be called
         :type sys_exit: bool
         :param message: Quit message
         :type message: str
         """
-        self.closeAllModules()
-        asyncio.run_coroutine_threadsafe(self.irc.kill(message=message), self.loop)
+        if forever:
+            self.closeAllModules()
+        asyncio.run_coroutine_threadsafe(self.irc.kill(message=message, forever=forever), self.loop)
 
     def initModules(self):
         """load modules specified in instance config"""

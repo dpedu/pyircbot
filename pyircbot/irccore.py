@@ -88,13 +88,14 @@ class IRCCore(object):
                 logging.info("Reconnecting in 3s...")
                 await asyncio.sleep(3)
 
-    async def kill(self, message="Help! Another thread is killing me :("):
+    async def kill(self, message="Help! Another thread is killing me :(", forever=True):
         """Send quit message, flush queue, and close the socket
 
         :param message: Quit message to send before disconnecting
         :type message: str
         """
-        self.alive = False
+        if forever:
+            self.alive = False
         self.act_QUIT(message)  # TODO will this hang if the socket is having issues?
         await self.writer.drain()
         self.writer.close()
