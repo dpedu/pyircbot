@@ -79,7 +79,6 @@ class Calc(ModuleBase):
         seconds = int(remaining - (minutes * 60))
         return "Please wait %s minute(s) and %s second(s)." % (minutes, seconds)
 
-    # @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)')
     @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)', types=['PRIVMSG'])
     def cmd_calc(self, match, message):
         word, changeit, value = match.groups()

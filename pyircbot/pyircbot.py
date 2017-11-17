@@ -92,9 +92,6 @@ class PyIRCBot(object):
         self.log.info("disconnect")
         self.kill(message=message)
 
-    def break_connection(self):
-        """Break the connection, e.g. in the case of an unresponsive server"""
-
     def kill(self, message="Help! Another thread is killing me :(", forever=True):
         """Close the connection violently
 
