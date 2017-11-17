@@ -1,5 +1,5 @@
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, ModuleHook, MissingDependancyException, regex, command
 import datetime
 import time
 import math
@@ -9,13 +9,11 @@ class Calc(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
 
-        self.hooks = [ModuleHook("PRIVMSG", self.calc)]
         self.timers = {}
 
         self.sqlite = self.bot.getBestModuleForService("sqlite")
         if self.sqlite is None:
-            self.log.error("Calc: SQLIite service is required.")
-            return
+            raise MissingDependancyException("Calc: SQLIite service is required.")
 
         self.sql = self.sqlite.opendb("calc.db")
 
@@ -81,105 +79,94 @@ class Calc(ModuleBase):
         seconds = int(remaining - (minutes * 60))
         return "Please wait %s minute(s) and %s second(s)." % (minutes, seconds)
 
-    def calc(self, args, prefix, trailing):
-        # Channel only
-        if not args[0][0] == "#":
-            return
-        sender = self.bot.decodePrefix(prefix)
+    # @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)')
+    @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)', types=['PRIVMSG'])
+    def cmd_calc(self, match, message):
+        word, changeit, value = match.groups()
+        if word:
+            word = word.strip()
+        if value:
+            value = value.strip()
+        channel = message.args[0]
+        sender = message.prefix.nick
 
-        foundCalc = False
-        for cmd in self.config["cmd_calc"]:
-            if trailing[0:len(cmd)] == cmd and (len(trailing) == len(cmd) or
-               (trailing[len(cmd):len(cmd) + 1] in [" ", "="])):
-                foundCalc = True
-
-        if foundCalc:
-            calcCmd = trailing[len(cmd) - 1:].strip()
-            if "=" in calcCmd[1:]:
-                " Add a new calc "
-                calcWord, calcDefinition = calcCmd.split("=", 1)
-                calcWord = calcWord.strip()
-                calcDefinition = calcDefinition.strip()
-                if self.config["allowDelete"] and calcDefinition == "":
-                    result = self.deleteCalc(args[0], calcWord)
-                    if result:
-                        self.bot.act_PRIVMSG(args[0], "Calc deleted, %s." % sender.nick)
-                    else:
-                        self.bot.act_PRIVMSG(args[0], "Sorry %s, I don't know what '%s' is." % (sender.nick, calcWord))
+        if word and changeit:
+            # Add a new calc or delete
+            if self.config["allowDelete"] and not value:
+                result = self.deleteCalc(channel, word)
+                if result:
+                    self.bot.act_PRIVMSG(channel, "Calc deleted, %s." % sender)
                 else:
-                    if self.config["delaySubmit"] > 0 and self.timeSince(args[0], "add") < self.config["delaySubmit"]:
-                        self.bot.act_PRIVMSG(sender.nick, self.remainingToStr(self.config["delaySubmit"],
-                                                                              self.timeSince(args[0], "add")))
-                    else:
-                        self.addNewCalc(args[0], calcWord, calcDefinition, prefix)
-                        self.bot.act_PRIVMSG(args[0], "Thanks for the info, %s." % sender.nick)
-                        self.updateTimeSince(args[0], "add")
-            elif len(calcCmd) > 0:
-                " Lookup the word in calcCmd "
-
-                if self.config["delayCalcSpecific"] > 0 and \
-                   self.timeSince(args[0], "calcspec") < self.config["delayCalcSpecific"]:
-                    self.bot.act_PRIVMSG(sender.nick, self.remainingToStr(self.config["delayCalcSpecific"],
-                                                                          self.timeSince(args[0], "calcspec")))
-                else:
-                    randCalc = self.getSpecificCalc(args[0], calcCmd)
-                    if randCalc is None:
-                        self.bot.act_PRIVMSG(args[0], "Sorry %s, I don't know what '%s' is." % (sender.nick, calcCmd))
-                    else:
-                        self.bot.act_PRIVMSG(args[0], "%s \x03= %s \x0314[added by: %s]" %
-                                             (randCalc["word"], randCalc["definition"], randCalc["by"]))
-                        self.updateTimeSince(args[0], "calcspec")
+                    self.bot.act_PRIVMSG(channel, "Sorry %s, I don't know what '%s' is." % (sender, word))
             else:
-                if self.config["delayCalc"] > 0 and self.timeSince(args[0], "calc") < self.config["delayCalc"]:
-                    self.bot.act_PRIVMSG(sender.nick, self.remainingToStr(self.config["delayCalc"],
-                                                                          self.timeSince(args[0], "calc")))
+                if self.config["delaySubmit"] > 0 and self.timeSince(channel, "add") < self.config["delaySubmit"]:
+                    self.bot.act_PRIVMSG(channel, self.remainingToStr(self.config["delaySubmit"],
+                                                                      self.timeSince(channel, "add")))
                 else:
-                    randCalc = self.getRandomCalc(args[0])
-                    if randCalc is None:
-                        self.bot.act_PRIVMSG(args[0], "This channel has no calcs, %s :(" % (sender.nick,))
-                    else:
-                        self.bot.act_PRIVMSG(args[0], "%s \x03= %s \x0314[added by: %s]" % (randCalc["word"],
-                                             randCalc["definition"], randCalc["by"]))
-                        self.updateTimeSince(args[0], "calc")
-            return
+                    self.addNewCalc(channel, word, value, sender, message.prefix.hostname)
+                    self.bot.act_PRIVMSG(channel, "Thanks for the info, %s." % sender)
+                    self.updateTimeSince(channel, "add")
+        elif word:
+            # Lookup the word in calc
 
-        cmd = self.bot.messageHasCommand(self.config["cmd_match"], trailing, True)
-        if cmd:
-            if self.config["delayMatch"] > 0 and self.timeSince(args[0], "match") < self.config["delayMatch"]:
-                self.bot.act_PRIVMSG(sender.nick, self.remainingToStr(self.config["delayMatch"],
-                                                                      self.timeSince(args[0], "match")))
+            if self.config["delayCalcSpecific"] > 0 and \
+               self.timeSince(channel, "calcspec") < self.config["delayCalcSpecific"]:
+                self.bot.act_PRIVMSG(sender, self.remainingToStr(self.config["delayCalcSpecific"],
+                                                                 self.timeSince(channel, "calcspec")))
             else:
-                term = cmd.args_str
-                if not term.strip():
-                    return
-                c = self.sql.getCursor()
-                channelId = self.getChannelId(args[0])
-                c.execute("SELECT * FROM `calc_words` WHERE `word` LIKE ? AND `channel`=? ORDER BY `word` ASC ;",
-                          ("%%" + term + "%%", channelId))
-                rows = c.fetchall()
-                if not rows:
-                    self.bot.act_PRIVMSG(args[0], "%s: Sorry, no matches" % sender.nick)
+                randCalc = self.getSpecificCalc(channel, word)
+                if randCalc is None:
+                    self.bot.act_PRIVMSG(channel, "Sorry %s, I don't know what '%s' is." % (sender, word))
                 else:
-                    matches = []
-                    for row in rows[0:10]:
-                        if not row:
-                            break
-                        matches.append(row["word"])
-                    self.bot.act_PRIVMSG(args[0], "%s: %s match%s (%s\x03)" %
-                                         (sender.nick, len(matches), "es" if len(matches) > 1 else
+                    self.bot.act_PRIVMSG(channel, "%s \x03= %s \x0314[added by: %s]" %
+                                         (randCalc["word"], randCalc["definition"], randCalc["by"]))
+                    self.updateTimeSince(channel, "calcspec")
+        else:
+            if self.config["delayCalc"] > 0 and self.timeSince(channel, "calc") < self.config["delayCalc"]:
+                self.bot.act_PRIVMSG(sender, self.remainingToStr(self.config["delayCalc"],
+                                                                 self.timeSince(channel, "calc")))
+            else:
+                randCalc = self.getRandomCalc(channel)
+                if randCalc is None:
+                    self.bot.act_PRIVMSG(channel, "This channel has no calcs, %s :(" % (sender,))
+                else:
+                    self.bot.act_PRIVMSG(channel, "%s \x03= %s \x0314[added by: %s]" % (randCalc["word"],
+                                         randCalc["definition"], randCalc["by"]))
+                    self.updateTimeSince(channel, "calc")
+
+    @command("match", require_args=True)
+    def cmd_match(self, cmd, msg):
+        if self.config["delayMatch"] > 0 and self.timeSince(msg.args[0], "match") < self.config["delayMatch"]:
+            self.bot.act_PRIVMSG(msg.prefix.nick, self.remainingToStr(self.config["delayMatch"],
+                                                                      self.timeSince(msg.args[0], "match")))
+        else:
+            term = cmd.args_str
+            if not term.strip():
+                return
+            c = self.sql.getCursor()
+            channelId = self.getChannelId(msg.args[0])
+            c.execute("SELECT * FROM `calc_words` WHERE `word` LIKE ? AND `channel`=? ORDER BY `word` ASC ;",
+                      ("%%" + term + "%%", channelId))
+            rows = c.fetchall()
+            if not rows:
+                self.bot.act_PRIVMSG(msg.args[0], "%s: Sorry, no matches" % msg.prefix.nick)
+            else:
+                matches = []
+                for row in rows[0:10]:
+                    if not row:
+                        break
+                    matches.append(row["word"])
+                self.bot.act_PRIVMSG(msg.args[0], "%s: %s match%s (%s\x03)" %
+                                     (msg.prefix.nick, len(matches), "es" if len(matches) > 1 else
                                                                      "", ", \x03".join(matches)))
-                    self.updateTimeSince(args[0], "match")
+                self.updateTimeSince(msg.args[0], "match")
 
-    def addNewCalc(self, channel, word, definition, prefix):
-        sender = self.bot.decodePrefix(prefix)
-
+    def addNewCalc(self, channel, word, definition, name, host):
         " Find the channel ID"
         channelId = self.getChannelId(channel)
 
         " Check if we need to add a user"
         c = self.sql.getCursor()
-        name = sender.nick
-        host = sender.hostname
         c.execute("SELECT * FROM `calc_addedby` WHERE `username`=? AND `userhost`=? ;", (name, host))
         rows = c.fetchall()
         if not rows:
@@ -201,7 +188,6 @@ class Calc(ModuleBase):
         c.execute("INSERT INTO `calc_definitions` (`word`, `definition`, `addedby`, `date`, `status`) VALUES "
                   "(?, ?, ?, ?, ?) ;", (wordId, definition, addedId, datetime.datetime.now(), 'approved',))
         c.close()
-        pass
 
     def getSpecificCalc(self, channel, word):
         c = self.sql.getCursor()

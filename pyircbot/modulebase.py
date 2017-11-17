@@ -6,10 +6,11 @@
 
 """
 
+import re
+import os
 import logging
 from .pyircbot import PyIRCBot
 from inspect import getargspec
-import os
 
 
 class ModuleBase:
@@ -156,6 +157,12 @@ class irchook(object):
             getattr(func, ATTR_COMMAND_HOOK).extend(self)
         return func
 
+    def call(self, method, msg):
+        """
+        Call the hooked function
+        """
+        method(msg)  # TODO is this actually a sane base?
+
     def validate(self, msg, bot):
         """
         Return True if the message should be passed on. False otherwise.
@@ -197,7 +204,7 @@ class command(irchook):
 
     def call(self, method, msg):
         """
-        Internal use. Triggers the hooked function
+        Overridden to make the msg param optional
         """
         if len(getargspec(method).args) == 3:
             return method(self.parsed_cmd, msg)
@@ -227,3 +234,66 @@ class command(irchook):
             self.parsed_cmd = cmd
             return True
         return False
+
+
+class regex(irchook):
+    """
+    Decorator for calling module methods when a message matches a regex.
+
+    .. code-block:: python
+
+        @regex(r'^foobar$')
+        def cmd_foobar(self, matches, msg):
+            print("Someone's message was exactly "foobar" ({}) in channel {}".format(msg.message, msg.args[0]))
+
+    This stores a list of IRC actions each function is tagged for in method.__tag_regexes. This attribute is scanned
+    during module init and appropriate hooks are set up.
+
+    :param regexps: expressions to match for
+    :type keywords: str
+    :param allow_private: enable matching in private messages
+    :type allow_private: bool
+    :param types: list of irc commands such as PRIVMSG to accept
+    :type types: list
+    """
+
+    def __init__(self, *regexps, allow_private=False, types=None):
+        self.regexps = [re.compile(r) for r in regexps]
+        self.allow_private = allow_private
+        self.matches = None
+        self.types = types
+
+    def call(self, method, msg):
+        """
+        Overridden to pass matches and make an arg optional
+        """
+        if len(getargspec(method).args) == 3:
+            return method(self.matches, msg)
+        else:
+            return method(self.matches)
+
+    def validate(self, msg, bot):
+        """
+        Test a message and return true if matched.
+
+        :param msg: message to test against
+        :type msg: pyircbot.irccore.IRCEvent
+        :param bot: reference to main pyircbot
+        :type bot: pyircbot.pyircbot.PyIRCBot
+        """
+        if self.types and msg.command not in self.types:
+            return False
+        if not self.allow_private and msg.args[0] == "#":
+            return False
+        for exp in self.regexps:
+            matches = exp.search(msg.trailing)
+            if matches:
+                self.matches = matches
+                return True
+        return False
+
+
+class MissingDependancyException(Exception):
+    """
+    Exception expressing that a pyricbot module could not find a required module
+    """
