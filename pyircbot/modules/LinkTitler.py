@@ -79,7 +79,8 @@ class LinkTitler(ModuleBase):
         # subreddits
 
         # generic <title>
-        matches = re.compile(r'(https?://([a-zA-Z0-9_\-\.]+/([^ ]+)?))').findall(trailing)
+        matches = re.compile(r'(https?://([a-zA-Z0-9_\-\.]+/([A-Za-z0-9\-\._~:\/?#[]@!$&\'\(\)\*\+\,\;=]+)?))') \
+            .findall(trailing)
         if matches:
             done = []
             for match in matches:
