@@ -4,6 +4,7 @@
 This module provides ".text-<name> <message>" commands that send SMS messages
 via the Twilio api.
 
+
 Config
 ------
 
@@ -19,6 +20,11 @@ Config
             "guy1": "+11111111111",
             "guy2": "+12222222222"
         },
+        "limit": {
+            "enable": true,
+            "period": 900,
+            "max": 5
+        }
     }
 
 .. cmdoption:: account_sid
@@ -45,6 +51,19 @@ Config
 
     Dict of names to phone numbers. Names must be a-zA-Z0-9 and numbers match the format shown above.
 
+.. cmdoption:: limit.enable
+
+    Enable or disable rate limiting. Rate limiting is controlled as a "burst bucket." If enabled, sending an SMS
+    requires 1 and removes one point from the bucket.
+
+.. cmdoption:: limit.period
+
+    Every `limit.period`, a virtual point is added to the bucket.
+
+.. cmdoption:: limit.max
+
+    When adding a point the bucket, the point will be discarded if the bucket already has `limit.max` points.
+
 
 Twilio Setup
 ------------
@@ -55,6 +74,7 @@ URL.
 
 The webhook listener listens on `/app/gotsms`, so an example webhook URL would
 be `http://1.2.3.4:3000/app/gotsms`.
+
 
 Class Reference
 ---------------

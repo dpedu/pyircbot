@@ -7,5 +7,10 @@
     "contacts": {
         "guy1": "+11111111111",
         "guy2": "+12222222222"
+    },
+    "limit": {
+        "enable": true,
+        "period": 900,
+        "max": 5
     }
 }

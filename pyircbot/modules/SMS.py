@@ -5,6 +5,8 @@
     :synopsis: SMS client script (requires Twilio account)
 """
 
+from time import time
+from math import floor
 from pyircbot.modulebase import ModuleBase, regex
 import cherrypy
 from threading import Thread
@@ -62,6 +64,39 @@ class SMS(ModuleBase):
         self.apithread = None
         self.twilio = Client(self.config["account_sid"], self.config["auth_token"])
 
+        # limit-related vars
+        # How many messages can be bursted
+        self.bucket_max = int(self.config["limit"]["max"])
+        # burst bucket, initial value is 1 or half the max, whichever is more
+        self.bucket = max(1, self.bucket_max / 2)
+        # how often the bucket has 1 item added
+        self.bucket_period = int(self.config["limit"]["period"])
+        # last time the burst bucket was filled
+        self.bucket_lastfill = int(time())
+
+    def check_rate_limit(self):
+        """
+        Rate limiting via a 'burst bucket'. This method is called before sending and returns true or false depending on
+        if the action is allowed.
+        """
+
+        # First, update the bucket
+        # Check if $period time has passed since the bucket was filled
+        since_fill = int(time()) - self.bucket_lastfill
+        if since_fill > self.bucket_period:
+            # How many complete points are credited
+            fills = floor(since_fill / self.bucket_period)
+            self.bucket += fills
+            if self.bucket > self.bucket_max:
+                self.bucket = self.bucket_max
+            # Advance the lastfill time appropriately
+            self.bucket_lastfill += self.bucket_period * fills
+
+        if self.bucket >= 1:
+            self.bucket -= 1
+            return True
+        return False
+
     def api(self):
         """
         Run the webhook listener and block
@@ -112,6 +147,11 @@ class SMS(ModuleBase):
             return  # TODO help text
         if contact not in self.config["contacts"].keys():
             return  # TODO invalid contact
+
+        if self.config["limit"]["enable"]:
+            if not self.check_rate_limit():
+                self.bot.act_PRIVMSG(msg.args[0], "Sorry, try again later")
+                return
 
         try:
             self.twilio.api.account.messages.create(to=self.config["contacts"][contact],
