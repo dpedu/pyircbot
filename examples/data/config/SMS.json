@@ -1,0 +1,11 @@
+{
+    "account_sid": "xxxx",
+    "auth_token": "xxxx",
+    "number": "+10000000000",
+    "api_port": 3000,
+    "channel": "#foo",
+    "contacts": {
+        "guy1": "+11111111111",
+        "guy2": "+12222222222"
+    }
+}

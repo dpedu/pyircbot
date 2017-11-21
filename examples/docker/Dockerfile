@@ -7,7 +7,7 @@ CMD ["-c", "config.json"]
 RUN apt-get update && \
     apt-get install -y python3 python3-setuptools python3-requests curl unzip sqlite3 && \
     easy_install3 pip && \
-    pip3 install praw==5.0.1 pytz && \
+    pip3 install praw==5.0.1 pytz cherrypy twilio==6.9.0 && \
     cd /tmp && \
     curl -o msgbus.tar.gz 'http://gitlab.davepedu.com/dave/pymsgbus/repository/archive.tar.gz?ref=master' && \
     mkdir pymsgbus && tar zxvf msgbus.tar.gz --strip-components 1 -C pymsgbus/ &&\

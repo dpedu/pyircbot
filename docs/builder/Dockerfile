@@ -3,7 +3,7 @@ FROM ubuntu:artful
 RUN apt-get update ; \
     apt-get install -y python3 python3-sphinx python3-setuptools python3-dev python3-requests python3-pip python3-lxml make wget unzip libmysqlclient-dev
 
-RUN pip3 install pytz praw releases
+RUN pip3 install pytz praw releases cherrypy twilio==6.9.0
 
 RUN cd /tmp ; \
     wget -O msgbus.tar.gz 'http://gitlab.davepedu.com/dave/pymsgbus/repository/archive.tar.gz?ref=master' && \
