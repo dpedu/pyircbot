@@ -93,7 +93,6 @@ Client sending a message that the bot will relay
 
     pyircbot_send default privmsg ["#clonebot", "asdf1234"]
 
-"""
 
 Example Programs
 ----------------

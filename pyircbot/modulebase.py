@@ -251,9 +251,6 @@ class regex(hook):
         def cmd_foobar(self, matches, msg):
             print("Someone's message was exactly "foobar" ({}) in channel {}".format(msg.message, msg.args[0]))
 
-    This stores a list of IRC actions each function is tagged for in method.__tag_regexes. This attribute is scanned
-    during module init and appropriate hooks are set up.
-
     :param regexps: expressions to match for
     :type keywords: str
     :param allow_private: enable matching in private messages

@@ -369,14 +369,14 @@ class PyIRCBot(object):
         argsStart = len(command)
         args = ""
         if argsStart > 0:
-            args = message[argsStart + 1:]
+            args = message[argsStart + 1:].strip()
 
-        if requireArgs and args.strip() == '':
+        if requireArgs and args == '':
             return False
 
         # Verified! Return the set.
         return ParsedCommand(command,
-                             args.split(" "),
+                             args.split(" ") if args else [],
                              args,
                              message)
 

@@ -7,7 +7,9 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modules.ModInfo import info
+from pyircbot.modulebase import ModuleBase, command, hook
+from contextlib import closing
 import sqlite3
 import time
 
@@ -15,7 +17,6 @@ import time
 class Seen(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("PRIVMSG", self.lastSeen)]
         # if the database doesnt exist, it will be created
         sql = self.getSql()
         c = sql.cursor()
@@ -27,31 +28,32 @@ class Seen(ModuleBase):
             c.execute("CREATE TABLE `seen` (`nick` VARCHAR(32), `date` INTEGER, PRIMARY KEY(`nick`))")
         self.x = "asdf"
 
-    def lastSeen(self, args, prefix, trailing):
+    @hook("PRIVMSG")
+    def recordSeen(self, message, command):
         # using a message to update last seen, also, the .seen query
-        prefixObj = self.bot.decodePrefix(prefix)
-        nick = prefixObj.nick
-        sql = self.getSql()
-        c = sql.cursor()
-        # update or add the user's row
         datest = str(time.time() + (int(self.config["add_hours"]) * 60 * 60))
-        c.execute("REPLACE INTO `seen` (`nick`, `date`) VALUES (?, ?)", (nick.lower(), datest))
-        # self.log.info("Seen: %s on %s" % (nick.lower(), datest))
-        sql.commit()
-        if trailing.startswith(".seen"):
-            cmdargs = trailing.split(" ")
+        sql = self.getSql()
+        with closing(sql.cursor()) as c:
+            # update or add the user's row
+            c.execute("REPLACE INTO `seen` (`nick`, `date`) VALUES (?, ?)", (message.prefix.nick.lower(), datest))
+            # self.log.info("Seen: %s on %s" % (nick.lower(), datest))
+            sql.commit()
+
+    @info("seen <nick>       print last time user was seen", cmds=["seen"])
+    @command("seen", require_args=True)
+    def lastSeen(self, message, command):
+        sql = self.getSql()
+        searchnic = command.args[0].lower()
+        with closing(sql.cursor()) as c:
             # query the DB for the user
-            if len(cmdargs) >= 2:
-                searchnic = cmdargs[1].lower()
-                c.execute("SELECT * FROM `seen` WHERE `nick`= ? ", [searchnic])
-                rows = c.fetchall()
-                if len(rows) == 1:
-                    self.bot.act_PRIVMSG(args[0], "I last saw %s on %s (%s)." %
-                                         (cmdargs[1], time.strftime("%m/%d/%y at %I:%M %p",
-                                          time.localtime(rows[0]['date'])), self.config["timezone"]))
-                else:
-                    self.bot.act_PRIVMSG(args[0], "Sorry, I haven't seen %s!" % cmdargs[1])
-        c.close()
+            c.execute("SELECT * FROM `seen` WHERE `nick`= ? ", [searchnic])
+            rows = c.fetchall()
+            if len(rows) == 1:
+                self.bot.act_PRIVMSG(message.args[0], "I last saw %s on %s (%s)." %
+                                     (command.args[0], time.strftime("%m/%d/%y at %I:%M %p",
+                                      time.localtime(rows[0]['date'])), self.config["timezone"]))
+            else:
+                self.bot.act_PRIVMSG(message.args[0], "Sorry, I haven't seen %s!" % command.args[0])
 
     def getSql(self):
         # return a SQL reference to the database
@@ -66,9 +68,3 @@ class Seen(ModuleBase):
         for idx, col in enumerate(cursor.description):
             d[col[0]] = row[idx]
         return d
-
-    def test(self, arg):
-        print("TEST: %s" % arg)
-        print("self.x = %s" % self.x)
-        return arg
-

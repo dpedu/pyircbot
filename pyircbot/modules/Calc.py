@@ -1,5 +1,6 @@
 
 from pyircbot.modulebase import ModuleBase, ModuleHook, MissingDependancyException, regex, command
+from pyircbot.modules.ModInfo import info
 import datetime
 import time
 import math
@@ -79,6 +80,7 @@ class Calc(ModuleBase):
         seconds = int(remaining - (minutes * 60))
         return "Please wait %s minute(s) and %s second(s)." % (minutes, seconds)
 
+    @info("quote [key[ =[ value]]]     set or update facts", cmds=["quote"])
     @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)', types=['PRIVMSG'])
     def cmd_calc(self, message, match):
         word, changeit, value = match.groups()
