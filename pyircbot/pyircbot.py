@@ -69,7 +69,7 @@ class PyIRCBot(object):
         self.initModules()
 
         # Internal usage hook
-        self.irc.addHook("PRIVMSG", self._hook_privmsg_internal)
+        self.irc.addHook("PRIVMSG", self._irchook_internal)
 
     def run(self):
         self.loop = asyncio.get_event_loop()
@@ -116,15 +116,16 @@ class PyIRCBot(object):
         for modulename in self.botconfig["modules"]:
             self.loadmodule(modulename)
 
-    def _hook_privmsg_internal(self, msg):
+    def _irchook_internal(self, msg):
         """
-        IRC hook handler. Calling point for IRCHook based module hooks. This method is called when a PRIVMSG is
+        IRC hook handler. Calling point for IRCHook based module hooks. This method is called when a message is
         received. It tests all hooks in all modules against the message can calls the hooked function on hits.
         """
         for module_name, module in self.moduleInstances.items():
             for hook in module.irchooks:
-                if hook.hook.validate(msg, self):
-                    hook.call(msg)
+                validation = hook.validator(msg, self)
+                if validation:
+                    hook.method(msg, validation)
 
     def importmodule(self, name):
         """Import a module

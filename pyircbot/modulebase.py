@@ -10,7 +10,6 @@ import re
 import os
 import logging
 from .pyircbot import PyIRCBot
-from inspect import getargspec
 
 
 class ModuleBase:
@@ -30,7 +29,7 @@ class ModuleBase:
         """Reference to the master PyIRCBot object"""
 
         self.hooks = []
-        """Hooks (aka listeners) this module has"""
+        """Low-level protocol hooks this module has"""
 
         self.irchooks = []
         """IRC Hooks this module has"""
@@ -61,12 +60,9 @@ class ModuleBase:
             attr = getattr(self, attr_name)
             if not callable(attr):
                 continue
-            if hasattr(attr, ATTR_ACTION_HOOK):
-                for action in getattr(attr, ATTR_ACTION_HOOK):
-                    self.hooks.append(ModuleHook(action, attr))
-            if hasattr(attr, ATTR_COMMAND_HOOK):
-                for action in getattr(attr, ATTR_COMMAND_HOOK):
-                    self.irchooks.append(IRCHook(action, attr))
+            if hasattr(attr, ATTR_ALL_HOOKS):
+                for hook in getattr(attr, ATTR_ALL_HOOKS):
+                    self.irchooks.append(IRCHook(hook.validate, attr))
 
     def loadConfig(self):
         """
@@ -110,19 +106,61 @@ class ModuleHook:
 
 
 class IRCHook:
-    def __init__(self, hook, method):
-        self.hook = hook
+    def __init__(self, validator, method):
+        """
+        :param validator: method accpeting an IRCEvent and returning false-like or true-like depending on match
+        :param method: module method
+        """
+        self.validator = validator
         self.method = method
 
-    def call(self, msg):
-        self.hook.call(self.method, msg)
+
+ATTR_ALL_HOOKS = "__hooks"
 
 
-ATTR_ACTION_HOOK = "__tag_hooks"
-ATTR_COMMAND_HOOK = "__tag_commands"
+class AbstractHook(object):
+    """
+    Decorator for calling module methods in response to arbitrary IRC actions. Example:
+
+    .. code-block:: python
+
+        @myhooksubclass(<conditions>)
+        def mymyethod(self, message, extra):
+            print("IRC server sent something that matched <conditions>")
+
+    This stores some record of the above filtering in an attribute of the decorated method, such as method.__tag_hooks.
+    This attribute is scanned during module init and appropriate hooks are set up.
+
+    Hooks implement a validate() method that return a true-like or false-like item, dictating whether the hooked method
+    will be called (with the message and true-like object as parameters)
+
+    :param args: irc protocol event to listen for. See :py:meth:`pyircbot.irccore.IRCCore.initHooks` for a complete list
+    :type args: str
+    """
+    def __init__(self):
+        # todo do i need this here for the docstring?
+        pass
+
+    def __call__(self, func):
+        """
+        Store a list of such hooks in an attribute of the decorated method
+        """
+        if not hasattr(func, ATTR_ALL_HOOKS):
+            setattr(func, ATTR_ALL_HOOKS, [self])
+        else:
+            getattr(func, ATTR_ALL_HOOKS).extend(self)
+        return func
+
+    def validate(self, msg, bot):
+        """
+        Return a true-like item if the hook matched. Otherwise, false.
+        :param msg: IRCEvent instance of the message
+        :param bot: reference to the bot TODO remove this
+        """
+        return True
 
 
-class hook(object):
+class hook(AbstractHook):
     """
     Decorator for calling module methods in response to IRC actions. Example:
 
@@ -141,36 +179,12 @@ class hook(object):
     def __init__(self, *args):
         self.commands = args
 
-    def __call__(self, func):
-        if not hasattr(func, ATTR_ACTION_HOOK):
-            setattr(func, ATTR_ACTION_HOOK, list(self.commands))
-        else:
-            getattr(func, ATTR_ACTION_HOOK).extend(self.commands)
-        return func
-
-
-class irchook(object):
-    def __call__(self, func):
-        if not hasattr(func, ATTR_COMMAND_HOOK):
-            setattr(func, ATTR_COMMAND_HOOK, [self])
-        else:
-            getattr(func, ATTR_COMMAND_HOOK).extend(self)
-        return func
-
-    def call(self, method, msg):
-        """
-        Call the hooked function
-        """
-        method(msg)  # TODO is this actually a sane base?
-
     def validate(self, msg, bot):
-        """
-        Return True if the message should be passed on. False otherwise.
-        """
-        return True
+        if msg.command in self.commands:
+            return True
 
 
-class command(irchook):
+class command(hook):
     """
     Decorator for calling module methods when a command is parsed from chat
 
@@ -197,19 +211,11 @@ class command(irchook):
     """
 
     def __init__(self, *keywords, require_args=False, allow_private=False):
+        super().__init__("PRIVMSG")
         self.keywords = keywords
         self.require_args = require_args
         self.allow_private = allow_private
         self.parsed_cmd = None
-
-    def call(self, method, msg):
-        """
-        Overridden to make the msg param optional
-        """
-        if len(getargspec(method).args) == 3:
-            return method(self.parsed_cmd, msg)
-        else:
-            return method(self.parsed_cmd)
 
     def validate(self, msg, bot):
         """
@@ -220,23 +226,22 @@ class command(irchook):
         :param bot: reference to main pyircbot
         :type bot: pyircbot.pyircbot.PyIRCBot
         """
+        if not super().validate(msg, bot):
+            return False
         if not self.allow_private and msg.args[0] == "#":
             return False
         for keyword in self.keywords:
-            if self._validate_one(msg, keyword):
-                return True
+            single = self._validate_one(msg, keyword)
+            if single:
+                return single
         return False
 
     def _validate_one(self, msg, keyword):
         with_prefix = "{}{}".format(self.prefix, keyword)
-        cmd = PyIRCBot.messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
-        if cmd:
-            self.parsed_cmd = cmd
-            return True
-        return False
+        return PyIRCBot.messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
 
 
-class regex(irchook):
+class regex(hook):
     """
     Decorator for calling module methods when a message matches a regex.
 
@@ -258,19 +263,10 @@ class regex(irchook):
     """
 
     def __init__(self, *regexps, allow_private=False, types=None):
+        super().__init__("PRIVMSG")
         self.regexps = [re.compile(r) for r in regexps]
         self.allow_private = allow_private
-        self.matches = None
         self.types = types
-
-    def call(self, method, msg):
-        """
-        Overridden to pass matches and make an arg optional
-        """
-        if len(getargspec(method).args) == 3:
-            return method(self.matches, msg)
-        else:
-            return method(self.matches)
 
     def validate(self, msg, bot):
         """
@@ -281,6 +277,8 @@ class regex(irchook):
         :param bot: reference to main pyircbot
         :type bot: pyircbot.pyircbot.PyIRCBot
         """
+        if not super().validate(msg, bot):
+            return False
         if self.types and msg.command not in self.types:
             return False
         if not self.allow_private and msg.args[0] == "#":
@@ -288,8 +286,7 @@ class regex(irchook):
         for exp in self.regexps:
             matches = exp.search(msg.trailing)
             if matches:
-                self.matches = matches
-                return True
+                return matches
         return False
 
 

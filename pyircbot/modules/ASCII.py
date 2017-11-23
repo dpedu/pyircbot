@@ -33,7 +33,7 @@ class ASCII(ModuleBase):
 
     # @hook("PRIVMSG")
     @command("listascii")
-    def cmd_listascii(self, cmd, msg):
+    def cmd_listascii(self, msg, cmd):
         """
         List available asciis
         """
@@ -48,7 +48,7 @@ class ASCII(ModuleBase):
         return
 
     @command("ascii", require_args=True)
-    def cmd_ascii(self, cmd, msg):
+    def cmd_ascii(self, msg, cmd):
         # import ipdb
         # ipdb.set_trace()
         # Send out an ascii
@@ -70,7 +70,7 @@ class ASCII(ModuleBase):
             return
 
     @command("stopascii")
-    def cmd_stopascii(self, cmd, msg):
+    def cmd_stopascii(self, msg, cmd):
         """
         Command to stop the running ascii in a given channel
         """
@@ -120,7 +120,7 @@ class ASCII(ModuleBase):
         del self.killed_channels[channel]
 
     @command("asciiedit", require_args=True)
-    def cmd_asciiedit(self, cmd, msg):
+    def cmd_asciiedit(self, msg, cmd):
         ascii_name = cmd.args.pop(0)
         try:
             with open(self.getFilePath(ascii_name + ".json")) as f:

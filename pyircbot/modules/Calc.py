@@ -80,7 +80,7 @@ class Calc(ModuleBase):
         return "Please wait %s minute(s) and %s second(s)." % (minutes, seconds)
 
     @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)', types=['PRIVMSG'])
-    def cmd_calc(self, match, message):
+    def cmd_calc(self, message, match):
         word, changeit, value = match.groups()
         if word:
             word = word.strip()
@@ -134,7 +134,7 @@ class Calc(ModuleBase):
                     self.updateTimeSince(channel, "calc")
 
     @command("match", require_args=True)
-    def cmd_match(self, cmd, msg):
+    def cmd_match(self, msg, cmd):
         if self.config["delayMatch"] > 0 and self.timeSince(msg.args[0], "match") < self.config["delayMatch"]:
             self.bot.act_PRIVMSG(msg.prefix.nick, self.remainingToStr(self.config["delayMatch"],
                                                                       self.timeSince(msg.args[0], "match")))
