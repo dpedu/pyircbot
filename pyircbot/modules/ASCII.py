@@ -5,7 +5,7 @@
     :synopsis: Spam chat with awesome ascii texts
 """
 
-from pyircbot.modulebase import ModuleBase, hook, command
+from pyircbot.modulebase import ModuleBase, command
 from threading import Thread
 from glob import iglob
 from collections import defaultdict
@@ -14,6 +14,7 @@ import re
 import os
 import json
 from textwrap import wrap
+from pyircbot.modules.ModInfo import info
 
 
 RE_ASCII_FNAME = re.compile(r'^[a-zA-Z0-9\-_]+$')
@@ -31,7 +32,7 @@ class ASCII(ModuleBase):
         self.running_asciis = defaultdict(lambda: None)
         self.killed_channels = defaultdict(lambda: False)
 
-    # @hook("PRIVMSG")
+    @info("listascii         list available asciis", cmds=["listascii"])
     @command("listascii")
     def cmd_listascii(self, msg, cmd):
         """
@@ -47,11 +48,9 @@ class ASCII(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], "...and {} more".format(len(fnames) - self.config.get("list_max")))
         return
 
+    @info("ascii <name>      print an ascii", cmds=["ascii"])
     @command("ascii", require_args=True)
     def cmd_ascii(self, msg, cmd):
-        # import ipdb
-        # ipdb.set_trace()
-        # Send out an ascii
         if self.channel_busy(msg.args[0]):
             return
 
@@ -69,6 +68,7 @@ class ASCII(ModuleBase):
         except FileNotFoundError:
             return
 
+    @info("stopascii         stop the currently scrolling ascii", cmds=["stopascii"])
     @command("stopascii")
     def cmd_stopascii(self, msg, cmd):
         """
@@ -119,6 +119,7 @@ class ASCII(ModuleBase):
         del self.running_asciis[channel]
         del self.killed_channels[channel]
 
+    @info("asciiedit <args>            customize an ascii with input", cmds=["asciiedit"])
     @command("asciiedit", require_args=True)
     def cmd_asciiedit(self, msg, cmd):
         ascii_name = cmd.args.pop(0)

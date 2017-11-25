@@ -135,6 +135,7 @@ class Calc(ModuleBase):
                                          randCalc["definition"], randCalc["by"]))
                     self.updateTimeSince(channel, "calc")
 
+    @info("match <value>     search for facts by key", cmds=["match"])
     @command("match", require_args=True)
     def cmd_match(self, msg, cmd):
         if self.config["delayMatch"] > 0 and self.timeSince(msg.args[0], "match") < self.config["delayMatch"]:
