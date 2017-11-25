@@ -12,7 +12,7 @@ import logging
 import traceback
 import sys
 from inspect import getargspec
-from time import sleep
+from pyircbot.common import burstbucket
 from collections import namedtuple
 from io import StringIO
 
@@ -23,7 +23,13 @@ ServerPrefix = namedtuple("ServerPrefix", "hostname")
 
 class IRCCore(object):
 
-    def __init__(self, servers):
+    def __init__(self, servers, loop, rate_limit=True, rate_max=5.0, rate_int=1.1):
+        self._loop = loop
+
+        # rate limiting options
+        self.rate_limit = rate_limit
+        self.rate_max = float(rate_max)
+        self.rate_int = float(rate_int)
 
         self.connected = False
         """If we're connected or not"""
@@ -52,6 +58,9 @@ class IRCCore(object):
 
         # Set up hooks for modules
         self.initHooks()
+
+        self.outputq = asyncio.Queue()
+        self._loop.call_soon(asyncio.ensure_future, self.outputqueue())
 
     async def loop(self, loop):
         while self.alive:
@@ -87,6 +96,26 @@ class IRCCore(object):
                 # TODO ramp down reconnect attempts
                 logging.info("Reconnecting in 3s...")
                 await asyncio.sleep(3)
+
+    async def outputqueue(self):
+        bucket = burstbucket(self.rate_max, self.rate_int)
+        while True:
+            prio, line = await self.outputq.get()
+            # sleep until the bucket allows us to send
+            if self.rate_limit:
+                while True:
+                    s = bucket.get()
+                    if s == 0:
+                        break
+                    else:
+                        await asyncio.sleep(s, loop=self._loop)
+            self.fire_hook('_SEND', args=None, prefix=None, trailing=None)
+            self.log.debug(">>> {}".format(repr(line)))
+            try:
+                self.writer.write((line + "\r\n").encode("UTF-8"))
+            except Exception as e:  # Probably fine if we drop messages while offline
+                print(e)
+                print(self.trace())
 
     async def kill(self, message="Help! Another thread is killing me :(", forever=True):
         """Send quit message, flush queue, and close the socket
@@ -137,9 +166,7 @@ class IRCCore(object):
             self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
 
     def sendRaw(self, data):
-        self.log.debug(">>> {}".format(repr(data)))
-        self.fire_hook('_SEND', args=None, prefix=None, trailing=None)
-        self.writer.write((data + "\r\n").encode("UTF-8"))
+        asyncio.run_coroutine_threadsafe(self.outputq.put((5, data, )), self._loop)
 
     " Module related code "
     def initHooks(self):

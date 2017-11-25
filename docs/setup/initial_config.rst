@@ -40,7 +40,11 @@ Instance Configuration
             ],
             "force_ipv6": false,
             "force_ipv4": false,
-            "bind": ["1.2.3.4", 5678]
+            "bind": ["1.2.3.4", 5678],
+            "rate_limit": {
+                "rate_max": 5.0,
+                "rate_int":1.1
+            }
         },
         "modules":[
             "PingResponder",
@@ -97,6 +101,11 @@ options:
 .. note::
 
     To bind to an address but no specific port, set the second tuple entry to `null`.
+
+.. cmdoption:: connection.rate_limit
+
+    Set to false to disable rate limiting. Otherwise, a dict containing two floats keyed: `rate_max`: how many messages
+    may be bursted at once, and `rate_int`: after bursting, how many seconds between messages.
 
 .. cmdoption:: modules
 

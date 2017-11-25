@@ -31,6 +31,8 @@ class PyIRCBot(object):
         self.log = logging.getLogger('PyIRCBot')
         """Reference to logger object"""
 
+        self.loop = asyncio.get_event_loop()
+
         """saved copy of the instance config"""
         self.botconfig = botconfig
 
@@ -43,8 +45,14 @@ class PyIRCBot(object):
         """Reference to BotRPC thread"""
         self.rpc = BotRPC(self)
 
+        ratelimit = self.botconfig["connection"].get("rate_limit", None) or dict(rate_max=5.0, rate_int=1.1)
+
         """IRC protocol handler"""
-        self.irc = IRCCore(servers=self.botconfig["connection"]["servers"])
+        self.irc = IRCCore(servers=self.botconfig["connection"]["servers"],
+                           loop=self.loop,
+                           rate_limit=True if ratelimit else False,
+                           rate_max=ratelimit["rate_max"],
+                           rate_int=ratelimit["rate_int"])
         if self.botconfig.get("connection").get("force_ipv6", False):
             self.irc.connection_family = AF_INET6
         elif self.botconfig.get("connection").get("force_ipv4", False):
@@ -72,8 +80,6 @@ class PyIRCBot(object):
         self.irc.addHook("PRIVMSG", self._irchook_internal)
 
     def run(self):
-        self.loop = asyncio.get_event_loop()
-
         self.client = asyncio.ensure_future(self.irc.loop(self.loop), loop=self.loop)
         try:
             self.loop.set_debug(True)

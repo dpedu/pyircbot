@@ -13,7 +13,11 @@
             ["dickson.freenode.net", 6667],
             ["morgan.freenode.net", 6667]
         ],
-        "force_ipv6": false
+        "force_ipv6": false,
+        "rate_limit": {
+            "rate_max": 5.0,
+            "rate_int":1.1
+        }
     },
     "modules":[
         "PingResponder",
