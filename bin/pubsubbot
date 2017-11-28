@@ -10,6 +10,7 @@ import pyircbot
 import traceback
 from pyircbot.pyircbot import PrimitiveBot
 from pyircbot.irccore import IRCEvent, UserPrefix
+from pyircbot.common import TouchReload
 from json import dumps
 
 
@@ -109,6 +110,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", default=7100, type=int, help="Msgbus server port")
     parser.add_argument("-n", "--name", default="default", help="bot name")
     parser.add_argument("--debug", action="store_true", help="increase logging level")
+    parser.add_argument("--touch-reload", action="store_true", help="reload modules on file modification")
     args = parser.parse_args()
 
     if args.debug:
@@ -122,10 +124,25 @@ if __name__ == "__main__":
     bot = PyIRCBotSub(args.name, args.server, int(args.port), config)
 
     # Load modules in config
-    sys.path.append(os.path.dirname(pyircbot.__file__) + "/modules/")
+    moddir = os.path.join(os.path.dirname(pyircbot.__file__), "modules")
+    modpaths = []
+    sys.path.append(moddir)
     for modulename in config["modules"]:
-        print("Load: ", modulename)
         bot.loadmodule(modulename)
+        modpaths.append(os.path.join(moddir, modulename + ".py"))
+
+    if args.touch_reload:
+        def changed(path):
+            module_name = os.path.basename(path).split(".")[-2]
+            logging.warning("{} was modified, reloading".format(module_name))
+            if module_name in bot.moduleInstances.keys():  # TODO fix shitty mystery results from redomodule in core
+                bot.redomodule(module_name)
+            else:
+                bot.loadmodule(module_name)
+
+        reloader = TouchReload(modpaths, changed)
+        reloader.daemon = True
+        reloader.start()
 
     bot.run()
 

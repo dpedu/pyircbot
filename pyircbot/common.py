@@ -2,6 +2,9 @@ from time import time
 from math import floor
 from json import load as json_load
 from collections import namedtuple
+from time import sleep
+import os
+from threading import Thread
 
 
 ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
@@ -44,6 +47,31 @@ class burstbucket(object):
             self.bucket -= 1
             return 0
         return self.bucket_period - since_fill
+
+
+class TouchReload(Thread):
+    def __init__(self, filepaths, do, resolution=0.75):
+        """
+        Given a list of module files, call a lambda if the modification times changes
+        :param filepaths: list of filepaths
+        :param do: lambda to call with the altered filepath
+        """
+        super().__init__()
+        self.files = [[os.path.normpath(i), None] for i in filepaths]
+        self.do = do
+        self.sleep = resolution
+
+    def run(self):
+        while True:
+            for num, (path, mtime) in enumerate(self.files):
+                new_mtime = os.stat(path).st_mtime
+                if mtime is None:
+                    self.files[num][1] = new_mtime
+                    continue
+                if mtime != new_mtime:
+                    self.files[num][1] = new_mtime
+                    self.do(path)
+            sleep(self.sleep)
 
 
 def messageHasCommand(command, message, requireArgs=False):
