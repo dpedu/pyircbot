@@ -98,7 +98,7 @@ class PyIRCBotSub(PrimitiveBot):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.WARNING,
                         format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
     log = logging.getLogger('main')
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--server", default="localhost", help="Msgbus server address")
     parser.add_argument("-p", "--port", default=7100, type=int, help="Msgbus server port")
     parser.add_argument("-n", "--name", default="default", help="bot name")
-    parser.add_argument("--debug", action="store_true", help="")
+    parser.add_argument("--debug", action="store_true", help="increase logging level")
     args = parser.parse_args()
 
     if args.debug:

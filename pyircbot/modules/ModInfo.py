@@ -63,6 +63,7 @@ class ModInfo(ModuleBase):
             for modname, module, helptext, helpcommands in self.iter_modules():
                 self.bot.act_PRIVMSG(msg.args[0], "{}: {}{}".format(modname, command.prefix, helptext))
 
+    @info("helpindex         show a short list of all commands", cmds=["helpindex"])
     @command("helpindex")
     def cmd_helpindex(self, msg, cmd):
         """

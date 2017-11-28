@@ -8,6 +8,7 @@
 from time import time
 from math import floor
 from pyircbot.modulebase import ModuleBase, regex
+from pyircbot.modules.ModInfo import info
 import cherrypy
 from threading import Thread
 from twilio.rest import Client
@@ -133,6 +134,7 @@ class SMS(ModuleBase):
         """
         cherrypy.engine.exit()
 
+    @info("text-<name>       text somebody on the VIP list", cmds=["text"])
     @regex(r'(?:^\.text\-([a-zA-Z0-9]+)(?:\s+(.+))?)', types=['PRIVMSG'])
     def cmd_text(self, msg, match):
         """
