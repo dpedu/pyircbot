@@ -3,6 +3,7 @@ import sys
 import logging
 import signal
 from argparse import ArgumentParser
+from pyircbot.common import load
 from pyircbot import PyIRCBot
 from json import loads
 
@@ -30,7 +31,7 @@ if __name__ == "__main__":
         log.critical("No bot config file specified (-c). Exiting.")
         sys.exit(1)
 
-    botconfig = loads(sys.stdin.read()) if args.config == "-" else PyIRCBot.load(args.config)
+    botconfig = loads(sys.stdin.read()) if args.config == "-" else load(args.config)
 
     log.debug(botconfig)
 

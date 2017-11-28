@@ -19,7 +19,6 @@ except:
 class MySQL(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.services = ["mysql"]
         self.connection = self.getConnection()
 

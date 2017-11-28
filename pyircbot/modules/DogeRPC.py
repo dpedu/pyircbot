@@ -14,7 +14,6 @@ from bitcoinrpc.authproxy import AuthServiceProxy
 class DogeRPC(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.services = ["dogerpc"]
         self.rpc = DogeController(self)
 

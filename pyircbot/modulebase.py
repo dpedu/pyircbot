@@ -9,7 +9,8 @@
 import re
 import os
 import logging
-from .pyircbot import PyIRCBot
+from .common import load as pload
+from .common import messageHasCommand
 
 
 class ModuleBase:
@@ -27,9 +28,6 @@ class ModuleBase:
 
         self.bot = bot
         """Reference to the master PyIRCBot object"""
-
-        self.hooks = []
-        """Low-level protocol hooks this module has"""
 
         self.irchooks = []
         """IRC Hooks this module has"""
@@ -73,7 +71,7 @@ class ModuleBase:
         if not self.config:
             configPath = self.getConfigPath()
             if configPath is not None:
-                self.config = PyIRCBot.load(configPath)
+                self.config = pload(configPath)
 
     def onenable(self):
         """Called when the module is enabled"""
@@ -228,7 +226,7 @@ class command(hook):
         """
         if not super().validate(msg, bot):
             return False
-        if not self.allow_private and msg.args[0] == "#":
+        if msg.args[0][0] != "#" and not self.allow_private:
             return False
         for keyword in self.keywords:
             single = self._validate_one(msg, keyword)
@@ -238,7 +236,7 @@ class command(hook):
 
     def _validate_one(self, msg, keyword):
         with_prefix = "{}{}".format(self.prefix, keyword)
-        return PyIRCBot.messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
+        return messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
 
 
 class regex(hook):

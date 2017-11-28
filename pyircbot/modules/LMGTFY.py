@@ -7,24 +7,20 @@
 """
 
 import urllib.parse
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
+from pyircbot.modules.ModInfo import info
 
 BASE_URL = "http://lmgtfy.com/?q="
 
 
 class LMGTFY(ModuleBase):
-    def __init__(self, bot, moduleName):
-        ModuleBase.__init__(self, bot, moduleName)
-        self.hooks.append(ModuleHook("PRIVMSG", self.handleMessage))
-        self.bot = bot
 
-    def handleMessage(self, args, prefix, trailing):
-        channel = args[0]
-        prefix = self.bot.decodePrefix(prefix)
-        if self.bot.messageHasCommand(".lmgtfy", trailing):
-            message = trailing.split(" ")[1:]
-            link = self.createLink(message)
-            self.bot.act_PRIVMSG(channel, "%s: %s" % (prefix.nick, link))
+    @info("lmgtfy <term>     display a condescending internet query", cmds=["lmgtfy"])
+    @command("lmgtfy", require_args=True)
+    def handleMessage(self, msg, cmd):
+        message = msg.trailing.split(" ")[1:]
+        link = self.createLink(message)
+        self.bot.act_PRIVMSG(msg.args[0], "%s: %s" % (msg.prefix.nick, link))
 
     def createLink(self, message):
         finalUrl = BASE_URL

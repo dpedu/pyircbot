@@ -10,128 +10,21 @@ import logging
 import sys
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
-from collections import namedtuple
 from socket import AF_INET, AF_INET6
-from json import load
 import os.path
 import asyncio
 import traceback
 
 
-ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
-
-
-class PyIRCBot(object):
-    """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
-    :type botconfig: dict
-    """
-    version = "4.1.0"
-
-    def __init__(self, botconfig):
-        self.log = logging.getLogger('PyIRCBot')
-        """Reference to logger object"""
-
-        self.loop = asyncio.get_event_loop()
-
-        """saved copy of the instance config"""
-        self.botconfig = botconfig
-
+class ModuleLoader(object):
+    def __init__(self):
         """storage of imported modules"""
         self.modules = {}
 
         """instances of modules"""
         self.moduleInstances = {}
 
-        """Reference to BotRPC thread"""
-        self.rpc = BotRPC(self)
-
-        ratelimit = self.botconfig["connection"].get("rate_limit", None) or dict(rate_max=5.0, rate_int=1.1)
-
-        """IRC protocol handler"""
-        self.irc = IRCCore(servers=self.botconfig["connection"]["servers"],
-                           loop=self.loop,
-                           rate_limit=True if ratelimit else False,
-                           rate_max=ratelimit["rate_max"],
-                           rate_int=ratelimit["rate_int"])
-        if self.botconfig.get("connection").get("force_ipv6", False):
-            self.irc.connection_family = AF_INET6
-        elif self.botconfig.get("connection").get("force_ipv4", False):
-            self.irc.connection_family = AF_INET
-        self.irc.bind_addr = self.botconfig.get("connection").get("bind", None)
-
-        # legacy support
-        self.act_PONG = self.irc.act_PONG
-        self.act_USER = self.irc.act_USER
-        self.act_NICK = self.irc.act_NICK
-        self.act_JOIN = self.irc.act_JOIN
-        self.act_PRIVMSG = self.irc.act_PRIVMSG
-        self.act_MODE = self.irc.act_MODE
-        self.act_ACTION = self.irc.act_ACTION
-        self.act_KICK = self.irc.act_KICK
-        self.act_QUIT = self.irc.act_QUIT
-        self.act_PASS = self.irc.act_PASS
-        self.get_nick = self.irc.get_nick
-        self.decodePrefix = IRCCore.decodePrefix
-
-        # Load modules
-        self.initModules()
-
-        # Internal usage hook
-        self.irc.addHook("PRIVMSG", self._irchook_internal)
-
-    def run(self):
-        self.client = asyncio.ensure_future(self.irc.loop(self.loop), loop=self.loop)
-        try:
-            self.loop.set_debug(True)
-            self.loop.run_until_complete(self.client)
-        finally:
-            logging.debug("Escaped main loop")
-
-    def disconnect(self, message):
-        """Send quit message and disconnect from IRC.
-
-        :param message: Quit message
-        :type message: str
-        :param reconnect: True causes a reconnection attempt to be made after the disconnect
-        :type reconnect: bool
-        """
-        self.log.info("disconnect")
-        self.kill(message=message)
-
-    def kill(self, message="Help! Another thread is killing me :(", forever=True):
-        """Close the connection violently
-
-        :param sys_exit: True causes sys.exit(0) to be called
-        :type sys_exit: bool
-        :param message: Quit message
-        :type message: str
-        """
-        if forever:
-            self.closeAllModules()
-        asyncio.run_coroutine_threadsafe(self.irc.kill(message=message, forever=forever), self.loop)
-
-    def initModules(self):
-        """load modules specified in instance config"""
-        " append module location to path "
-        sys.path.append(os.path.dirname(__file__) + "/modules/")
-
-        " append usermodule dir to beginning of path"
-        for path in self.botconfig["bot"]["usermodules"]:
-            sys.path.insert(0, path + "/")
-
-        for modulename in self.botconfig["modules"]:
-            self.loadmodule(modulename)
-
-    def _irchook_internal(self, msg):
-        """
-        IRC hook handler. Calling point for IRCHook based module hooks. This method is called when a message is
-        received. It tests all hooks in all modules against the message can calls the hooked function on hits.
-        """
-        for module_name, module in self.moduleInstances.items():
-            for hook in module.irchooks:
-                validation = hook.validator(msg, self)
-                if validation:
-                    hook.method(msg, validation)
+        self.log = logging.getLogger('ModuleLoader')
 
     def importmodule(self, name):
         """Import a module
@@ -189,7 +82,7 @@ class PyIRCBot(object):
         " init the module "
         self.moduleInstances[name] = getattr(self.modules[name], name)(self, name)
         " load hooks "
-        self.loadModuleHooks(self.moduleInstances[name])
+        # self.loadModuleHooks(self.moduleInstances[name])
         self.moduleInstances[name].onenable()
 
     def unloadmodule(self, name):
@@ -201,7 +94,7 @@ class PyIRCBot(object):
             " notify the module of disabling "
             self.moduleInstances[name].ondisable()
             " unload all hooks "
-            self.unloadModuleHooks(self.moduleInstances[name])
+            # self.unloadModuleHooks(self.moduleInstances[name])
             " remove & delete the instance "
             self.moduleInstances.pop(name)
             self.log.info("Module %s unloaded" % name)
@@ -246,32 +139,6 @@ class PyIRCBot(object):
             self.loadmodule(name)
         return (True, None)
 
-    def loadModuleHooks(self, module):
-        """**Internal.** Enable (connect) hooks of a module
-
-        :param module: module object to hook in
-        :type module: object"""
-        " activate a module's hooks "
-        for hook in module.hooks:
-            if type(hook.hook) == list:
-                for hookcmd in hook.hook:
-                    self.irc.addHook(hookcmd, hook.method)
-            else:
-                self.irc.addHook(hook.hook, hook.method)
-
-    def unloadModuleHooks(self, module):
-        """**Internal.** Disable (disconnect) hooks of a module
-
-        :param module: module object to unhook
-        :type module: object"""
-        " remove a modules hooks "
-        for hook in module.hooks:
-            if type(hook.hook) == list:
-                for hookcmd in hook.hook:
-                    self.irc.removeHook(hookcmd, hook.method)
-            else:
-                self.irc.removeHook(hook.hook, hook.method)
-
     def getmodulebyname(self, name):
         """Get a module object by name
 
@@ -305,8 +172,16 @@ class PyIRCBot(object):
             return m[0]
         return None
 
+
+class PrimitiveBot(ModuleLoader):
+    def __init__(self, botconfig):
+        super().__init__()
+        self.botconfig = botconfig
+
     def closeAllModules(self):
-        """ Deport all modules (for shutdown). Modules are unloaded in the opposite order listed in the config. """
+        """
+        Deport all modules (for shutdown). Modules are unloaded in the opposite order listed in the config.
+        """
         loaded = list(self.moduleInstances.keys())
         loadOrder = self.botconfig["modules"]
         loadOrder.reverse()
@@ -318,16 +193,6 @@ class PyIRCBot(object):
             self.deportmodule(key)
 
     " Filesystem Methods "
-    def getDataPath(self, moduleName):
-        """Return the absolute path for a module's data dir
-
-        :param moduleName: the module who's data dir we want
-        :type moduleName: str"""
-        module_dir = os.path.join(self.botconfig["bot"]["datadir"], "data", moduleName)
-        if not os.path.exists(module_dir):
-            os.mkdir(module_dir)
-        return module_dir
-
     def getConfigPath(self, moduleName):
         """Return the absolute path for a module's config file
 
@@ -340,63 +205,140 @@ class PyIRCBot(object):
             return "%s.json" % basepath
         return None
 
-    " Utility methods "
-    @staticmethod
-    def messageHasCommand(command, message, requireArgs=False):
-        """Check if a message has a command with or without args in it
+    def getDataPath(self, moduleName):
+        """Return the absolute path for a module's data dir
 
-        :param command: the command string to look for, like !ban. If a list is passed, the first match is returned.
-        :type command: str or list
-        :param message: the message string to look in, like "!ban Lil_Mac"
+        :param moduleName: the module who's data dir we want
+        :type moduleName: str"""
+        module_dir = os.path.join(self.botconfig["bot"]["datadir"], "data", moduleName)
+        if not os.path.exists(module_dir):
+            os.mkdir(module_dir)
+        return module_dir
+
+
+class PyIRCBot(PrimitiveBot):
+    """:param botconfig: The configuration of this instance of the bot. Passed by main.py.
+    :type botconfig: dict
+    """
+    version = "5.0.0"
+
+    def __init__(self, botconfig):
+        super().__init__(botconfig)
+
+        self.log = logging.getLogger('PyIRCBot')
+        """Reference to logger object"""
+
+        self.loop = asyncio.get_event_loop()
+
+        """Reference to BotRPC thread"""
+        self.rpc = BotRPC(self)
+
+        ratelimit = self.botconfig["connection"].get("rate_limit", None) or dict(rate_max=5.0, rate_int=1.1)
+
+        """IRC protocol handler"""
+        self.irc = IRCCore(servers=self.botconfig["connection"]["servers"],
+                           loop=self.loop,
+                           rate_limit=True if ratelimit else False,
+                           rate_max=ratelimit["rate_max"],
+                           rate_int=ratelimit["rate_int"])
+        if self.botconfig.get("connection").get("force_ipv6", False):
+            self.irc.connection_family = AF_INET6
+        elif self.botconfig.get("connection").get("force_ipv4", False):
+            self.irc.connection_family = AF_INET
+        self.irc.bind_addr = self.botconfig.get("connection").get("bind", None)
+
+        self.act_PONG = self.irc.act_PONG
+        self.act_USER = self.irc.act_USER
+        self.act_NICK = self.irc.act_NICK
+        self.act_JOIN = self.irc.act_JOIN
+        self.act_PRIVMSG = self.irc.act_PRIVMSG
+        self.act_MODE = self.irc.act_MODE
+        self.act_ACTION = self.irc.act_ACTION
+        self.act_KICK = self.irc.act_KICK
+        self.act_QUIT = self.irc.act_QUIT
+        self.act_PASS = self.irc.act_PASS
+        self.get_nick = self.irc.get_nick
+        self.decodePrefix = IRCCore.decodePrefix
+
+        # Load modules
+        self.initModules()
+
+        # Internal usage hook
+        self.irc.addHook("_ALL", self._irchook_internal)
+
+    def initModules(self):
+        """load modules specified in instance config"""
+        " append module location to path "
+        sys.path.append(os.path.dirname(__file__) + "/modules/")
+
+        " append usermodule dir to beginning of path"
+        for path in self.botconfig["bot"]["usermodules"]:
+            sys.path.insert(0, path + "/")
+
+        for modulename in self.botconfig["modules"]:
+            self.loadmodule(modulename)
+
+    def run(self):
+        self.client = asyncio.ensure_future(self.irc.loop(self.loop), loop=self.loop)
+        try:
+            self.loop.set_debug(True)
+            self.loop.run_until_complete(self.client)
+        finally:
+            logging.debug("Escaped main loop")
+
+    def disconnect(self, message):
+        """Send quit message and disconnect from IRC.
+
+        :param message: Quit message
         :type message: str
-        :param requireArgs: if true, only validate if the command use has any amount of trailing text
-        :type requireArgs: bool"""
-
-        if not type(command) == list:
-            command = [command]
-        for item in command:
-            cmd = PyIRCBot.messageHasCommandSingle(item, message, requireArgs)
-            if cmd:
-                return cmd
-        return False
-
-    @staticmethod
-    def messageHasCommandSingle(command, message, requireArgs=False):
-        # Check if the message at least starts with the command
-        messageBeginning = message[0:len(command)]
-        if messageBeginning != command:
-            return False
-        # Make sure it's not a subset of a longer command (ie .meme being set off by .memes)
-        subsetCheck = message[len(command):len(command) + 1]
-        if subsetCheck != " " and subsetCheck != "":
-            return False
-
-        # We've got the command! Do we need args?
-        argsStart = len(command)
-        args = ""
-        if argsStart > 0:
-            args = message[argsStart + 1:].strip()
-
-        if requireArgs and args == '':
-            return False
-
-        # Verified! Return the set.
-        return ParsedCommand(command,
-                             args.split(" ") if args else [],
-                             args,
-                             message)
-
-    @staticmethod
-    def load(filepath):
-        """Return an object from the passed filepath
-
-        :param filepath: path to a json file. filename must end with .json
-        :type filepath: str
-        :Returns:    | dict
+        :param reconnect: True causes a reconnection attempt to be made after the disconnect
+        :type reconnect: bool
         """
+        self.log.info("disconnect")
+        self.kill(message=message)
 
-        if filepath.endswith(".json"):
-            with open(filepath, 'r') as f:
-                return load(f)
-        else:
-            raise Exception("Unknown config format")
+    def kill(self, message="Help! Another thread is killing me :(", forever=True):
+        """Close the connection violently
+
+        :param sys_exit: True causes sys.exit(0) to be called
+        :type sys_exit: bool
+        :param message: Quit message
+        :type message: str
+        """
+        if forever:
+            self.closeAllModules()
+        asyncio.run_coroutine_threadsafe(self.irc.kill(message=message, forever=forever), self.loop)
+
+    def _irchook_internal(self, msg):
+        """
+        IRC hook handler. Calling point for IRCHook based module hooks. This method is called when any message is
+        received. It tests all hooks in all modules against the message can calls the hooked function on hits.
+        """
+        for module_name, module in self.moduleInstances.items():
+            for hook in module.irchooks:
+                validation = hook.validator(msg, self)
+                if validation:
+                    hook.method(msg, validation)
+
+    " Filesystem Methods "
+    def getConfigPath(self, moduleName):
+        """Return the absolute path for a module's config file
+
+        :param moduleName: the module who's config file we want
+        :type moduleName: str"""
+
+        basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
+
+        if os.path.exists("%s.json" % basepath):
+            return "%s.json" % basepath
+        return None
+
+    def getDataPath(self, moduleName):
+        """Return the absolute path for a module's data dir
+
+        :param moduleName: the module who's data dir we want
+        :type moduleName: str"""
+        module_dir = os.path.join(self.botconfig["bot"]["datadir"], "data", moduleName)
+        if not os.path.exists(module_dir):
+            os.mkdir(module_dir)
+        return module_dir

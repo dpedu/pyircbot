@@ -14,7 +14,6 @@ import sqlite3
 class SQLite(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.services = ["sqlite"]
 
     def opendb(self, dbname):

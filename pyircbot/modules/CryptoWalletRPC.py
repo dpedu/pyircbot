@@ -15,7 +15,6 @@ from threading import Thread
 class CryptoWalletRPC(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.services = ["bitcoinrpc"]
         self.rpcservices = {}
         self.loadrpcservices()

@@ -1,5 +1,5 @@
 
-from pyircbot.modulebase import ModuleBase, ModuleHook, MissingDependancyException, regex, command
+from pyircbot.modulebase import ModuleBase, MissingDependancyException, regex, command
 from pyircbot.modules.ModInfo import info
 import datetime
 import time
@@ -93,12 +93,13 @@ class Calc(ModuleBase):
 
         if word and changeit:
             # Add a new calc or delete
-            if self.config["allowDelete"] and not value:
-                result = self.deleteCalc(channel, word)
-                if result:
-                    self.bot.act_PRIVMSG(channel, "Calc deleted, %s." % sender)
-                else:
-                    self.bot.act_PRIVMSG(channel, "Sorry %s, I don't know what '%s' is." % (sender, word))
+            if not value:
+                if self.config["allowDelete"]:
+                    result = self.deleteCalc(channel, word)
+                    if result:
+                        self.bot.act_PRIVMSG(channel, "Calc deleted, %s." % sender)
+                    else:
+                        self.bot.act_PRIVMSG(channel, "Sorry %s, I don't know what '%s' is." % (sender, word))
             else:
                 if self.config["delaySubmit"] > 0 and self.timeSince(channel, "add") < self.config["delaySubmit"]:
                     self.bot.act_PRIVMSG(channel, self.remainingToStr(self.config["delaySubmit"],

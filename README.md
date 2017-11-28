@@ -6,8 +6,8 @@ Quick start
 -----------
 
 * Install: `python3 setup.py install`
-* Configure: `cd examples ; vim config.json data/config/Services.json`
-* Run: `pyircbot -c config.json`
+* Configure: `vim examples/config.json examples/data/config/Services.json`
+* Run: `pyircbot -c examples/config.json`
 
 Running in docker
 -----------------

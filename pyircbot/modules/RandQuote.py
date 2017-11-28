@@ -7,14 +7,14 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook, command
 from datetime import datetime
+from pyircbot.modules.ModInfo import info
 
 
 class RandQuote(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.db = None
         serviceProviders = self.bot.getmodulesbyservice("sqlite")
         if not serviceProviders:
@@ -33,26 +33,19 @@ class RandQuote(ModuleBase):
             ) ;""")
             c.close()
 
-        self.hooks = [ModuleHook("PRIVMSG", self.logquote),
-                      ModuleHook("PRIVMSG", self.fetchquotes)]
+    @info("randquote         print a random quote", cmds=["randquote", "randomquote", "rq"])
+    @command("randquote", "randomquote", "rq")
+    def fetchquotes(self, msg, cmd):
+        c = self.db.query("SELECT * FROM `chat` ORDER BY RANDOM() LIMIT 1;")
+        row = c.fetchone()
+        c.close()
+        if row:
+            self.bot.act_PRIVMSG(msg.args[0], "<%s> %s" % (row["sender"], row["message"],))
 
-    def fetchquotes(self, args, prefix, trailing):
-        if not args[0][0] == "#":
-            return
-        cmd = self.bot.messageHasCommand([".randomquote", ".randquote", ".rq"], trailing)
-        if cmd:
-            c = self.db.query("SELECT * FROM `chat` ORDER BY RANDOM() LIMIT 1;")
-            row = c.fetchone()
-            c.close()
-            if row:
-                self.bot.act_PRIVMSG(args[0], "<%s> %s" % (row["sender"], row["message"],))
-
-    def logquote(self, args, prefix, trailing):
-        if not args[0][0] == "#":
-            return
-        prefixObj = self.bot.decodePrefix(prefix)
+    @hook("PRIVMSG")
+    def logquote(self, msg, cmd):
         self.db.query("INSERT INTO `chat` (`date`, `sender`, `message`) VALUES (?, ?, ?)",
-                      (int(datetime.now().timestamp()), prefixObj.nick, trailing)).close()
+                      (int(datetime.now().timestamp()), msg.prefix.nick, msg.trailing)).close()
         # Trim quotes
         c = self.db.query("SELECT * FROM `chat` ORDER BY `date` DESC LIMIT %s, 1000000;" % self.config["limit"])
         while True:

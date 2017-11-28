@@ -7,14 +7,14 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
-import hashlib
+from pyircbot.modulebase import ModuleBase, hook
+from pyircbot.common import messageHasCommand
+from pyircbot.modules.ModInfo import info
 
 
 class NickUser(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("PRIVMSG", self.gotmsg)]
         self.services = ["login"]
 
     def check(self, nick, hostname):
@@ -28,17 +28,19 @@ class NickUser(ModuleBase):
         pass
         # TODO: log out all users
 
-    def gotmsg(self, args, prefix, trailing):
-        channel = args[0]
-        if channel[0] == "#":
+    @hook("PRIVMSG")
+    def gotmsg(self, msg, cmd):
+        if msg.args[0][0] == "#":
             # Ignore channel messages
-            pass
+            return
         else:
-            self.handlePm(args, prefix, trailing)
+            self.handlePm(msg.prefix, msg.trailing)
 
-    def handlePm(self, args, prefix, trailing):
-        prefix = self.bot.decodePrefix(prefix)
-        cmd = self.bot.messageHasCommand(".setpass", trailing)
+    @info("setpass [<oldpass>] <password>        set or change password", cmds=["setpass"])
+    @info("login <password>            authenticate with the bot", cmds=["login"])
+    @info("logout            log out of the bot", cmds=["logout"])
+    def handlePm(self, prefix, trailing):
+        cmd = messageHasCommand(".setpass", trailing)
         if cmd:
             if len(cmd.args) == 0:
                 self.bot.act_PRIVMSG(prefix.nick, ".setpass: usage: \".setpass newpass\" or "
@@ -61,7 +63,7 @@ class NickUser(ModuleBase):
                         self.bot.act_PRIVMSG(prefix.nick,
                                              ".setpass: You must provide the old password when setting a new one.")
 
-        cmd = self.bot.messageHasCommand(".login", trailing)
+        cmd = messageHasCommand(".login", trailing)
         if cmd:
             attr = self.bot.getBestModuleForService("attributes")
             userpw = attr.getKey(prefix.nick, "password")
@@ -78,7 +80,7 @@ class NickUser(ModuleBase):
                         self.bot.act_PRIVMSG(prefix.nick, ".login: incorrect password.")
                 else:
                     self.bot.act_PRIVMSG(prefix.nick, ".login: usage: \".login password\"")
-        cmd = self.bot.messageHasCommand(".logout", trailing)
+        cmd = messageHasCommand(".logout", trailing)
         if cmd:
             attr = self.bot.getBestModuleForService("attributes")
             loggedin = attr.getKey(prefix.nick, "loggedinfrom")
@@ -87,8 +89,3 @@ class NickUser(ModuleBase):
             else:
                 attr.setKey(prefix.nick, "loggedinfrom", None)
                 self.bot.act_PRIVMSG(prefix.nick, ".logout: You have been logged out.")
-
-    def md5(self, data):
-        m = hashlib.md5()
-        m.update(data.encode("ascii"))
-        return m.hexdigest()

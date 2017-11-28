@@ -7,15 +7,15 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 
 
 class ServerPassword(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("_CONNECT", self.doConnect)]
 
-    def doConnect(self, args, prefix, trailing):
+    @hook("_CONNECT")
+    def doConnect(self, msg, cmd):
         """Hook for when the IRC conneciton is opened"""
         if "password" in self.config and self.config["password"]:
             self.log.info("Sending server password")

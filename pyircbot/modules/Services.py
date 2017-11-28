@@ -7,27 +7,25 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 from time import sleep
 
 
 class Services(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("_CONNECT", self.doConnect),
-                      ModuleHook("433", self.nickTaken),
-                      ModuleHook("001", self.initservices),
-                      ModuleHook("INVITE", self.invited), ]
         self.current_nick = 0
         self.do_ghost = False
 
-    def doConnect(self, args, prefix, trailing):
+    @hook("_CONNECT")
+    def doConnect(self, msg, cmd):
         """Hook for when the IRC conneciton is opened"""
         self.bot.act_NICK(self.config["user"]["nick"][0])
         self.bot.act_USER(self.config["user"]["username"], self.config["user"]["hostname"],
                           self.config["user"]["realname"])
 
-    def nickTaken(self, args, prefix, trailing):
+    @hook("433")
+    def nickTaken(self, msg, cmd):
         """Hook that responds to 433, meaning our nick is taken"""
         if self.config["ident"]["ghost"]:
             self.do_ghost = True
@@ -37,7 +35,8 @@ class Services(ModuleBase):
             return
         self.bot.act_NICK(self.config["user"]["nick"][self.current_nick])
 
-    def initservices(self, args, prefix, trailing):
+    @hook("001")
+    def initservices(self, msg, cmd):
         """Hook that sets our initial nickname"""
         if self.do_ghost:
             self.bot.act_PRIVMSG(self.config["ident"]["ghost_to"], self.config["ident"]["ghost_cmd"] %
@@ -46,11 +45,12 @@ class Services(ModuleBase):
             self.bot.act_NICK(self.config["user"]["nick"][0])
         self.do_initservices()
 
-    def invited(self, args, prefix, trailing):
+    @hook("INVITE")
+    def invited(self, msg, cmd):
         """Hook responding to INVITE channel invitations"""
-        if trailing.lower() in self.config["privatechannels"]["list"]:
-            self.log.info("Invited to %s, joining" % trailing)
-            self.bot.act_JOIN(trailing)
+        if msg.trailing.lower() in self.config["privatechannels"]["list"]:
+            self.log.info("Invited to %s, joining" % msg.trailing)
+            self.bot.act_JOIN(msg.trailing)
 
     def do_initservices(self):
         """Identify with nickserv and join startup channels"""

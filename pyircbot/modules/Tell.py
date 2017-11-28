@@ -6,9 +6,10 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command, hook
 import datetime
 from time import mktime
+from pyircbot.modules.ModInfo import info
 
 
 class Tell(ModuleBase):
@@ -38,27 +39,21 @@ class Tell(ModuleBase):
         self.db.query("DELETE FROM `tells` WHERE `when`<?",
                       (int(mktime(datetime.datetime.now().timetuple())) - self.config["maxage"],)).close()
 
-        self.hooks = [
-            ModuleHook(["JOIN", "PRIVMSG"], self.showtell),
-            ModuleHook(["PRIVMSG"], self.tellcmds)
-        ]
-
-    def showtell(self, args, prefix, trailing):
-        prefix = self.bot.decodePrefix(prefix)
-
+    @hook("PRIVMSG", "JOIN")
+    def showtell(self, msg, cmd):
         # Look for tells for this person
-        c = self.db.query("SELECT * FROM `tells` WHERE `recip`=?", (prefix.nick,))
+        c = self.db.query("SELECT * FROM `tells` WHERE `recip`=?", (msg.prefix.nick,))
         tells = c.fetchall()
         c.close()
         for tell in tells:
             agostr = Tell.timesince(datetime.datetime.fromtimestamp(tell["when"]))
             recip = None
             if tell["channel"] == "":
-                recip = prefix.nick
+                recip = msg.prefix.nick
             else:
                 recip = tell["channel"]
             self.bot.act_PRIVMSG(recip, "%s: %s said %s ago: %s" % (
-                prefix.nick,
+                msg.prefix.nick,
                 tell["sender"],
                 agostr,
                 tell["message"]
@@ -66,34 +61,31 @@ class Tell(ModuleBase):
             # Delete
             self.db.query("DELETE FROM `tells` WHERE `id`=?", (tell["id"],))
 
-    def tellcmds(self, args, prefix, trailing):
-        prefixObj = self.bot.decodePrefix(prefix)
-        replyTo = prefixObj.nick if "#" not in args[0] else args[0]
+    @info(".tell <person> <message>              relay a message when the target is online", cmds=["tell"])
+    @command("tell", allow_private=True)
+    def tellcmds(self, msg, cmd):
+        if len(cmd.args) < 2:
+            self.bot.act_PRIVMSG(msg.args[0], "%s: .tell <person> <message> - Tell someone something the next time "
+                                 "they're seen. Example: .tell antiroach Do your homework!" % msg.prefix.nick)
+            return
 
-        cmd = self.bot.messageHasCommand(".tell", trailing)
-        if cmd:
-            if len(cmd.args) < 2:
-                self.bot.act_PRIVMSG(replyTo, "%s: .tell <person> <message> - Tell someone something the next time "
-                                     "they're seen. Example: .tell antiroach Do your homework!" % prefixObj.nick)
-                return
+        recip = cmd.args[0]
+        message = ' '.join(cmd.args[1:]).strip()
 
-            recip = cmd.args[0]
-            message = ' '.join(cmd.args[1:]).strip()
-
-            if not message:
-                self.bot.act_PRIVMSG(replyTo, "%s: .tell <person> <message> - Tell someone something the next time "
+        if not message:
+            self.bot.act_PRIVMSG(msg.args[0], "%s: .tell <person> <message> - Tell someone something the next time "
                                               "they're seen. Example: .tell antiroach Do your homework!" %
-                                              prefixObj.nick)
-                return
+                                              msg.prefix.nick)
+            return
 
-            self.db.query("INSERT INTO `tells` (`sender`, `channel`, `when`, `recip`, `message`) VALUES "
-                          "(?, ?, ?, ?, ?);", (prefixObj.nick,
-                                               args[0] if "#" in args[0] else "",
-                                               int(mktime(datetime.datetime.now().timetuple())),
-                                               recip,
-                                               message)).close()
+        self.db.query("INSERT INTO `tells` (`sender`, `channel`, `when`, `recip`, `message`) VALUES "
+                      "(?, ?, ?, ?, ?);", (msg.prefix.nick,
+                                           msg.args[0] if "#" in msg.args[0] else "",
+                                           int(mktime(datetime.datetime.now().timetuple())),
+                                           recip,
+                                           message)).close()
 
-            self.bot.act_PRIVMSG(replyTo, "%s: I'll pass that along." % prefixObj.nick)
+        self.bot.act_PRIVMSG(msg.args[0], "%s: I'll pass that along." % msg.prefix.nick)
 
     # Copyright (c) Django Software Foundation and individual contributors.
     # All rights reserved.

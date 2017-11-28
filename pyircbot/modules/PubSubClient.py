@@ -62,28 +62,28 @@ class PubSubClient(ModuleBase):
         self.bus.pub(self.config.get("publish").format(subchannel), "{} {}".format("default", message))
 
     @hook("PRIVMSG")
-    def bus_privmsg(self, msg):
+    def bus_privmsg(self, msg, cmd):
         """
         Relay a privmsg to the event bus
         """
         self.publish("privmsg", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("JOIN")
-    def bus_join(self, msg):
+    def bus_join(self, msg, cmd):
         """
         Relay a join message to the event bus
         """
         self.publish("join", dumps([msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("PART")
-    def bus_part(self, msg):
+    def bus_part(self, msg, cmd):
         """
         Relay a part message to the event bus
         """
         self.publish("part", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("PRIVMSG")
-    def bus_command(self, msg):
+    def bus_command(self, msg, cmd):
         """
         Parse commands and publish as separate channels on the bus. Commands like `.seen nick` will be published
         to channel `command_seen`.

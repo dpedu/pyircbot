@@ -9,26 +9,23 @@
 
 from time import time, sleep
 from threading import Thread
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 
 
 class PingResponder(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
         self.timer = PingRespondTimer(self)
-        self.hooks = [
-            ModuleHook("PING", self.pingrespond),
-            ModuleHook("_RECV", self.resettimer),
-            ModuleHook("_SEND", self.resettimer)
-        ]
 
-    def pingrespond(self, args, prefix, trailing):
+    @hook("PING")
+    def pingrespond(self, msg, cmd):
         """Respond to the PING command"""
         # got a ping? send it right back
-        self.bot.act_PONG(trailing)
-        self.log.info("%s Responded to a ping: %s" % (self.bot.get_nick(), trailing))
+        self.bot.act_PONG(msg.trailing)
+        self.log.info("%s Responded to a ping: %s" % (self.bot.get_nick(), msg.trailing))
 
-    def resettimer(self, msg):
+    @hook("_RECV", "_SEND")
+    def resettimer(self, msg, cmd):
         """Resets the connection failure timer"""
         self.timer.reset()
 
@@ -37,7 +34,9 @@ class PingResponder(ModuleBase):
 
 
 class PingRespondTimer(Thread):
-    "Tracks last ping from server, and reconnects if over a threshold"
+    """
+    Tracks last ping from server, and reconnects if over a threshold
+    """
     def __init__(self, master):
         Thread.__init__(self)
         self.daemon = True
@@ -47,11 +46,15 @@ class PingRespondTimer(Thread):
         self.start()
 
     def reset(self):
-        "Reset the internal ping timeout counter"
+        """
+        Reset the internal ping timeout counter
+        """
         self.lastping = time()
 
     def disable(self):
-        "Allow the thread to die"
+        """
+        Allow the thread to die
+        """
         self.alive = False
 
     def run(self):

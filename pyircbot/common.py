@@ -1,5 +1,10 @@
 from time import time
 from math import floor
+from json import load as json_load
+from collections import namedtuple
+
+
+ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
 
 
 class burstbucket(object):
@@ -39,3 +44,63 @@ class burstbucket(object):
             self.bucket -= 1
             return 0
         return self.bucket_period - since_fill
+
+
+def messageHasCommand(command, message, requireArgs=False):
+    """Check if a message has a command with or without args in it
+
+    :param command: the command string to look for, like !ban. If a list is passed, the first match is returned.
+    :type command: str or list
+    :param message: the message string to look in, like "!ban Lil_Mac"
+    :type message: str
+    :param requireArgs: if true, only validate if the command use has any amount of trailing text
+    :type requireArgs: bool"""
+
+    if not type(command) == list:
+        command = [command]
+    for item in command:
+        cmd = messageHasCommandSingle(item, message, requireArgs)
+        if cmd:
+            return cmd
+    return False
+
+
+def messageHasCommandSingle(command, message, requireArgs=False):
+    # Check if the message at least starts with the command
+    messageBeginning = message[0:len(command)]
+    if messageBeginning != command:
+        return False
+    # Make sure it's not a subset of a longer command (ie .meme being set off by .memes)
+    subsetCheck = message[len(command):len(command) + 1]
+    if subsetCheck != " " and subsetCheck != "":
+        return False
+
+    # We've got the command! Do we need args?
+    argsStart = len(command)
+    args = ""
+    if argsStart > 0:
+        args = message[argsStart + 1:].strip()
+
+    if requireArgs and args == '':
+        return False
+
+    # Verified! Return the set.
+    return ParsedCommand(command,
+                         args.split(" ") if args else [],
+                         args,
+                         message)
+
+
+def load(filepath):
+    """Return an object from the passed filepath
+
+    :param filepath: path to a json file. filename must end with .json
+    :type filepath: str
+    :Returns:    | dict
+    """
+
+    if filepath.endswith(".json"):
+        with open(filepath, 'r') as f:
+            return json_load(f)
+    else:
+        raise Exception("Unknown config format")

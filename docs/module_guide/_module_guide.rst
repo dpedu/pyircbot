@@ -74,6 +74,8 @@ Prefix may also be a ``ServerPrefix`` object, if the hook is for an IRC method
 that interacts with the server directly, such as PING. It would have the
 properties ``event.prefix.hostname`` and ``event.prefix.str``.
 
+There are more hook-like decorators. See @regex and @command.
+
 Since the module described above echos messages, let's do that:
 
 .. code-block:: python
@@ -134,30 +136,6 @@ In usage:
     4:40:17 PM <Beefpile> test
     4:40:17 PM <derpbot420> test
 
-New Style Module Hooks
-----------------------
-
-Instead of receiving the values of the IRC event a module is responding to in
-3 separate arguments, hooks can receive them as one object. The hook system
-will automatically determine which argument style to use.
-
-The reason for this change is to eliminate some unnecessary code in modules.
-Any module that looks at a user's nick or hostname may find itself doing
-something like this in every hook:
-
-.. code-block:: python
-
-        def saynick(self, args, prefix, trailing):
-            prefixObj = self.bot.decodePrefix(prefix)
-            self.bot.act_PRIVMSG(args[0], "Hello, %s. You are connecting from %s" % (prefixObj.nick, prefixObj.hostname))
-
-With the new style, one line can be eliminated, as the passed ``IRCEvent``
-event has the prefix already parsed:
-
-.. code-block:: python
-
-        def saynick(self, event):
-            self.bot.act_PRIVMSG(event.args[0], "Hello, %s. You are connecting from %s" % (event.prefix.nick, event.prefix.hostname))
 
 Advanced Usage
 ==============

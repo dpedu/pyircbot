@@ -6,12 +6,13 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
 from datetime import datetime, timedelta
 from threading import Thread
 from time import sleep
 import re
 import pytz
+from pyircbot.modules.ModInfo import info
 
 
 class Remind(ModuleBase):
@@ -36,9 +37,6 @@ class Remind(ModuleBase):
             `message` varchar(2048)
             ) ;""")
             c.close()
-
-        self.hooks = [ModuleHook("PRIVMSG", self.remindin),
-                      ModuleHook("PRIVMSG", self.remindat)]
 
         self.disabled = False
 
@@ -108,86 +106,81 @@ class Remind(ModuleBase):
     def ondisable(self):
         self.disabled = True
 
-    def remindat(self, args, prefix, trailing):
-        prefixObj = self.bot.decodePrefix(prefix)
+    @info("remind <time>     have the bot remind you", cmds=["remind", "at"])
+    @command("remind", "at", allow_private=True)
+    def remindat(self, msg, cmd):
+        regex = re.compile(r'(\d+):(\d+)(?::(\d+))?([^\s\d]+)? (.*)')
+        match = regex.match(cmd.args_str)
+        replyTo = msg.args[0]
+        try:
+            hour, minute, second, tz, message = match.groups()
+            message = message.strip()
 
-        replyTo = prefixObj.nick if "#" not in args[0] else args[0]
+            assert not message == ""
 
-        # Lots of code borrowed from https://github.com/embolalia/willie/blob/master/willie/modules/remind.py
-        cmd = self.bot.messageHasCommand([".at", ".remind"], trailing, True)
-        if cmd:
-            regex = re.compile(r'(\d+):(\d+)(?::(\d+))?([^\s\d]+)? (.*)')
-            match = regex.match(cmd.args_str)
+            hour = int(hour)
+            minute = int(minute)
+            if second is not None:
+                second = int(second)
 
+        except:
+            self.bot.act_PRIVMSG(replyTo, "%s: .at - Remind at a time. Example: .at 20:45EST Do your homework!" %
+                                 msg.prefix.nick)
+            return
+
+        now = datetime.now()
+        remindAt = datetime.now()
+
+        # if there was timezone, make sure the time we're reminding them at is relative to their timezone
+        if tz is not None:
             try:
-                hour, minute, second, tz, message = match.groups()
-                message = message.strip()
-
-                assert not message == ""
-
-                hour = int(hour)
-                minute = int(minute)
-                if second is not None:
-                    second = int(second)
-
+                theirzone = pytz.timezone(Remind.translateZoneStr(tz))
             except:
-                self.bot.act_PRIVMSG(replyTo, "%s: .at - Remind at a time. Example: .at 20:45EST Do your homework!" %
-                                     prefixObj.nick)
+                self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (msg.prefix.nick, tz))
                 return
+            remindAt = theirzone.localize(remindAt, is_dst=Remind.is_dst(theirzone))
 
-            now = datetime.now()
-            remindAt = datetime.now()
+        # Set the hour and minute we'll remind them at today.
+        # If the ends up being in the past, we'll add a day alter
+        remindAt = remindAt.replace(hour=hour).replace(minute=minute).replace(microsecond=0)
 
-            # if there was timezone, make sure the time we're reminding them at is relative to their timezone
-            if tz is not None:
-                try:
-                    theirzone = pytz.timezone(Remind.translateZoneStr(tz))
-                except:
-                    self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (prefixObj.nick, tz))
-                    return
-                remindAt = theirzone.localize(remindAt, is_dst=Remind.is_dst(theirzone))
+        # Set seconds
+        if second is None:
+            remindAt = remindAt.replace(second=0)
+        else:
+            remindAt = remindAt.replace(second=second)
 
-            # Set the hour and minute we'll remind them at today.
-            # If the ends up being in the past, we'll add a day alter
-            remindAt = remindAt.replace(hour=hour).replace(minute=minute).replace(microsecond=0)
+        # if there was timezone, convert remindAt to our zone
+        if tz is not None:
+            try:
+                theirzone = pytz.timezone(Remind.translateZoneStr(tz))
+            except:
+                self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (msg.prefix.nick, tz))
+                return
+            remindAt = remindAt.astimezone(pytz.timezone(self.config["mytimezone"])).replace(tzinfo=None)
 
-            # Set seconds
-            if second is None:
-                remindAt = remindAt.replace(second=0)
-            else:
-                remindAt = remindAt.replace(second=second)
+        # Advance it a day if the time would have been earlier today
+        while remindAt < now:
+            remindAt += timedelta(days=1)
 
-            # if there was timezone, convert remindAt to our zone
-            if tz is not None:
-                try:
-                    theirzone = pytz.timezone(Remind.translateZoneStr(tz))
-                except:
-                    self.bot.act_PRIVMSG(replyTo, "%s: I don't recognize the timezone '%s'." % (prefixObj.nick, tz))
-                    return
-                remindAt = remindAt.astimezone(pytz.timezone(self.config["mytimezone"])).replace(tzinfo=None)
+        timediff = remindAt - datetime.now()
+        # self.bot.act_PRIVMSG(replyTo, "Time: %s" % str(remindAt))
+        # self.bot.act_PRIVMSG(replyTo, "Diff: %s" % (timediff))
 
-            # Advance it a day if the time would have been earlier today
-            while remindAt < now:
-                remindAt += timedelta(days=1)
+        # Save the reminder
+        c = self.db.query("INSERT INTO `reminders` (`sender`, `senderch`, `when`, `message`) VALUES (?, ?, ?, ?)", (
+            msg.prefix.nick,
+            msg.args[0] if "#" in msg.args[0] else "",
+            remindAt,
+            message
+        ))
+        c.close()
 
-            timediff = remindAt - datetime.now()
-            # self.bot.act_PRIVMSG(replyTo, "Time: %s" % str(remindAt))
-            # self.bot.act_PRIVMSG(replyTo, "Diff: %s" % (timediff))
+        diffHours = int(timediff.seconds / 60 / 60)
+        diffMins = int((timediff.seconds - diffHours * 60 * 60) / 60)
 
-            # Save the reminder
-            c = self.db.query("INSERT INTO `reminders` (`sender`, `senderch`, `when`, `message`) VALUES (?, ?, ?, ?)", (
-                prefixObj.nick,
-                args[0] if "#" in args[0] else "",
-                remindAt,
-                message
-            ))
-            c.close()
-
-            diffHours = int(timediff.seconds / 60 / 60)
-            diffMins = int((timediff.seconds - diffHours * 60 * 60) / 60)
-
-            self.bot.act_PRIVMSG(replyTo, "%s: Ok, will do. Approx %sh%sm to go." %
-                                 (prefixObj.nick, diffHours, diffMins))
+        self.bot.act_PRIVMSG(replyTo, "%s: Ok, will do. Approx %sh%sm to go." %
+                             (msg.prefix.nick, diffHours, diffMins))
 
     @staticmethod
     def is_dst(tz):
@@ -205,46 +198,45 @@ class Remind(ModuleBase):
         else:
             return zonestr
 
-    def remindin(self, args, prefix, trailing):
-        prefixObj = self.bot.decodePrefix(prefix)
-        replyTo = prefixObj.nick if "#" not in args[0] else args[0]
+    @info("after <duration>     have the bot remind after", cmds=["after", "in"])
+    @command("after", "in", allow_private=True)
+    def remindin(self, msg, cmd):
+        replyTo = msg.args[0]
 
-        cmd = self.bot.messageHasCommand([".in", ".after"], trailing, True)
-        if cmd:
-            if not cmd.args:
-                self.bot.act_PRIVMSG(replyTo, "%s: .in - Remind after x amount of time. Example: .in 1week5d2h1m Go "
-                                     "fuck yourself" % prefixObj.nick)
+        if not cmd.args:
+            self.bot.act_PRIVMSG(replyTo, "%s: .in - Remind after x amount of time. Example: .in 1week5d2h1m Go "
+                                 "fuck yourself" % msg.prefix.nick)
+            return
+
+        timepieces = re.compile(r'([0-9]+)([a-zA-Z]+)').findall(cmd.args[0])
+        if not timepieces:
+            self.bot.act_PRIVMSG(replyTo, "%s: .in - Remind after x amount of time. Example: .in 1week5d2h1m Go "
+                                 "fuck yourself" % msg.prefix.nick)
+            return
+
+        delaySeconds = 0
+        for match in timepieces:
+            # ('30', 'm')
+            if not match[1] in Remind.scaling:
+                self.bot.act_PRIVMSG(replyTo, "%s: Sorry, I don't understand the time unit '%s'" %
+                                     (msg.prefix.nick, match[1]))
                 return
 
-            timepieces = re.compile(r'([0-9]+)([a-zA-Z]+)').findall(cmd.args[0])
-            if not timepieces:
-                self.bot.act_PRIVMSG(replyTo, "%s: .in - Remind after x amount of time. Example: .in 1week5d2h1m Go "
-                                     "fuck yourself" % prefixObj.nick)
-                return
+            delaySeconds += (Remind.scaling[match[1]] * int(match[0]))
 
-            delaySeconds = 0
-            for match in timepieces:
-                # ('30', 'm')
-                if not match[1] in Remind.scaling:
-                    self.bot.act_PRIVMSG(replyTo, "%s: Sorry, I don't understand the time unit '%s'" %
-                                         (prefixObj.nick, match[1]))
-                    return
+        remindAt = datetime.now() + timedelta(seconds=delaySeconds)
 
-                delaySeconds += (Remind.scaling[match[1]] * int(match[0]))
+        self.db.query("INSERT INTO `reminders` (`sender`, `senderch`, `when`, `message`) VALUES (?, ?, ?, ?)", (
+            msg.prefix.nick,
+            msg.args[0] if "#" in msg.args[0] else "",
+            remindAt,
+            cmd.args_str[len(cmd.args[0]):].strip()
+        )).close()
 
-            remindAt = datetime.now() + timedelta(seconds=delaySeconds)
+        hours = int(delaySeconds / 60 / 60)
+        minutes = int((delaySeconds - (hours * 60 * 60)) / 60)
 
-            self.db.query("INSERT INTO `reminders` (`sender`, `senderch`, `when`, `message`) VALUES (?, ?, ?, ?)", (
-                prefixObj.nick,
-                args[0] if "#" in args[0] else "",
-                remindAt,
-                cmd.args_str[len(cmd.args[0]):].strip()
-            )).close()
-
-            hours = int(delaySeconds / 60 / 60)
-            minutes = int((delaySeconds - (hours * 60 * 60)) / 60)
-
-            self.bot.act_PRIVMSG(replyTo, "%s: Ok, talk to you in approx %sh%sm" % (prefixObj.nick, hours, minutes))
+        self.bot.act_PRIVMSG(replyTo, "%s: Ok, talk to you in approx %sh%sm" % (msg.prefix.nick, hours, minutes))
 
     scaling = {
         "years": 365.25 * 24 * 3600,

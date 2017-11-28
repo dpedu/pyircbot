@@ -13,6 +13,7 @@ Contents:
    modules/_modules.rst
    rpc/_rpc.rst
    module_guide/_module_guide.rst
+   module_guide/_pubsub_mode.rst
    changelog.rst
 
 More Information

@@ -7,7 +7,7 @@
 
 from threading import Thread
 from time import sleep, time
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 from random import randrange, choice
 
 
@@ -15,15 +15,15 @@ class Triggered(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
         self.quietuntil = time()
-        self.hooks.append(ModuleHook("PRIVMSG", self.check))
 
-    def check(self, args):
+    @hook("PRIVMSG")
+    def check(self, msg, cmd):
         if time() < self.quietuntil:
             return
-        if not args.args[0].lower() in self.config["channels"]:
+        if not msg.args[0].lower() in self.config["channels"]:
             return
 
-        message = args.trailing.lower()
+        message = msg.trailing.lower()
         triggered = False
         for word in self.config["words"]:
             if word.lower() in message:
@@ -33,7 +33,7 @@ class Triggered(ModuleBase):
         if not triggered:
             return
 
-        msg = Thread(target=self.scream, args=(args.args[0],))
+        msg = Thread(target=self.scream, args=(msg.args[0],))
         msg.daemon = True
         msg.start()
 

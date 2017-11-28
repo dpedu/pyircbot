@@ -7,14 +7,14 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
+from pyircbot.modules.ModInfo import info
 from datetime import datetime
 
 
 class Inventory(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.db = None
         serviceProviders = self.bot.getmodulesbyservice("sqlite")
         if not serviceProviders:
@@ -33,42 +33,38 @@ class Inventory(ModuleBase):
             ) ;""")
             c.close()
 
-        self.hooks = [ModuleHook("PRIVMSG", self.checkInv)]
-
-    def checkInv(self, args, prefix, trailing):
-        if not args[0][0] == "#":
+    @info("have <item>       give the bot an item", cmds=["have"])
+    @command("have")
+    def checkInv(self, msg, cmd):
+        if len(cmd.args) < 1:
             return
-        prefixObj = self.bot.decodePrefix(prefix)
-        cmd = self.bot.messageHasCommand([".have"], trailing, True)
-        if cmd:
-            if len(cmd.args) < 1:
-                return
-            adjective = None
-            if cmd.args[0] in self.config["adjectives"]:
-                cmd.args_str = cmd.args_str[len(cmd.args[0]):].strip()
-                adjective = cmd.args[0]
-            newItem = cmd.args_str
+        adjective = None
+        newItem = cmd.args_str
+        if cmd.args[0] in self.config["adjectives"]:
+            newItem = cmd.args_str[len(cmd.args[0]):].strip()
+            adjective = cmd.args[0]
 
-            if self.has_item(newItem):
-                self.bot.act_PRIVMSG(args[0], self.config["dupe_msg"] % {"item": newItem})
-                return
+        if self.has_item(newItem):
+            self.bot.act_PRIVMSG(msg.args[0], self.config["dupe_msg"] % {"item": newItem})
+            return
 
-            dropped = self.add_item(prefixObj.nick, newItem)
-            if len(dropped) > 0:
-                self.bot.act_PRIVMSG(args[0], self.config["swap_msg"] %
-                                     {"adjective": (adjective + " ") if adjective else "",
-                                      "recv_item": newItem, "drop_item": ", ".join(dropped)})
-            else:
-                self.bot.act_PRIVMSG(args[0], self.config["recv_msg"] %
-                                     {"item": newItem, "adjective": "these " if newItem[-1:] == "s" else "this "})
+        dropped = self.add_item(msg.prefix.nick, newItem)
+        if len(dropped) > 0:
+            self.bot.act_PRIVMSG(msg.args[0], self.config["swap_msg"] %
+                                 {"adjective": (adjective + " ") if adjective else "",
+                                  "recv_item": newItem, "drop_item": ", ".join(dropped)})
+        else:
+            self.bot.act_PRIVMSG(msg.args[0], self.config["recv_msg"] %
+                                 {"item": newItem, "adjective": "these " if newItem[-1:] == "s" else "this "})
 
-        cmd = self.bot.messageHasCommand([".inventory", ".inv"], trailing)
-        if cmd:
-            inv = self.getinventory()
-            if len(inv) == 0:
-                self.bot.act_PRIVMSG(args[0], self.config["inv_msg"] % {"itemlist": "nothing!"})
-            else:
-                self.bot.act_PRIVMSG(args[0], self.config["inv_msg"] % {"itemlist": ", ".join(inv)})
+    @info("inventory         show the bot's inventory", cmds=["inventory", "inv"])
+    @command("inventory", "inv")
+    def cmd_inv(self, msg, cmd):
+        inv = self.getinventory()
+        if len(inv) == 0:
+            self.bot.act_PRIVMSG(msg.args[0], self.config["inv_msg"] % {"itemlist": "nothing!"})
+        else:
+            self.bot.act_PRIVMSG(msg.args[0], self.config["inv_msg"] % {"itemlist": ", ".join(inv)})
 
     def has_item(self, itemName):
         c = self.db.query("SELECT COUNT(*) as `num` FROM `inventory` WHERE `item`=? COLLATE NOCASE", (itemName,))

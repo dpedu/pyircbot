@@ -156,7 +156,9 @@ class SMS(ModuleBase):
         try:
             self.twilio.api.account.messages.create(to=self.config["contacts"][contact],
                                                     from_=self.config["number"],
-                                                    body=msg.trailing[7 + len(contact):].strip())
+                                                    body="{} <{}>: {}".format(msg.args[0],
+                                                                              msg.prefix.nick,
+                                                                              msg.trailing[7 + len(contact):].strip()))
         except Exception as e:
             self.bot.act_PRIVMSG(msg.args[0], "Could not send message: {}".format(repr(e)))
         else:

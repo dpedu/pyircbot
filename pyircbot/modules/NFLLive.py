@@ -6,7 +6,8 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
+from pyircbot.modules.ModInfo import info
 from time import time
 from requests import get
 from lxml import etree
@@ -19,112 +20,107 @@ class NFLLive(ModuleBase):
         self.cache = None
         self.cacheAge = 0
 
-        self.hooks = [ModuleHook(["PRIVMSG"], self.nflitup)]
+    @info("nfl               show nfl schedule & score", cmds=["nfl"])
+    @command("nfl")
+    def nflitup(self, message, cmd):
+        games = self.getNflGamesCached()
+        msg = []
 
-    def nflitup(self, args, prefix, trailing):
-        prefix = self.bot.decodePrefix(prefix)
-        replyTo = prefix.nick if "#" not in args[0] else args[0]
+        liveGames = []
+        gamesLaterToday = []
+        gamesToday = []
+        gamesUpcoming = []
+        gamesEarlierWeek = []
 
-        cmd = self.bot.messageHasCommand(".nfl", trailing)
-        if cmd:
-            games = self.getNflGamesCached()
-            msg = []
-
-            liveGames = []
-            gamesLaterToday = []
-            gamesToday = []
-            gamesUpcoming = []
-            gamesEarlierWeek = []
-
-            # sort games
-            for game in games["games"]:
-                if game["time"] is not None:
-                    liveGames.append(game)
-                elif game["quarter"] == "P" and game["startdate"].day == datetime.now().day:
-                    gamesLaterToday.append(game)
-                elif game["startdate"].day == datetime.now().day:
-                    gamesToday.append(game)
-                elif game["startdate"].day > datetime.now().day:
-                    gamesUpcoming.append(game)
-                else:
-                    gamesEarlierWeek.append(game)
-
-            # create list of formatted games
-            liveGamesStr = []
-            for game in liveGames:
-                liveGamesStr.append(self.formatGameLive(game))
-            liveGamesStr = ",   ".join(liveGamesStr)
-
-            gamesLaterTodayStr = []
-            for game in gamesLaterToday:
-                gamesLaterTodayStr.append(self.formatGameFuture(game))
-            gamesLaterTodayStr = ",   ".join(gamesLaterTodayStr)
-
-            gamesTodayStr = []
-            for game in gamesToday:
-                gamesTodayStr.append(self.formatGamePast(game))
-            gamesTodayStr = ",   ".join(gamesTodayStr)
-
-            gamesUpcomingStr = []
-            for game in gamesUpcoming:
-                gamesUpcomingStr.append(self.formatGameFuture(game))
-            gamesUpcomingStr = ",   ".join(gamesUpcomingStr)
-
-            gamesEarlierWeekStr = []
-            for game in gamesEarlierWeek:
-                gamesEarlierWeekStr.append(self.formatGamePast(game))
-            gamesEarlierWeekStr = ",   ".join(gamesEarlierWeekStr)
-
-            msgPieces = []
-
-            msgPieces.append("\x02NFL week %s\x02:" % (games["season"]["week"]))
-
-            # Depending on args build the respon pieces
-            if len(cmd.args) > 0 and cmd.args[0] == "today":
-                if not liveGamesStr == "":
-                    msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
-                if not gamesLaterTodayStr == "":
-                    msgPieces.append("\x02Later today:\x02 %s" % gamesLaterTodayStr)
-                if not gamesTodayStr == "":
-                    msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
-            elif len(cmd.args) > 0 and cmd.args[0] == "live":
-                if not liveGamesStr == "":
-                    msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
-            elif len(cmd.args) > 0 and cmd.args[0] == "scores":
-                if not liveGamesStr == "":
-                    msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
-                if not gamesTodayStr == "":
-                    msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
-                if not gamesEarlierWeekStr == "":
-                    msgPieces.append("\x02Earlier this week: \x02 %s" % gamesEarlierWeekStr)
+        # sort games
+        for game in games["games"]:
+            if game["time"] is not None:
+                liveGames.append(game)
+            elif game["quarter"] == "P" and game["startdate"].day == datetime.now().day:
+                gamesLaterToday.append(game)
+            elif game["startdate"].day == datetime.now().day:
+                gamesToday.append(game)
+            elif game["startdate"].day > datetime.now().day:
+                gamesUpcoming.append(game)
             else:
-                if not liveGamesStr == "":
-                    msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
-                if not gamesLaterTodayStr == "":
-                    msgPieces.append("\x02Later today:\x02 %s" % gamesLaterTodayStr)
-                if not gamesTodayStr == "":
-                    msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
-                if not gamesEarlierWeekStr == "":
-                    msgPieces.append("\x02Earlier this week: \x02 %s" % gamesEarlierWeekStr)
-                if not gamesUpcomingStr == "":
-                    msgPieces.append("\x02Upcoming:\x02 %s" % gamesUpcomingStr)
+                gamesEarlierWeek.append(game)
 
-            # Collaspe the list into a repsonse string. Fix grammar
-            msg = ",   ".join(msgPieces).replace(":,   ", ": ")
+        # create list of formatted games
+        liveGamesStr = []
+        for game in liveGames:
+            liveGamesStr.append(self.formatGameLive(game))
+        liveGamesStr = ",   ".join(liveGamesStr)
 
-            # Nothing means there were probably no games
-            if len(msgPieces) == 1:
-                msg = "No games!"
+        gamesLaterTodayStr = []
+        for game in gamesLaterToday:
+            gamesLaterTodayStr.append(self.formatGameFuture(game))
+        gamesLaterTodayStr = ",   ".join(gamesLaterTodayStr)
 
-            if len(msg) > 0:
-                # The message can be long so chunk it into pieces splitting at commas
-                while len(msg) > 0:
-                    piece = msg[0:330]
-                    msg = msg[330:]
-                    while not piece[-1:] == "," and len(msg) > 0:
-                        piece += msg[0:1]
-                        msg = msg[1:]
-                    self.bot.act_PRIVMSG(replyTo, "%s: %s" % (prefix.nick, piece.strip()))
+        gamesTodayStr = []
+        for game in gamesToday:
+            gamesTodayStr.append(self.formatGamePast(game))
+        gamesTodayStr = ",   ".join(gamesTodayStr)
+
+        gamesUpcomingStr = []
+        for game in gamesUpcoming:
+            gamesUpcomingStr.append(self.formatGameFuture(game))
+        gamesUpcomingStr = ",   ".join(gamesUpcomingStr)
+
+        gamesEarlierWeekStr = []
+        for game in gamesEarlierWeek:
+            gamesEarlierWeekStr.append(self.formatGamePast(game))
+        gamesEarlierWeekStr = ",   ".join(gamesEarlierWeekStr)
+
+        msgPieces = []
+
+        msgPieces.append("\x02NFL week %s\x02:" % (games["season"]["week"]))
+
+        # Depending on args build the respon pieces
+        if len(cmd.args) > 0 and cmd.args[0] == "today":
+            if not liveGamesStr == "":
+                msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+            if not gamesLaterTodayStr == "":
+                msgPieces.append("\x02Later today:\x02 %s" % gamesLaterTodayStr)
+            if not gamesTodayStr == "":
+                msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
+        elif len(cmd.args) > 0 and cmd.args[0] == "live":
+            if not liveGamesStr == "":
+                msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+        elif len(cmd.args) > 0 and cmd.args[0] == "scores":
+            if not liveGamesStr == "":
+                msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+            if not gamesTodayStr == "":
+                msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
+            if not gamesEarlierWeekStr == "":
+                msgPieces.append("\x02Earlier this week: \x02 %s" % gamesEarlierWeekStr)
+        else:
+            if not liveGamesStr == "":
+                msgPieces.append("\x02Playing now:\x02 %s" % liveGamesStr)
+            if not gamesLaterTodayStr == "":
+                msgPieces.append("\x02Later today:\x02 %s" % gamesLaterTodayStr)
+            if not gamesTodayStr == "":
+                msgPieces.append("\x02Earlier today:\x02 %s" % gamesTodayStr)
+            if not gamesEarlierWeekStr == "":
+                msgPieces.append("\x02Earlier this week: \x02 %s" % gamesEarlierWeekStr)
+            if not gamesUpcomingStr == "":
+                msgPieces.append("\x02Upcoming:\x02 %s" % gamesUpcomingStr)
+
+        # Collaspe the list into a repsonse string. Fix grammar
+        msg = ",   ".join(msgPieces).replace(":,   ", ": ")
+
+        # Nothing means there were probably no games
+        if len(msgPieces) == 1:
+            msg = "No games!"
+
+        if len(msg) > 0:
+            # The message can be long so chunk it into pieces splitting at commas
+            while len(msg) > 0:
+                piece = msg[0:330]
+                msg = msg[330:]
+                while not piece[-1:] == "," and len(msg) > 0:
+                    piece += msg[0:1]
+                    msg = msg[1:]
+                self.bot.act_PRIVMSG(message.args[0], "%s: %s" % (message.prefix.nick, piece.strip()))
 
     def formatGameLive(self, game):
         c_vis = 3 if int(game["visitor_score"]) > int(game["home_score"]) else 4

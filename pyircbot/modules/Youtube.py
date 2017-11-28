@@ -7,7 +7,9 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
+from pyircbot.modules.ModInfo import info
+from random import shuffle
 from requests import get
 import time
 import re
@@ -16,7 +18,6 @@ import re
 class Youtube(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("PRIVMSG", self.youtube)]
 
     def getISOdurationseconds(self, stamp):
         ISO_8601_period_rx = re.compile(
@@ -33,25 +34,24 @@ class Youtube(ModuleBase):
         )  # http://stackoverflow.com/a/16742742
         return ISO_8601_period_rx.match(stamp).groupdict()
 
-    def youtube(self, args, prefix, trailing):
+    @info("yt                search for youtube videos", cmds=["yt", "youtube"])
+    @command("yt", "youtube")
+    def youtube(self, msg, cmd):
+        j = get("https://www.googleapis.com/youtube/v3/search",
+                params={"key": self.config["api_key"],
+                        "part": "snippet",
+                        "type": "video",
+                        "maxResults": "25",
+                        "safeSearch": self.config.get("safe_search", "none"),
+                        "q": cmd.args_str}).json()
 
-        cmd = self.bot.messageHasCommand(".youtube", trailing)
-        if not cmd:
-            cmd = self.bot.messageHasCommand(".yt", trailing)
-        if cmd and args[0][0:1] == "#":
-            # TODO search youtube
-            if cmd.args_str.strip() == "":
-                self.bot.act_PRIVMSG(args[0], '.youtube <query> -- returns the first YouTube search result for <query>')
-                return
-            j = get("http://gdata.youtube.com/feeds/api/videos?v=2&alt=jsonc&max-results=1",
-                    params={"q": trailing}).json()
-            if 'error' in j or j['data']['totalItems'] == 0:
-                self.bot.act_PRIVMSG(args[0], "YouTube: No results found.")
-            else:
-                vid_id = j['data']['items'][0]['id']
-                vidinfo = self.get_video_description(vid_id)
-                if vidinfo:
-                    self.bot.act_PRIVMSG(args[0], "http://youtu.be/%s :: %s" % (vid_id, vidinfo))
+        if 'error' in j or len(j["items"]) == 0:
+            self.bot.act_PRIVMSG(msg.args[0], "No results found.")
+        else:
+            shuffle(j['items'])
+            vid_id = j["items"][0]['id']['videoId']
+            self.bot.act_PRIVMSG(msg.args[0], "http://youtu.be/{} :: {}".format(vid_id,
+                                                                                self.get_video_description(vid_id)))
 
     def get_video_description(self, vid_id):
         apidata = get('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s'

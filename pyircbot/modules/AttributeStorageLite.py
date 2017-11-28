@@ -13,7 +13,6 @@ from pyircbot.modulebase import ModuleBase
 class AttributeStorageLite(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = []
         self.services = ["attributes"]
         self.db = None
         serviceProviders = self.bot.getmodulesbyservice("sqlite")

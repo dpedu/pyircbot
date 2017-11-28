@@ -7,7 +7,7 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 from requests import get
 import re
 import time
@@ -22,16 +22,14 @@ class LinkTitler(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
         self.REQUEST_SIZE_LIMIT = 10 * 1024
-        self.hooks = [ModuleHook("PRIVMSG", self.searches)]
 
-    def searches(self, args, prefix, trailing):
-        t = Thread(target=self.doLinkTitle, args=(args, prefix, trailing))
+    @hook("PRIVMSG")
+    def searches(self, msg, cmd):
+        t = Thread(target=self.doLinkTitle, args=(msg.args, msg.prefix.nick, msg.trailing))
         t.daemon = True
         t.start()
 
-    def doLinkTitle(self, args, prefix, trailing):
-        sender = self.bot.decodePrefix(prefix)
-
+    def doLinkTitle(self, args, sender, trailing):
         # Youtube
         matches = re.compile(r'(?:youtube.*?(?:v=|/v/)|youtu\.be/|yooouuutuuube.*?id=)([-_a-z0-9]+)', re.I) \
             .findall(trailing)
@@ -67,7 +65,7 @@ class LinkTitler(ModuleBase):
                           "domain": submission.domain,
                           "nsfw": "[NSFW]" if submission.over_18 else "",
                           "points": submission.ups,
-                          "percent": "%s%%" % int(submission.upvote_ratio  *100),
+                          "percent": "%s%%" % int(submission.upvote_ratio * 100),
                           "comments": submission.num_comments,
                           "author": submission.author.name,
                           "date": datetime.datetime.fromtimestamp(submission.created).strftime("%Y.%m.%d")
@@ -98,11 +96,11 @@ class LinkTitler(ModuleBase):
                     # Fetch HTML title
                     title = self.url_htmltitle(match[0])
                     if title:
-                        self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02" % (sender.nick, title))
+                        self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02" % (sender, title))
                 else:
                     # Unknown types, just print type and size
                     self.bot.act_PRIVMSG(args[0], "%s: \x02%s\x02, %s" %
-                                         (sender.nick, headers["Content-Type"],
+                                         (sender, headers["Content-Type"],
                                           self.nicesize(int(headers["Content-Length"])) if
                                           "Content-Length" in headers else "unknown size"))
 

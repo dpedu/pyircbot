@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+import sys
+import os
+import logging
+from contextlib import closing
+from argparse import ArgumentParser
+from json import loads, load
+from msgbus.client import MsgbusSubClient
+import pyircbot
+import traceback
+from pyircbot.pyircbot import PrimitiveBot
+from pyircbot.irccore import IRCEvent, UserPrefix
+from json import dumps
+
+
+# IRCEvent = namedtuple("IRCEvent", "command args prefix trailing")
+# UserPrefix = namedtuple("UserPrefix", "nick username hostname")
+# ServerPrefix = namedtuple("ServerPrefix", "hostname")
+
+
+class PyIRCBotSub(PrimitiveBot):
+    def __init__(self, name, host, port, config):
+        super().__init__(config)
+        self.name = name
+        self.host = host
+        self.port = port
+        self.client = None  # PubSub socket
+
+    def run(self):
+        # Connect to msgbus and loop through messages
+        with closing(MsgbusSubClient(self.host, self.port)) as self.client:
+            self.client.sub("pyircbot_privmsg")#TODO More of these
+            while True:
+                try:
+                    channel, body = self.client.recv()
+                    self.process_line(channel, body)
+                except Exception as e:
+                    traceback.print_exc()
+
+    def process_line(self, channel, body):
+        name, rest = body.split(" ", 1)
+        if name != self.name:
+            return
+
+        # pyircbot_privmsg default
+        # [["#jesusandhacking"], "xMopxShell", "test", {"prefix": ["xMopxShell", "~xMopxShel", "192.95.23.134"]}]
+        args, sender, trailing, extras = loads(rest)
+        nick, username, hostname = extras["prefix"]
+
+        msg = IRCEvent("PRIVMSG",
+                       args,
+                       UserPrefix(nick,
+                                  username,
+                                  hostname),
+                       trailing)
+
+        for module_name, module in self.moduleInstances.items():
+            for hook in module.irchooks:
+                validation = hook.validator(msg, self)
+                if validation:
+                    hook.method(msg, validation)
+
+                # client.pub("pyircbot_send", "default privmsg {}".format(dumps([channel, "{}: pong".format(sender)])))
+
+    " Filesystem Methods "
+    def getConfigPath(self, moduleName):
+        """Return the absolute path for a module's config file
+
+        :param moduleName: the module who's config file we want
+        :type moduleName: str"""
+
+        basepath = "%s/config/%s" % (self.botconfig["bot"]["datadir"], moduleName)
+
+        if os.path.exists("%s.json" % basepath):
+            return "%s.json" % basepath
+        return None
+
+    def getDataPath(self, moduleName):
+        """Return the absolute path for a module's data dir
+
+        :param moduleName: the module who's data dir we want
+        :type moduleName: str"""
+        module_dir = os.path.join(self.botconfig["bot"]["datadir"], "data", moduleName)
+        if not os.path.exists(module_dir):
+            os.mkdir(module_dir)
+        return module_dir
+
+    " IRC methods "
+    def act_PRIVMSG(self, towho, message):
+        """Use the `/msg` command
+
+        :param towho: the target #channel or user's name
+        :type towho: str
+        :param message: the message to send
+        :type message: str"""
+        # self.sendRaw("PRIVMSG %s :%s" % (towho, message))
+        self.client.pub("pyircbot_send", "{} {} {}".format(self.name, "privmsg", dumps([towho, message])))
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
+    log = logging.getLogger('main')
+
+    # parse command line args
+    parser = ArgumentParser(description="Run pyircbot plugins behind a pubsub client")
+    parser.add_argument("-c", "--config", help="Pyircbot config file")
+    parser.add_argument("-s", "--server", default="localhost", help="Msgbus server address")
+    parser.add_argument("-p", "--port", default=7100, type=int, help="Msgbus server port")
+    parser.add_argument("-n", "--name", default="default", help="bot name")
+    parser.add_argument("--debug", action="store_true", help="")
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    log.debug(args)
+
+    # Load config
+    with open(args.config) as f:
+        config = load(f)
+
+    bot = PyIRCBotSub(args.name, args.server, int(args.port), config)
+
+    # Load modules in config
+    sys.path.append(os.path.dirname(pyircbot.__file__) + "/modules/")
+    for modulename in config["modules"]:
+        print("Load: ", modulename)
+        bot.loadmodule(modulename)
+
+    bot.run()
+

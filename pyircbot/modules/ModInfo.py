@@ -34,8 +34,16 @@ class info(object):
         self.commands = cmds or []
 
     def __call__(self, func):
-        setattr(func, "irchelp", self.docstring)
-        setattr(func, "irchelpc", self.commands)
+        if hasattr(func, "irchelp"):
+            func.irchelp.append(self.docstring)
+        else:
+            setattr(func, "irchelp", [self.docstring])
+
+        if hasattr(func, "irchelpc"):
+            func.irchelpc.append(self.commands)
+        else:
+            setattr(func, "irchelpc", [self.commands])
+
         return func
 
 
@@ -77,5 +85,6 @@ class ModInfo(ModuleBase):
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
                 if callable(attr) and hasattr(attr, "irchelp"):
-                    yield (modname, module, getattr(attr, "irchelp"), getattr(attr, "irchelpc"), )
+                    for cmdhelp, cmdaliases in zip(getattr(attr, "irchelp"), getattr(attr, "irchelpc")):
+                        yield (modname, module, cmdhelp, cmdaliases, )
         raise StopIteration()

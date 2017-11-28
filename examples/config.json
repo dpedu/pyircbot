@@ -1,6 +1,6 @@
 {
     "bot":{
-        "datadir":"./data/",
+        "datadir":"./examples/data/",
         "rpcbind":"0.0.0.0",
         "rpcport":1876,
         "usermodules": [ "./data/modules/" ]

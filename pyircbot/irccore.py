@@ -172,6 +172,7 @@ class IRCCore(object):
     def initHooks(self):
         """Defines hooks that modules can listen for events of"""
         self.hooks = [
+            '_ALL',
             '_CONNECT',
             '_DISCONNECT',
             '_RECV',
@@ -222,7 +223,7 @@ class IRCCore(object):
         :type prefix: str
         :param trailing: data payload of the command
         :type trailing: str"""
-        for hook in self.hookcalls[command]:
+        for hook in self.hookcalls["_ALL"] + self.hookcalls[command]:
             try:
                 if len(getargspec(hook).args) == 2:
                     hook(IRCCore.packetAsObject(command, args, prefix, trailing))

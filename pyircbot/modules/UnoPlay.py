@@ -6,7 +6,7 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
 from random import randint
 import time
 import re
@@ -19,9 +19,6 @@ class UnoPlay(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
         self.servicesModule = self.bot.getmodulebyname("Services")
-        self.hooks = [ModuleHook("PRIVMSG", self.unoplay),
-                      ModuleHook("PRIVMSG", self.trigger),
-                      ModuleHook("NOTICE", self.decklisten)]
         self.current_card = None
         self.shouldgo = False
         self.has_drawn = False
@@ -32,30 +29,32 @@ class UnoPlay(ModuleBase):
         assert self.config["strategy"] in self.strategies
         self.cards = []
 
-    def trigger(self, args, prefix, trailing):
-        if trailing.startswith("["):  # anti-znc buffer playback
+    @hook("PRIVMSG")
+    def trigger(self, msg, cmd):
+        if msg.trailing.startswith("["):  # anti-znc buffer playback
             return
-        if self.config["enable_trigger"] and "!jo" in trailing:
+        if self.config["enable_trigger"] and "!jo" in msg.trailing:
             self.bot.act_PRIVMSG(self.config["unochannel"], "jo")
-        elif trailing == "jo":
+        elif msg.trailing == "jo":
             # Reset streak counter & join if another human joins
             self.games_played = 0
             self.join_game()
 
-    def decklisten(self, args, prefix, trailing):
+    @hook("NOTICE")
+    def decklisten(self, msg, cmd):
         """
         Listen for messages sent via NOTICe to the bot, this is usually a list of cards in our hand. Parse them.
         """
-        if trailing.startswith("["):  # anti-znc buffer playback
+        if msg.trailing.startswith("["):  # anti-znc buffer playback
             return
-        if not prefix or self.config["unobot"] not in prefix:
+        if not msg.prefix or self.config["unobot"] not in msg.prefix:
             return
 
-        if "You don't have that card" in trailing:
+        if "You don't have that card" in msg.trailing:
             self.log.error("played invalid card!")
             return
 
-        trailing = self.stripcolors(trailing)
+        trailing = self.stripcolors(msg.trailing)
 
         cards = []
 
@@ -73,13 +72,14 @@ class UnoPlay(ModuleBase):
             self.shouldgo = False
             self.taketurn()
 
-    def unoplay(self, args, prefix, trailing):
-        if trailing.startswith("["):  # anti-znc buffer playback
+    @hook("PRIVMSG")
+    def unoplay(self, msg, cmd):
+        if msg.trailing.startswith("["):  # anti-znc buffer playback
             return
 
-        trailing = self.stripcolors(trailing)
+        trailing = self.stripcolors(msg.trailing)
 
-        if self.config["unobot"] not in prefix:
+        if self.config["unobot"] not in msg.prefix.nick:
             return
 
         # Parse card from beginning message

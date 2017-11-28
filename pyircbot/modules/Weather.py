@@ -7,8 +7,9 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
 from requests import get
+from pyircbot.modules.ModInfo import info
 
 
 class Weather(ModuleBase):
@@ -31,80 +32,71 @@ class Weather(ModuleBase):
             self.log.error("Weather: An 'attributes' service is required")
             return
 
-        self.hooks = [ModuleHook("PRIVMSG", self.weather)]
-
-    def weather(self, args, prefix, trailing):
-        prefixObj = self.bot.decodePrefix(prefix)
-        fromWho = prefixObj.nick
-
-        replyTo = args[0] if "#" in args[0] else fromWho
-
-        hasUnit = self.attr.get(fromWho, "weather-unit")
+    @info("weather [location]          display the forecast", cmds=["weather", "w"])
+    @command("weather", "w")
+    def cmd_weather(self, msg, cmd):
+        hasUnit = self.attr.get(msg.prefix.nick, "weather-unit")
         if hasUnit:
             hasUnit = hasUnit.upper()
 
-        cmd = self.bot.messageHasCommand([".w", ".weather"], trailing)
-        if cmd:
-            if len(cmd.args_str) > 0:
-                self.send_weather(replyTo, fromWho, cmd.args_str, hasUnit)
-                return
+        if len(cmd.args_str) > 0:
+            self.send_weather(msg.args[0], msg.prefix.nick, cmd.args_str, hasUnit)
+            return
 
-            weatherZip = self.attr.get(fromWho, "weather-zip")
-            if weatherZip is None:
-                self.bot.act_PRIVMSG(replyTo, "%s: you must set a location with .setloc" % (fromWho,))
-                return
+        weatherZip = self.attr.get(msg.prefix.nick, "weather-zip")
+        if weatherZip is None:
+            self.bot.act_PRIVMSG(msg.args[0], "%s: you must set a location with .setloc" % (msg.prefix.nick,))
+            return
 
-            self.bot.act_PRIVMSG(replyTo, "%s: %s" % (fromWho, self.getWeather(weatherZip, hasUnit)))
+        self.bot.act_PRIVMSG(msg.args[0], "%s: %s" % (msg.prefix.nick, self.getWeather(weatherZip, hasUnit)))
 
-        cmd = self.bot.messageHasCommand(".setloc", trailing)
-        if cmd and not args[0] == "#":
+    @info("setloc <location>           set your home location for weather lookups", cmds=["setloc"])
+    @command("setloc", allow_private=True)
+    def cmd_setloc(self, msg, cmd):
+        # if not cmd.args:
+        #     self.bot.act_PRIVMSG(fromWho, ".setloc: set your location for weather lookup. Example: "
+        #                                   ".setloc Rochester, NY")
+        #     return
+        reply_to = msg.args[0] if msg.args[0].startswith("#") else msg.prefix.nick
+        weatherLoc = cmd.args_str
+        try:
+            result = self.getWeather(weatherLoc)  # NOQA
+        except LocationNotSpecificException as lnse:
+            self.bot.act_PRIVMSG(reply_to, "'%s': location not specific enough. Did you mean: %s" %
+                                 (weatherLoc, self.alternates_to_str(lnse.alternates)))
+            return
+        except LocationException as le:
+            self.bot.act_PRIVMSG(reply_to, "'%s': location not found: %s" % (weatherLoc, le))
+            return
 
-            if not cmd.args:
-                self.bot.act_PRIVMSG(fromWho, ".setloc: set your location for weather lookup. Example: "
-                                              ".setloc Rochester, NY")
-                return
+        if not self.login.check(msg.prefix.nick, msg.prefix.hostname):
+            self.bot.act_PRIVMSG(reply_to, ".setloc: you need to be logged in to do that (try .login)")
+            return
 
-            weatherLoc = cmd.args_str
+        self.attr.set(msg.prefix.nick, "weather-zip", weatherLoc)
+        self.bot.act_PRIVMSG(reply_to, "Saved your location as %s"
+                                              % self.attr.get(msg.prefix.nick, "weather-zip"))
+        if self.attr.get(msg.prefix.nick, "weather-zip") is None:
+            self.bot.act_PRIVMSG(reply_to, "Tip: choose C or F with .wunit <C/F>")
 
-            try:
-                result = self.getWeather(weatherLoc)  # NOQA
-            except LocationNotSpecificException as lnse:
-                self.bot.act_PRIVMSG(fromWho, "'%s': location not specific enough. Did you mean: %s" %
-                                     (weatherLoc, self.alternates_to_str(lnse.alternates)))
-                return
-            except LocationException as le:
-                self.bot.act_PRIVMSG(fromWho, "'%s': location not found: %s" % (weatherLoc, le))
-                return
+    @info("wunit <c|f>           set preferred weather unit", cmds=["wunit"])
+    @command("wunit", allow_private=True)
+    def cmd_wunit(self, msg, cmd):
+        if cmd.args[0].lower() not in ['c', 'f']:
+            return
+        unit = cmd.args[0].lower()
+        reply_to = msg.args[0] if msg.args[0].startswith("#") else msg.prefix.nick
 
-            if not self.login.check(prefixObj.nick, prefixObj.hostname):
-                self.bot.act_PRIVMSG(fromWho, ".setloc: you need to be logged in to do that (try .login)")
-                return
+        # if unit is None:
+        #     self.bot.act_PRIVMSG(fromWho, ".wunit: set your preferred temperature unit to C or F")
+        #     return
 
-            self.attr.set(fromWho, "weather-zip", weatherLoc)
-            self.bot.act_PRIVMSG(fromWho, "Saved your location as %s" % self.attr.get(fromWho, "weather-zip"))
-            if self.attr.get(fromWho, "weather-zip") is None:
-                self.bot.act_PRIVMSG(fromWho, "Tip: choose C or F with .wunit <C/F>")
+        if not self.login.check(msg.prefix.nick, msg.prefix.hostname):
+            self.bot.act_PRIVMSG(reply_to, ".wunit: you need to be logged in to do that (try .login)")
+            return
 
-        cmd = self.bot.messageHasCommand(".wunit", trailing)
-        if cmd and not args[0] == "#":
-            unit = None
-            try:
-                assert cmd.args[0].lower() in ['c', 'f']
-                unit = cmd.args[0]
-            except:
-                pass
-
-            if unit is None:
-                self.bot.act_PRIVMSG(fromWho, ".wunit: set your preferred temperature unit to C or F")
-                return
-
-            if not self.login.check(prefixObj.nick, prefixObj.hostname):
-                self.bot.act_PRIVMSG(fromWho, ".wunit: you need to be logged in to do that (try .login)")
-                return
-
-            self.attr.set(fromWho, "weather-unit", unit.lower())
-            self.bot.act_PRIVMSG(fromWho, "Saved your preferred unit as %s" %
-                                          self.attr.get(fromWho, "weather-unit").upper())
+        self.attr.set(msg.prefix.nick, "weather-unit", unit.lower())
+        self.bot.act_PRIVMSG(reply_to, "Saved your preferred unit as %s" % unit)
 
     def send_weather(self, target, hilight, location, units=None):
         try:
