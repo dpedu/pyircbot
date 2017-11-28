@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 CONFPATH=${1:-examples/config.json}
 
