@@ -72,10 +72,11 @@ class Tell(ModuleBase):
         recip = cmd.args[0]
         message = ' '.join(cmd.args[1:]).strip()
 
-        if not message:
-            self.bot.act_PRIVMSG(msg.args[0], "%s: .tell <person> <message> - Tell someone something the next time "
-                                              "they're seen. Example: .tell antiroach Do your homework!" %
-                                              msg.prefix.nick)
+        c = self.db.query("SELECT COUNT(*) as `cnt` FROM `tells` WHERE `recip`=?;", (recip, ))
+        user_total = c.fetchall()[0]['cnt']
+        c.close()
+
+        if user_total >= self.config.get("max", 3):
             return
 
         self.db.query("INSERT INTO `tells` (`sender`, `channel`, `when`, `recip`, `message`) VALUES "

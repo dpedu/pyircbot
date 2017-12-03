@@ -24,8 +24,6 @@ class LMGTFY(ModuleBase):
 
     def createLink(self, message):
         finalUrl = BASE_URL
-        if type(message) == str:
-            message = message.split(" ")
 
         for word in message:
             finalUrl += urllib.parse.quote(word)

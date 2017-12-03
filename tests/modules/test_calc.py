@@ -16,10 +16,10 @@ def calcbot(fakebot):
         "delayMatch": 0}
     fakebot.loadmodule("SQLite")
     with closing(fakebot.moduleInstances["SQLite"].opendb("calc.db")) as db:
-        for q in ["DELETE FROM calc_addedby;",
-                  "DELETE FROM calc_channels;",
-                  "DELETE FROM calc_definitions;",
-                  "DELETE FROM calc_words;"]:
+        for q in ["DROP TABLE calc_addedby;",
+                  "DROP TABLE calc_channels;",
+                  "DROP TABLE calc_definitions;",
+                  "DROP TABLE calc_words;"]:
             db.query(q)
     fakebot.loadmodule("Calc")
     return fakebot

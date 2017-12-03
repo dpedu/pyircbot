@@ -19,9 +19,9 @@ def nickbot(fakebot):
         "delayMatch": 0}
     fakebot.loadmodule("SQLite")
     with closing(fakebot.moduleInstances["SQLite"].opendb("attributes.db")) as db:
-        for q in ["DELETE FROM attribute;",
-                  "DELETE FROM items;",
-                  "DELETE FROM `values`;"]:
+        for q in ["DROP TABLE attribute;",
+                  "DROP TABLE items;",
+                  "DROP TABLE `values`;"]:
             db.query(q)
     fakebot.loadmodule("AttributeStorageLite")
     fakebot.loadmodule("NickUser")
@@ -56,6 +56,12 @@ def test_badpass(nickbot):
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.login: incorrect password.')
 
 
+def test_change_needspass(nickbot):
+    test_register(nickbot)
+    pm(nickbot, ".setpass oopsie")
+    nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: You must provide the old password when setting a new one.')
+
+
 def test_logout(nickbot):
     test_register_login(nickbot)
     pm(nickbot, ".logout")
@@ -72,3 +78,12 @@ def test_changepass(nickbot):
     nickbot.act_PRIVMSG.reset_mock()
     pm(nickbot, ".setpass wrong newpass2")
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: Old password incorrect.')
+
+
+def test_check(nickbot):
+    test_register_login(nickbot)
+    mod = nickbot.moduleInstances["NickUser"]
+    assert mod.check("chatter", "cia.gov")
+    assert not mod.check("chatter", "not-valid.hostname")
+    pm(nickbot, ".logout")
+    assert not mod.check("chatter", "cia.gov")

@@ -9,11 +9,7 @@
 
 from pyircbot.modulebase import ModuleBase
 import sys
-
-try:
-    import MySQLdb  # python 2.x
-except:
-    import pymysql as MySQLdb  # python 3.x
+import pymysql as MySQLdb  # python 3.x
 
 
 class MySQL(ModuleBase):
