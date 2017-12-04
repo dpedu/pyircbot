@@ -185,3 +185,31 @@ one is found.
 modules providing a service should be loaded before modules requiring the
 service. Modules using a service MUST BE unloaded before the service module
 is unloaded.**
+
+Testing
+-------
+
+Good modules should be fully tested. PyIRCBot's test suite provides fixtures
+for testing any module:
+
+- ``fakebot``: a slimmed-down bot backend for light module testing
+- ``livebot``: a fully fledged instance of the bot connected to a real irc server
+
+Except for the most extreme cases, most modules can be tested with ``fakebot``.
+It allows feeding lines and checking internal state. In the test suite,
+``tests/modules/test_calc.py`` is a good example of use.
+
+However, ``livebot`` exists mainly for testing network-level things, like
+reconnecting after a connection drop, etc. If your module deals with this level
+of operations, ``livebot`` might be right. Otherwise. no.
+
+Tests (for modules) should be placed in ``./tests/modules/`` and be named like
+``test_modulename.py``.
+
+To run the test suite, call the helper script in the root of the repository:
+
+- ``./run-tests.sh``
+
+Or an individual test:
+
+- ``PYTHONPATH=. py.test tests/modules/test_mymodule.py -s -k test_function_name``

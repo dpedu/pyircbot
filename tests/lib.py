@@ -99,6 +99,9 @@ def ircserver():
 
 @pytest.fixture
 def livebot(ircserver, tmpdir):
+    """
+    A full-fledged bot connected to an irc server.
+    """
     port, server = ircserver
     channel = "#test" + str(randint(100000, 1000000))
     nick = "testbot" + str(randint(100000, 1000000))
