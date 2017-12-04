@@ -231,7 +231,8 @@ class PyIRCBot(PrimitiveBot):
         self.loop = asyncio.get_event_loop()
 
         """Reference to BotRPC thread"""
-        self.rpc = BotRPC(self)
+        if self.botconfig["bot"]["rpcport"] >= 0:
+            self.rpc = BotRPC(self)
 
         ratelimit = self.botconfig["connection"].get("rate_limit", None) or dict(rate_max=5.0, rate_int=1.1)
 
