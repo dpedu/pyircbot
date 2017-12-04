@@ -13,7 +13,7 @@ from .common import load as pload
 from .common import messageHasCommand
 
 
-class ModuleBase:
+class ModuleBase(object):
     """All modules will extend this class
 
     :param bot: A reference to the main bot passed when this module is created

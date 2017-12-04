@@ -15,13 +15,13 @@ def calcbot(fakebot):
         "delayCalcSpecific": 0,
         "delayMatch": 0}
     fakebot.loadmodule("SQLite")
+    tables = ["calc_addedby", "calc_channels", "calc_definitions", "calc_words"]
     with closing(fakebot.moduleInstances["SQLite"].opendb("calc.db")) as db:
-        for q in ["DROP TABLE calc_addedby;",
-                  "DROP TABLE calc_channels;",
-                  "DROP TABLE calc_definitions;",
-                  "DROP TABLE calc_words;"]:
-            db.query(q)
+        for t in tables:
+            db.query("DROP TABLE IF EXISTS `{}`;".format(t))
     fakebot.loadmodule("Calc")
+    for t in tables:
+        assert fakebot.moduleInstances["Calc"].sql.tableExists("calc_addedby")
     return fakebot
 
 

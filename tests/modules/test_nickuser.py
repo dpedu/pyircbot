@@ -19,10 +19,8 @@ def nickbot(fakebot):
         "delayMatch": 0}
     fakebot.loadmodule("SQLite")
     with closing(fakebot.moduleInstances["SQLite"].opendb("attributes.db")) as db:
-        for q in ["DROP TABLE attribute;",
-                  "DROP TABLE items;",
-                  "DROP TABLE `values`;"]:
-            db.query(q)
+        for table in ["attribute", "items", "values"]:
+            db.query("DROP TABLE IF EXISTS `{}`;".format(table))
     fakebot.loadmodule("AttributeStorageLite")
     fakebot.loadmodule("NickUser")
     return fakebot
@@ -37,7 +35,15 @@ def test_blind_login(nickbot):
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.login: You must first set a password with .setpass')
 
 
+def test_no_pms(nickbot):
+    nickbot.feed_line(".login foobar")
+    nickbot.act_PRIVMSG.assert_not_called()
+
+
 def test_register(nickbot):
+    pm(nickbot, ".setpass")
+    nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: usage: ".setpass newpass" or ".setpass oldpass newpass"')
+    nickbot.act_PRIVMSG.reset_mock()
     pm(nickbot, ".setpass foobar")
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: Your password has been set to "foobar".')
     nickbot.act_PRIVMSG.reset_mock()
@@ -45,6 +51,9 @@ def test_register(nickbot):
 
 def test_register_login(nickbot):
     test_register(nickbot)
+    pm(nickbot, ".login")
+    nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.login: usage: ".login password"')
+    nickbot.act_PRIVMSG.reset_mock()
     pm(nickbot, ".login foobar")
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.login: You have been logged in from: cia.gov')
     nickbot.act_PRIVMSG.reset_mock()

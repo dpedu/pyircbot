@@ -31,6 +31,8 @@ class IRCCore(object):
         self.rate_max = float(rate_max)
         self.rate_int = float(rate_int)
 
+        self.reconnect_delay = 3.0
+
         self.connected = False
         """If we're connected or not"""
 
@@ -60,7 +62,7 @@ class IRCCore(object):
         self.initHooks()
 
         self.outputq = asyncio.Queue()
-        self._loop.call_soon(asyncio.ensure_future, self.outputqueue())
+        self._loop.call_soon_threadsafe(asyncio.ensure_future, self.outputqueue())
 
     async def loop(self, loop):
         while self.alive:
@@ -94,8 +96,8 @@ class IRCCore(object):
             self.writer.close()
             if self.alive:
                 # TODO ramp down reconnect attempts
-                logging.info("Reconnecting in 3s...")
-                await asyncio.sleep(3)
+                logging.info("Reconnecting in {}s...".format(self.reconnect_delay))
+                await asyncio.sleep(self.reconnect_delay)
 
     async def outputqueue(self):
         bucket = burstbucket(self.rate_max, self.rate_int)

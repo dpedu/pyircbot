@@ -198,7 +198,7 @@ class Remind(ModuleBase):
         else:
             return zonestr
 
-    @info("after <duration>     have the bot remind after", cmds=["after", "in"])
+    @info("after <duration> <reminder>           have the bot remind after", cmds=["after", "in"])
     @command("after", "in", allow_private=True)
     def remindin(self, msg, cmd):
         replyTo = msg.args[0]

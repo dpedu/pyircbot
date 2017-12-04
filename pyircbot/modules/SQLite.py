@@ -64,13 +64,7 @@ class Connection:
         c = self.connection.cursor()
         return c
 
-    def escape(self, s):
-        raise NotImplementedError
-
-    def ondisable(self):
-        self.connection.close()
-
-    # Connects to the database server, and selects a database (Or attempts to create it if it doesn't exist yet)
+    # Opens the sqlite database / attempts to create it if it doesn't exist yet
     def _connect(self):
         self.log.info("Sqlite: opening database %s" % self.master.getFilePath(self.dbname))
         self.connection = sqlite3.connect(self.master.getFilePath(self.dbname), check_same_thread=False)

@@ -1,8 +1,9 @@
 import os
 import sys
 import pytest
-from random import randint
 from threading import Thread
+from random import randint
+from pyircbot import PyIRCBot
 from pyircbot.pyircbot import PrimitiveBot
 from pyircbot.irccore import IRCEvent, UserPrefix
 from unittest.mock import MagicMock
@@ -20,6 +21,7 @@ class FakeBaseBot(PrimitiveBot):
     def __init__(self, config):
         super().__init__(config)
         self.act_PRIVMSG = MagicMock()
+        self._modules = []
 
     def feed_line(self, trailing, cmd="PRIVMSG", args=["#test"], sender=("chatter", "root", "cia.gov")):
         """
@@ -36,13 +38,27 @@ class FakeBaseBot(PrimitiveBot):
                 if validation:
                     hook.method(msg, validation)
 
+    def closeAllModules(self):
+        for modname in self._modules:
+            self.unloadmodule(modname)
+
+    def loadmodule(self, module_name):
+        super().loadmodule(module_name)
+        self._modules.append(module_name)
+
+    def unloadmodule(self, module_name):
+        super().unloadmodule(module_name)
+        self._modules.remove(module_name)
+
 
 @pytest.fixture
-def fakebot():
+def fakebot(tmpdir):
     # TODO copy data tree to isolated place so each fakebot() is isolated
-    bot = FakeBaseBot({"bot": {"datadir": "./examples/data/"},
+    os.mkdir(os.path.join(tmpdir, "data"))
+    bot = FakeBaseBot({"bot": {"datadir": tmpdir},
                        "module_configs": {}})
     yield bot
+    bot.closeAllModules()
 
 
 @pytest.fixture
@@ -79,3 +95,70 @@ def ircserver():
     server_t.start()
     yield port, server
     server.stop()
+
+
+@pytest.fixture
+def livebot(ircserver, tmpdir):
+    port, server = ircserver
+    channel = "#test" + str(randint(100000, 1000000))
+    nick = "testbot" + str(randint(100000, 1000000))
+    config = {
+        "bot": {
+            "datadir": tmpdir,
+            "rpcbind": "0.0.0.0",
+            "rpcport": -1,
+            "usermodules": []
+        },
+        "connection": {
+            "servers": [
+                ["localhost", port]
+            ],
+            "force_ipv6": False,
+            "rate_limit": {
+                "rate_max": 5.0,
+                "rate_int": 1.1
+            }
+        },
+        "modules": [
+            "PingResponder",
+            "Services"
+        ],
+        "module_configs": {
+            "Services": {
+                "user": {
+                    "nick": [
+                        nick,
+                        nick + "_",
+                        nick + "__"
+                    ],
+                    "password": "nickservpassword",
+                    "username": "pyircbot3",
+                    "hostname": "pyircbot3.domain.com",
+                    "realname": "pyircbot3"
+                },
+                "ident": {
+                    "enable": "no",
+                    "to": "nickserv",
+                    "command": "identify %(password)s",
+                    "ghost": "no",
+                    "ghost_to": "nickserv",
+                    "ghost_cmd": "ghost %(nick)s %(password)s"
+                },
+                "channels": [
+                    channel
+                ],
+                "privatechannels": {
+                    "to": "chanserv",
+                    "command": "invite %(channel)s",
+                    "list": []
+                }
+            }
+        }
+    }
+
+    bot = PyIRCBot(config)
+    bot_t = Thread(target=bot.run, daemon=True)
+    # bot_t.start()
+    yield port, server, bot, bot_t, channel, nick
+
+    bot.kill(message="bye", forever=True)

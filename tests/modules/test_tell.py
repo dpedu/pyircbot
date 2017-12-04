@@ -11,7 +11,7 @@ def tellbot(fakebot):
     fakebot.botconfig["module_configs"]["Tell"] = {"max": 10, "maxage": 2678400}
     fakebot.loadmodule("SQLite")
     with closing(fakebot.moduleInstances["SQLite"].opendb("tell.db")) as db:
-        db.query("DROP TABLE tells;")
+        db.query("DROP TABLE IF EXISTS tells;")
     fakebot.loadmodule("Tell")
     return fakebot
 
