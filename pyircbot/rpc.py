@@ -6,7 +6,6 @@
 
 """
 
-import traceback
 import logging
 from pyircbot import jsonrpc
 from threading import Thread
