@@ -56,8 +56,7 @@ class LinkTitler(ModuleBase):
                 if submissionId in done:
                     continue
                 done.append(submissionId)
-                r = praw.Reddit(**self.config["reddit"])
-                submission = r.submission(id=submissionId)
+                submission = self.get_reddit_submission(submissionId)
                 msg = "👽 \x02\x031,15REDDIT\x0f\x02 :: %(title)s \x02on \x02%(domain)s%(nsfw)s\x02 - points " \
                       "\x02%(points)s\x02 (%(percent)s↑) - comments \x02%(comments)s\x02 -  by \x02%(author)s\x02 on " \
                       "\x02%(date)s\x02" % {
@@ -105,6 +104,10 @@ class LinkTitler(ModuleBase):
                                           "Content-Length" in headers else "unknown size"))
 
             return
+
+    def get_reddit_submission(self, subid):
+        r = praw.Reddit(**self.config["reddit"])
+        return r.submission(id=subid)
 
     def nicesize(self, numBytes):
         "Return kb or plain bytes"
@@ -160,10 +163,12 @@ class LinkTitler(ModuleBase):
         )  # http://stackoverflow.com/a/16742742
         return ISO_8601_period_rx.match(stamp).groupdict()
 
-    def get_video_description(self, vid_id):
-        apidata = get('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s'
-                      '&key=%s' % (vid_id, self.config["youtube_api_key"])).json()
+    def _get_video_description_api(self, vid_id):
+        return get('https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s'
+                   '&key=%s' % (vid_id, self.config["youtube_api_key"])).json()
 
+    def get_video_description(self, vid_id):
+        apidata = self._get_video_description_api(vid_id)
         if not apidata['pageInfo']['totalResults']:
             return
 

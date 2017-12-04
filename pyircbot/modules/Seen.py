@@ -26,7 +26,6 @@ class Seen(ModuleBase):
             self.log.info("Seen: Creating database")
             # if no, create it.
             c.execute("CREATE TABLE `seen` (`nick` VARCHAR(32), `date` INTEGER, PRIMARY KEY(`nick`))")
-        self.x = "asdf"
 
     @hook("PRIVMSG")
     def recordSeen(self, message, command):

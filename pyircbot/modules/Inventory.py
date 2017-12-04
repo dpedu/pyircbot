@@ -74,7 +74,7 @@ class Inventory(ModuleBase):
 
     def add_item(self, donor, itemName):
         dropped = []
-        c = self.db.query("SELECT * FROM `inventory` ORDER BY RANDOM() LIMIT %s,1000000" % self.config["limit"])
+        c = self.db.query("SELECT * FROM `inventory` ORDER BY RANDOM() LIMIT %s,1000000" % str(int(self.config["limit"]) - 1))
         while True:
             row = c.fetchone()
             if row is None:

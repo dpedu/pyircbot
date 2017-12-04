@@ -8,7 +8,7 @@
 """
 
 from pyircbot.modulebase import ModuleBase, command
-from requests import get
+import requests
 from pyircbot.modules.ModInfo import info
 
 
@@ -17,9 +17,8 @@ class Urban(ModuleBase):
     @info("urban <term>      lookup an urban dictionary definition", cmds=["urban", "u"])
     @command("urban", "u")
     def urban(self, msg, cmd):
-        print(cmd)
-        definitions = get("http://www.urbandictionary.com/iphone/search/define",
-                          params={"term": cmd.args_str}).json()["list"]
+        definitions = requests.get("http://www.urbandictionary.com/iphone/search/define",
+                                   params={"term": cmd.args_str}).json()["list"]
         if len(definitions) == 0:
             self.bot.act_PRIVMSG(msg.args[0], "Urban definition: no results!")
         else:
