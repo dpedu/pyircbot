@@ -30,7 +30,13 @@ class PyIRCBotSub(PrimitiveBot):
     def run(self):
         # Connect to msgbus and loop through messages
         with closing(MsgbusSubClient(self.host, self.port)) as self.client:
-            self.client.sub("pyircbot_privmsg")#TODO More of these
+            self.client.prepare_pub()
+            self.client.sub("pyircbot_privmsg")
+            self.client.sub("pyircbot_join")
+            self.client.sub("pyircbot_kick")
+            self.client.sub("pyircbot_part")
+            self.client.sub("pyircbot_mode")
+            self.client.sub("pyircbot_quit")
             while True:
                 try:
                     channel, body = self.client.recv()
@@ -43,12 +49,11 @@ class PyIRCBotSub(PrimitiveBot):
         if name != self.name:
             return
 
-        # pyircbot_privmsg default
-        # [["#jesusandhacking"], "xMopxShell", "test", {"prefix": ["xMopxShell", "~xMopxShel", "192.95.23.134"]}]
+        command = channel.split("_", 1)[1].upper()
         args, sender, trailing, extras = loads(rest)
         nick, username, hostname = extras["prefix"]
 
-        msg = IRCEvent("PRIVMSG",
+        msg = IRCEvent(command,
                        args,
                        UserPrefix(nick,
                                   username,
@@ -60,8 +65,6 @@ class PyIRCBotSub(PrimitiveBot):
                 validation = hook.validator(msg, self)
                 if validation:
                     hook.method(msg, validation)
-
-                # client.pub("pyircbot_send", "default privmsg {}".format(dumps([channel, "{}: pong".format(sender)])))
 
     " Filesystem Methods "
     def getConfigPath(self, moduleName):

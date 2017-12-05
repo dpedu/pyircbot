@@ -31,7 +31,7 @@ class PubSubClient(ModuleBase):
         Listen to the bus for send messages and act on recv
         """
         sleep(3)
-        while True:#TODO clean exit onenable/ondisable etc
+        while True:
             if not self.bus:
                 sleep(0.01)
                 continue
@@ -61,26 +61,15 @@ class PubSubClient(ModuleBase):
         """
         self.bus.pub(self.config.get("publish").format(subchannel), "{} {}".format("default", message))
 
-    @hook("PRIVMSG")
-    def bus_privmsg(self, msg, cmd):
+    @hook("PRIVMSG", "JOIN", "PART", "KICK", "MODE", "QUIT", "NICK", "PING")
+    def busdriver(self, msg, cmd):
         """
         Relay a privmsg to the event bus
         """
-        self.publish("privmsg", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
-
-    @hook("JOIN")
-    def bus_join(self, msg, cmd):
-        """
-        Relay a join message to the event bus
-        """
-        self.publish("join", dumps([msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
-
-    @hook("PART")
-    def bus_part(self, msg, cmd):
-        """
-        Relay a part message to the event bus
-        """
-        self.publish("part", dumps([msg.args, msg.prefix[0], msg.trailing, {"prefix": msg.prefix}]))
+        self.publish(msg.command.lower(),
+                     dumps([msg.args,
+                            msg.prefix[0],
+                            msg.trailing, {"prefix": msg.prefix}]))
 
     @hook("PRIVMSG")
     def bus_command(self, msg, cmd):
@@ -93,7 +82,10 @@ class PubSubClient(ModuleBase):
             cmd_name = match.groups()[1]
             cmd_args = msg.trailing[len(cmd_name) + 1:].strip()
             self.publish("command_{}".format(cmd_name),
-                         dumps([msg.args, msg.prefix[0], cmd_args, {"prefix": msg.prefix}]))
+                         dumps([msg.args,
+                                msg.prefix[0],
+                                cmd_args,
+                                {"prefix": msg.prefix}]))
 
     def onenable(self):
         """
@@ -110,4 +102,4 @@ class PubSubClient(ModuleBase):
         """
         self.log.warning("clean it up")
         self.publish("sys", "offline")
-        self.bus.close()
+        self.bus.close()  # This will crash the listener thread
