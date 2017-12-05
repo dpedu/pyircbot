@@ -132,3 +132,43 @@ def load(filepath):
             return json_load(f)
     else:
         raise Exception("Unknown config format")
+
+
+def parse_irc_line(data, client=True):
+    """
+    Process one line of text irc sent us.
+
+    Return tuple of (command, args, prefix, trailing)
+
+    :param data: the data to process
+    :type data: str
+    :return tuple:"""
+    if data.strip() == "":
+        return
+
+    prefix = None
+    command = None
+    args = []
+    trailing = None
+
+    if data[0] == ":":
+        prefix = data.split(" ")[0][1:]
+        data = data[data.find(" ") + 1:]
+    command = data.split(" ")[0]
+    data = data[data.find(" ") + 1:]
+    if(data[0] == ":"):
+        # no args
+        trailing = data[1:].strip()
+    else:
+        # find trailing
+        pos = data.find(" :")
+        if pos == -1:
+            trailing = None
+        else:
+            trailing = data[pos + 2:].strip()
+            data = data[:data.find(" :")]
+        args = data.split(" ")
+    for index, arg in enumerate(args):
+        args[index] = arg.strip()
+
+    return (command, args, prefix, trailing)

@@ -12,7 +12,7 @@ import logging
 import traceback
 import sys
 from inspect import getargspec
-from pyircbot.common import burstbucket
+from pyircbot.common import burstbucket, parse_irc_line
 from collections import namedtuple
 from io import StringIO
 
@@ -81,12 +81,17 @@ class IRCCore(object):
                 self.server = (self.server + 1) % len(self.servers)
                 await asyncio.sleep(1, loop=loop)
                 continue
-
             while self.alive:
                 try:
                     data = await self.reader.readuntil()
                     self.log.debug("<<< {}".format(repr(data)))
-                    self.process_line(data.decode("UTF-8"))
+                    command, args, prefix, trailing = parse_irc_line(data.decode("UTF-8"))
+                    self.fire_hook("_RECV", args=args, prefix=prefix, trailing=trailing)
+                    if command not in self.hookcalls:
+                        self.log.warning("Unknown command: cmd='{}' prefix='{}' args='{}' trailing='{}'"
+                                         .format(command, prefix, args, trailing))
+                    else:
+                        self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
                 except (ConnectionResetError, asyncio.streams.IncompleteReadError):
                     traceback.print_exc()
                     break
@@ -131,41 +136,6 @@ class IRCCore(object):
         await self.writer.drain()
         self.writer.close()
         self.log.info("Kill complete")
-
-    def process_line(self, data):
-        """Process one line of text irc sent us
-
-        :param data: the data to process
-        :type data: str"""
-        if data.strip() == "":
-            return
-
-        prefix = None
-        command = None
-        args = []
-        trailing = None
-
-        if data[0] == ":":
-            prefix = data.split(" ")[0][1:]
-            data = data[data.find(" ") + 1:]
-        command = data.split(" ")[0]
-        data = data[data.find(" ") + 1:]
-        if(data[0] == ":"):
-            # no args
-            trailing = data[1:].strip()
-        else:
-            trailing = data[data.find(" :") + 2:].strip()
-            data = data[:data.find(" :")]
-            args = data.split(" ")
-        for index, arg in enumerate(args):
-            args[index] = arg.strip()
-
-        self.fire_hook("_RECV", args=args, prefix=prefix, trailing=trailing)
-        if command not in self.hookcalls:
-            self.log.warning("Unknown command: cmd='%s' prefix='%s' args='%s' trailing='%s'" % (command, prefix, args,
-                                                                                                trailing))
-        else:
-            self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
 
     def sendRaw(self, data):
         asyncio.run_coroutine_threadsafe(self.outputq.put((5, data, )), self._loop)
