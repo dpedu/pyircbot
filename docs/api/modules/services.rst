@@ -8,6 +8,7 @@ Services enables the bot to:
  - Ghost users using it's nick
  - Request invites & join private channels
 
+
 Config
 ------
 
@@ -47,7 +48,7 @@ Config
 
 .. cmdoption:: user.nick
 
-    A list of nicks, the first being the preferred nick and the others being 
+    A list of nicks, the first being the preferred nick and the others being
     fallbacks if the primary nick is taken.
 
 .. cmdoption:: user.password
@@ -78,7 +79,7 @@ Config
 .. cmdoption:: ident.command
 
     String formatted command to be sent for identification. Available tokens:
-     - password 
+     - password
 
 .. cmdoption:: ident.ghost
 
@@ -110,6 +111,17 @@ Config
 .. cmdoption:: privatechannels.list
 
     List of channels to request an invite to join on startup
+
+
+Service
+-------
+
+The ``service`` service provides information about the state of IRC. Available service methods:
+
+.. cmdoption:: nick()
+
+    Returns the current nick of the bot
+
 
 Class Reference
 ---------------
