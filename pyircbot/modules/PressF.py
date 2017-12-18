@@ -16,7 +16,7 @@ class PressF(ModuleBase):
         ModuleBase.__init__(self, bot, moduleName)
         self.last = 0
 
-    @regex(r'F', types=['PRIVMSG'], allow_private=False)
+    @regex(r'\bF\b', types=['PRIVMSG'], allow_private=False)
     def respect(self, msg, cmd):
         if time() - self.last > self.config.get("delay", 5):
             self.last = time()
