@@ -140,7 +140,8 @@ class LinkTitler(ModuleBase):
         data = data.decode('utf-8', "ignore")
 
         titleMatches = re.findall(r'<title>([^<]+)</title>', data, re.I)
-        if len(titleMatches) > 0:  # and resp.status_code==200:
+        statusCodeWhitelist = self.config.get("status_code_whitelist", [200])
+        if titleMatches and resp.status_code in statusCodeWhitelist:
             h = html.parser.HTMLParser()
             title = h.unescape(titleMatches[0]).strip()
             if len(title) > 0:
