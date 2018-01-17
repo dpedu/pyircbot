@@ -82,7 +82,8 @@ class Services(ModuleBase):
 
     @hook("JOIN", "PART")
     def _joinpart(self, msg, cmd):
-        (self.current_channels.append if msg.command == "JOIN" else self.current_channels.remove)(msg.args[0])
+        channel = msg.args[0] if msg.command == "PART" else msg.trailing
+        (self.current_channels.append if msg.command == "JOIN" else self.current_channels.remove)(channel)
 
     def nick(self):
         return self.current_nick
