@@ -6,7 +6,8 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, hook
+from pyircbot.common import messageHasCommand
 import random
 import json
 import os
@@ -18,7 +19,6 @@ class Scramble(ModuleBase):
     def __init__(self, bot, moduleName):
         # init the base module
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("PRIVMSG", self.scramble)]
 
         # Dictionary
         self.wordsCount = 0
@@ -40,14 +40,14 @@ class Scramble(ModuleBase):
         # Per channel games
         self.games = {}
         # Hook in
-        self.hooks = [ModuleHook("PRIVMSG", self.scramble)]
 
-    def scramble(self, args, prefix, trailing):
-        channel = args[0]
+    @hook("PRIVMSG")
+    def scramble(self, msg, cmd):
+        channel = msg.args[0]
         if channel[0] == "#":
             if channel not in self.games:
                 self.games[channel] = scrambleGame(self, channel)
-            self.games[channel].scramble(args, prefix, trailing)
+            self.games[channel].scramble(msg.args, msg.prefix, msg.trailing)
 
     def saveScores(self):
         json.dump(self.scores, open(self.scoresFile, 'w'))
@@ -116,19 +116,18 @@ class scrambleGame:
             timer.cancel()
 
     def scramble(self, args, prefix, trailing):
-        prefix = self.master.bot.decodePrefix(prefix)
         sender = prefix.nick
-        cmd = self.master.bot.messageHasCommand(".scrambleon", trailing)
+        cmd = messageHasCommand(".scrambleon", trailing)
         if cmd and not self.running:
             self.running = True
             self.startScramble()
             return
-        cmd = self.master.bot.messageHasCommand(".scrambleoff", trailing)
+        cmd = messageHasCommand(".scrambleoff", trailing)
         if cmd and self.running:
             self.gameover()
             self.running = False
             return
-        cmd = self.master.bot.messageHasCommand(".scramble top", trailing)
+        cmd = messageHasCommand(".scramble top", trailing)
         if cmd:
             sortedscores = []
             for player in self.master.scores:
@@ -144,7 +143,7 @@ class scrambleGame:
                 resp += "%s: %s, " % (sortedscores[which - 1]["name"], sortedscores[which - 1]["score"])
                 which += 1
             self.master.bot.act_PRIVMSG(self.channel, resp[:-2])
-        cmd = self.master.bot.messageHasCommand(".scramble score", trailing)
+        cmd = messageHasCommand(".scramble score", trailing)
         if cmd:
             someone = cmd.args.strip()
             if len(someone) > 0:
