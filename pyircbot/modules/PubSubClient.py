@@ -22,6 +22,7 @@ class PubSubClient(ModuleBase):
         ModuleBase.__init__(self, bot, moduleName)
         self.host, self.port = self.config.get("servers")[0].split(":")
         self.bus = None
+        self.services = (self.bot.getmodulesbyservice("services") or [None]).pop(0)
         self.bus_listener_thread = Thread(target=self.bus_listener)
         self.bus_listener_thread.daemon = True
         self.bus_listener_thread.start()
@@ -40,16 +41,21 @@ class PubSubClient(ModuleBase):
             except Again:
                 sleep(0.01)
                 continue
-            try:
-                print(channel, "--", message)
-                name, subcommand, message = message.split(" ", 2)
-                if name != self.config.get("name", "default") and name != "default":
-                    continue
-                if subcommand == "privmsg":
-                    dest, message = loads(message)
-                    self.bot.act_PRIVMSG(dest, message)
-            except:
-                print_exc()
+            if channel == self.config.get("publish", "pyircbot_{}").format("meta_req"):
+                if self.services:
+                    self.bus.pub(self.config.get("publish", "pyircbot_{}").format("meta_update"),
+                                 "{} {}".format(self.config.get("name", "default"),
+                                                dumps({"nick": self.services.nick()})))
+            else:
+                try:
+                    name, subcommand, message = message.split(" ", 2)
+                    if name != self.config.get("name", "default") and name != "default":
+                        continue
+                    if subcommand == "privmsg":
+                        dest, message = loads(message)
+                        self.bot.act_PRIVMSG(dest, message)
+                except:
+                    print_exc()
 
     def publish(self, subchannel, message):
         """
@@ -59,9 +65,10 @@ class PubSubClient(ModuleBase):
         :param message: message body
         :type message: str
         """
-        self.bus.pub(self.config.get("publish").format(subchannel), "{} {}".format("default", message))
+        self.bus.pub(self.config.get("publish", "pyircbot_{}").format(subchannel),
+                     "{} {}".format(self.config.get("name", "default"), message))
 
-    @hook("PRIVMSG", "JOIN", "PART", "KICK", "MODE", "QUIT", "NICK", "PING")
+    @hook("PRIVMSG", "JOIN", "PART", "KICK", "MODE", "QUIT", "NICK")
     def busdriver(self, msg, cmd):
         """
         Relay a privmsg to the event bus
@@ -92,6 +99,7 @@ class PubSubClient(ModuleBase):
         Connect to the message bus when the module is enabled
         """
         self.bus = MsgbusSubClient(self.host, int(self.port))
+        self.bus.sub(self.config.get("publish", "pyircbot_{}").format("meta_req"))
         for channel in self.config.get("subscriptions"):
             self.bus.sub(channel)
         self.publish("sys", "online")

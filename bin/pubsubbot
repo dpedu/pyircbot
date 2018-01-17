@@ -14,17 +14,13 @@ from pyircbot.common import TouchReload
 from json import dumps
 
 
-# IRCEvent = namedtuple("IRCEvent", "command args prefix trailing")
-# UserPrefix = namedtuple("UserPrefix", "nick username hostname")
-# ServerPrefix = namedtuple("ServerPrefix", "hostname")
-
-
 class PyIRCBotSub(PrimitiveBot):
     def __init__(self, name, host, port, config):
         super().__init__(config)
         self.name = name
         self.host = host
         self.port = port
+        self.meta = {}
         self.client = None  # PubSub socket
 
     def run(self):
@@ -37,6 +33,8 @@ class PyIRCBotSub(PrimitiveBot):
             self.client.sub("pyircbot_part")
             self.client.sub("pyircbot_mode")
             self.client.sub("pyircbot_quit")
+            self.client.sub("pyircbot_meta_update")
+            self.client.pub("pyircbot_meta_req", "x")
             while True:
                 try:
                     channel, body = self.client.recv()
@@ -49,11 +47,17 @@ class PyIRCBotSub(PrimitiveBot):
         if name != self.name:
             return
 
-        command = channel.split("_", 1)[1].upper()
+        command = channel.split("_", 1)[1]
+
+        if command == "meta_update":
+            self.meta.update(loads(rest))
+            print(self.meta)
+            return
+
         args, sender, trailing, extras = loads(rest)
         nick, username, hostname = extras["prefix"]
 
-        msg = IRCEvent(command,
+        msg = IRCEvent(command.upper(),
                        args,
                        UserPrefix(nick,
                                   username,
@@ -89,7 +93,6 @@ class PyIRCBotSub(PrimitiveBot):
             os.mkdir(module_dir)
         return module_dir
 
-    " IRC methods "
     def act_PRIVMSG(self, towho, message):
         """Use the `/msg` command
 
@@ -99,6 +102,14 @@ class PyIRCBotSub(PrimitiveBot):
         :type message: str"""
         # self.sendRaw("PRIVMSG %s :%s" % (towho, message))
         self.client.pub("pyircbot_send", "{} {} {}".format(self.name, "privmsg", dumps([towho, message])))
+
+    def getBestModuleForService(self, service):
+        if service == "services":
+            return self
+        return super().getBestModuleForService(service)
+
+    def nick(self):
+        return self.meta.get("nick", None)
 
 
 if __name__ == "__main__":

@@ -134,7 +134,7 @@ def load(filepath):
         raise Exception("Unknown config format")
 
 
-def parse_irc_line(data, client=True):
+def parse_irc_line(data):
     """
     Process one line of text irc sent us.
 
