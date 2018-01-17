@@ -15,7 +15,7 @@ jaraco.classes==1.4.3
 jedi==0.10.2
 lxml==4.1.1
 mock==2.0.0
-msgbus==0.0.1
+-e git+http://gitlab.davepedu.com/dave/pymsgbus.git#egg=msgbus
 packaging==16.8
 pbr==3.1.1
 pexpect==4.2.1
