@@ -7,7 +7,10 @@
 
 """
 
-from pyircbot.modulebase import ModuleBase, ModuleHook
+from pyircbot.modulebase import ModuleBase, command
+from pyircbot.modules.ModInfo import info
+from pyircbot.common import messageHasCommand
+from decimal import Decimal
 import time
 import hashlib
 
@@ -15,305 +18,271 @@ import hashlib
 class CryptoWallet(ModuleBase):
     def __init__(self, bot, moduleName):
         ModuleBase.__init__(self, bot, moduleName)
-        self.hooks = [ModuleHook("PRIVMSG", self.handle_message)]
 
     def getMods(self):
         return (self.bot.getBestModuleForService("attributes"), self.bot.getBestModuleForService("bitcoinrpc"))
 
-    def handle_setaddr(self, args, prefix, trailing, cmd):
-        usage = ".setaddr <currency> <address>"
-        attr, rpc = self.getMods()
-
-        # Check for args
-        if not len(cmd.args) == 2:
-            self.bot.act_PRIVMSG(args[0], ".setaddr: usage: %s" % usage)
-            # self.bot.act_PRIVMSG(args[0], ".setaddr: usage: .setaddr BTC 1xyWx6X5EABprhe3s9XduNxLn5NCtpSNB")
+    @info("setaddr <currency> <address>          set withdraw address", cmds=["setaddr"])
+    @command("setaddr", require_args=2, allow_private=True)
+    def handle_setaddr(self, msg, cmd):
+        if not self.check_login(msg.prefix, msg.args[0]):
             return
+        attr, rpc = self.getMods()
         # Check if currency is known
         if not rpc.isSupported(cmd.args[0]):
             supportedStr = ', '.join(rpc.getSupported())
-            self.bot.act_PRIVMSG(args[0], ".setaddr: '%s' is not a supported currency. Supported currencies are: %s" %
-                                 (cmd.args[0], supportedStr))
+            self.bot.act_PRIVMSG(msg.args[0], ".setaddr: '{}' is not a supported currency. Supported currencies are: {}"
+                                 .format(cmd.args[0], supportedStr))
             return
         if len(cmd.args[1]) < 16 or len(cmd.args[1]) > 42:
-            self.bot.act_PRIVMSG(args[0], ".setaddr: '%s' appears to be an invalid address." % (cmd.args[1]))
+            self.bot.act_PRIVMSG(msg.args[0], ".setaddr: '{}' appears to be an invalid address.".format(cmd.args[1]))
             return
 
         # Just make sure they have a wallet
-        self.checkUserHasWallet(prefix.nick, cmd.args[0])
+        self.checkUserHasWallet(msg.prefix.nick, cmd.args[0])
 
         # Set their address
-        attr.setKey(prefix.nick, "cryptowallet-%s-address" % cmd.args[0].lower(), cmd.args[1])
-        self.bot.act_PRIVMSG(args[0], ".setaddr: Your address has been saved as: %s. Please verify that this is correct"
-                                      " or your coins could be lost." % (cmd.args[1]))
+        attr.setKey(msg.prefix.nick, "cryptowallet-{}-address".format(cmd.args[0].lower()), cmd.args[1])
+        self.bot.act_PRIVMSG(msg.args[0], ".setaddr: Your address has been saved as: {}. Please verify that this is "
+                             "correct or your coins could be lost.".format(cmd.args[1]))
 
-    def handle_getbal(self, args, prefix, trailing, cmd):
+    @info("getbal <currency>           retrieve your balance ", cmds=["getbal"])
+    @command("getbal", require_args=1, allow_private=True)
+    def handle_getbal(self, msg, cmd):
         usage = ".getbal <currency>"
+        if not self.check_login(msg.prefix, msg.args[0]):
+            return
         attr, rpc = self.getMods()
         # Check for args
-        if not len(cmd.args) == 1:
-            self.bot.act_PRIVMSG(args[0], ".getbal: usage: %s" % usage)
-            self.bot.act_PRIVMSG(args[0], ".getbal: usage: .getbal BTC")
+        if len(cmd.args) != 1:
+            self.bot.act_PRIVMSG(msg.args[0], ".getbal: usage: {}".format(usage))
             return
         # Check if currency is known
         if not rpc.isSupported(cmd.args[0]):
             supportedStr = ', '.join(rpc.getSupported())
-            self.bot.act_PRIVMSG(args[0], ".getbal: '%s' is not a supported currency. Supported currencies are: %s" %
-                                 (cmd.args[0], supportedStr))
+            self.bot.act_PRIVMSG(msg.args[0],
+                                 ".getbal: '{}' is not a supported currency. Supported currencies are: {}"
+                                 .format(cmd.args[0], supportedStr))
             return
 
         # Just make sure they have a wallet
-        self.checkUserHasWallet(prefix.nick, cmd.args[0])
+        self.checkUserHasWallet(msg.prefix.nick, cmd.args[0])
 
         # fetch RPC and tell them the balance
-        walletname = attr.getKey(prefix.nick, "cryptowallet-account-%s" % cmd.args[0].lower())
+        walletname = attr.getKey(msg.prefix.nick, "cryptowallet-account-{}".format(cmd.args[0].lower()))
         amount = 0.0
         if walletname:
             client = rpc.getRpc(cmd.args[0].lower())
             amount = client.getBal(walletname)
-            self.bot.act_PRIVMSG(args[0], "%s: your balance is: %s %s" % (prefix.nick, amount, cmd.args[0].upper()))
+            self.bot.act_PRIVMSG(msg.args[0],
+                                 "{}: your balance is: {} {}".format(msg.prefix.nick, amount, cmd.args[0].upper()))
 
-    def handle_withdraw(self, args, prefix, trailing, cmd):
-        usage = ".withdraw <currency> <amount>"
-        attr, rpc = self.getMods()
-        # Check for args
-        if not len(cmd.args) == 2:
-            self.bot.act_PRIVMSG(args[0], ".withdraw: usage: %s" % usage)
-            self.bot.act_PRIVMSG(args[0], ".withdraw: usage: .getbal BTC 0.035")
+    @info("withdraw <currenyc> <amount>           send coins to your withdraw address", cmds=["withdraw"])
+    @command("withdraw", require_args=2, allow_private=True)
+    def handle_withdraw(self, msg, cmd):
+        if not self.check_login(msg.prefix, msg.args[0]):
             return
+        attr, rpc = self.getMods()
         # Check if currency is known
         if not rpc.isSupported(cmd.args[0]):
             supportedStr = ', '.join(rpc.getSupported())
-            self.bot.act_PRIVMSG(args[0], ".getbal: '%s' is not a supported currency. Supported currencies are: %s" %
-                                 (cmd.args[0], supportedStr))
+            self.bot.act_PRIVMSG(msg.args[0], ".getbal: '{}' is not a supported currency. Supported currencies are: {}"
+                                 .format(cmd.args[0], supportedStr))
             return
 
         # Just make sure they have a wallet
-        self.checkUserHasWallet(prefix.nick, cmd.args[0])
+        self.checkUserHasWallet(msg.prefix.nick, cmd.args[0])
 
         # check that they have a withdraw addr
-        withdrawaddr = attr.getKey(prefix.nick, "cryptowallet-%s-address" % cmd.args[0].lower())
+        withdrawaddr = attr.getKey(msg.prefix.nick, "cryptowallet-{}-address".format(cmd.args[0].lower()))
         if withdrawaddr is None:
-            self.bot.act_PRIVMSG(args[0], ".withdraw: You need to set a withdraw address before withdrawing. "
-                                          "Try .setaddr")
+            self.bot.act_PRIVMSG(msg.args[0], ".withdraw: You need to set a withdraw address before withdrawing. "
+                                              "Try .setaddr")
             return
 
         # fetch RPC and check balance
-        walletname = attr.getKey(prefix.nick, "cryptowallet-account-%s" % cmd.args[0].lower())
+        walletname = attr.getKey(msg.prefix.nick, "cryptowallet-account-{}".format(cmd.args[0].lower()))
         balance = 0.0
 
         client = rpc.getRpc(cmd.args[0].lower())
         balance = client.getBal(walletname)
-        withdrawamount = float(cmd.args[1])
+        withdrawamount = Decimal(cmd.args[1])
 
         if balance < withdrawamount or withdrawamount < 0:
-            self.bot.act_PRIVMSG(args[0], ".withdraw: You don't have enough %s to withdraw %s" %
-                                 (cmd.args[0].upper(), withdrawamount))
+            self.bot.act_PRIVMSG(msg.args[0], ".withdraw: You don't have enough {} to withdraw {}"
+                                 .format(cmd.args[0].upper(), withdrawamount))
             return
 
         if not client.reserve == 0 and balance - client.reserve < withdrawamount:
-            self.bot.act_PRIVMSG(args[0], ".withdraw: Withdrawing that much would put you below the reserve (%s %s)." %
-                                 (client.reserve, cmd.args[0].upper()))
-            self.bot.act_PRIVMSG(args[0], ".withdraw: The reserve is to cover network transaction fees. To recover it "
-                                          "you must close your account. (Talk to an admin)")
+            self.bot.act_PRIVMSG(msg.args[0], ".withdraw: Withdrawing that much would put you below the reserve "
+                                              "({} {}).".format(client.reserve, cmd.args[0].upper()))
+            self.bot.act_PRIVMSG(msg.args[0], ".withdraw: The reserve is to cover network transaction fees. To recover "
+                                              "it you must close your account. (Talk to an admin)")
             return
 
         # Check if the precision is wrong
         if not client.checkPrecision(withdrawamount):
-            self.bot.act_PRIVMSG(args[0], ".withdraw: %s has maximum %s decimal places" % (cmd.args[0].upper(),
-                                 client.precision))
+            self.bot.act_PRIVMSG(msg.args[0], ".withdraw: {} has maximum {} decimal places"
+                                              .format(cmd.args[0].upper(), client.precision))
             return
 
         # Create a transaction
         txn = client.send(walletname, withdrawaddr, withdrawamount)
         if txn:
-            self.bot.act_PRIVMSG(args[0], "%s: .withdraw: %s %s sent to %s. " %
-                                 (prefix.nick, withdrawamount, client.name, withdrawaddr))
-            self.bot.act_PRIVMSG(prefix.nick, "Withdrawal: (You)->%s: Transaction ID: %s" %
-                                 (prefix.nick, withdrawaddr, txn))
+            self.bot.act_PRIVMSG(msg.args[0], "{}: .withdraw: {} {} sent to {}. "
+                                 .format(msg.prefix.nick, withdrawamount, client.name, withdrawaddr))
+            self.bot.act_PRIVMSG(msg.prefix.nick, "Withdrawal: (You)->{}: Transaction ID: {}"
+                                 .format(withdrawaddr, txn))
         else:
-            self.bot.act_PRIVMSG(args[0], "%s: .withdraw: Transaction create failed. Maybe the transaction was too "
-                                          "large for the network? Try a smaller increment." % prefix.nick)
+            self.bot.act_PRIVMSG(msg.args[0], "{}: .withdraw: Transaction create failed. Maybe the transaction was too "
+                                              "large for the network? Try a smaller increment.".format(msg.prefix.nick))
 
-    def handle_send(self, args, prefix, trailing, cmd):
-        usage = ".send <currency> <amount> <nick or address>"
-        attr, rpc = self.getMods()
-        # Check for args
-        if not len(cmd.args) == 3:
-            self.bot.act_PRIVMSG(args[0], ".withdraw: usage: %s" % usage)
-            self.bot.act_PRIVMSG(args[0], ".withdraw: usage: .getbal BTC 0.035")
+    @info("send <currency> <amount> <nick_or_address>      send coins elsewhere", cmds=["send"])
+    @command("send", require_args=3, allow_private=True)
+    def handle_send(self, msg, cmd):
+        if not self.check_login(msg.prefix, msg.args[0]):
             return
+        attr, rpc = self.getMods()
         # Check if currency is known
-        if not rpc.isSupported(cmd.args[0]):
+        curr_name = cmd.args[0].lower()
+        if not rpc.isSupported(curr_name):
             supportedStr = ', '.join(rpc.getSupported())
-            self.bot.act_PRIVMSG(args[0], ".getbal: '%s' is not a supported currency. Supported currencies are: %s" %
-                                 (cmd.args[0], supportedStr))
+            self.bot.act_PRIVMSG(msg.args[0], ".getbal: '{}' is not a supported currency. Supported currencies are: {}"
+                                 .format(curr_name, supportedStr))
             return
 
         # Just make sure they have a wallet
-        self.checkUserHasWallet(prefix.nick, cmd.args[0])
+        self.checkUserHasWallet(msg.prefix.nick, curr_name)
 
         # fetch RPC and check balance
-        walletname = attr.getKey(prefix.nick, "cryptowallet-account-%s" % cmd.args[0].lower())
+        walletname = attr.getKey(msg.prefix.nick, "cryptowallet-account-{}".format(curr_name))
         balance = 0.0
 
-        client = rpc.getRpc(cmd.args[0].lower())
+        client = rpc.getRpc(curr_name.lower())
         balance = client.getBal(walletname)
-        withdrawamount = float(cmd.args[1])
+        withdrawamount = Decimal(cmd.args[1])
+        tx_dest = cmd.args[2]
 
         if balance < withdrawamount or withdrawamount < 0:
-            self.bot.act_PRIVMSG(args[0], "%s: .send: You don't have enough %s to send %s" %
-                                 (prefix.nick, cmd.args[0].upper(), withdrawamount))
+            self.bot.act_PRIVMSG(msg.args[0], "{}: .send: You don't have enough {} to send {}"
+                                              .format(msg.prefix.nick, curr_name.upper(), withdrawamount))
             return
 
         # Check if the precision is wrong
         if not client.checkPrecision(withdrawamount):
-            self.bot.act_PRIVMSG(args[0], ".send: %s has maximum %s decimal places" %
-                                 (cmd.args[0].upper(), client.precision))
+            self.bot.act_PRIVMSG(msg.args[0], ".send: {} has maximum {} decimal places"
+                                              .format(curr_name.upper(), client.precision))
             return
 
-        # Check if the recierver is a dogecoin address
-        if len(cmd.args[2]) == 34 and cmd.args[2][0:1] == "D":
+        # Check if the tx_dest is a valid address for the coin
+        if client.validate_addr(tx_dest):
             # Check if we can cover network fees
             if not client.reserve == 0 and balance - client.reserve < withdrawamount:
-                self.bot.act_PRIVMSG(args[0], ".send: Sending that much would put you below the reserve (%s %s)." %
-                                     (client.reserve, cmd.args[0].upper()))
-                self.bot.act_PRIVMSG(args[0], ".send: The reserve is to cover network transaction fees. To recover it "
-                                              "you must close your account. (Talk to an admin)")
+                self.bot.act_PRIVMSG(msg.args[0], ".send: Sending that much would put you below the reserve ({} {})."
+                                                  .format(client.reserve, curr_name.upper()))
+                self.bot.act_PRIVMSG(msg.args[0], ".send: The reserve is to cover network transaction fees. To recover it"
+                                                  " you must close your account. (Talk to my owner)")
                 return
-
             # Create a transaction
-            txn = client.send(walletname, cmd.args[2], withdrawamount)
+            txn = client.send(walletname, tx_dest, withdrawamount)
             if txn:
-                self.bot.act_PRIVMSG(args[0], "%s: .send: %s %s sent to %s. " %
-                                     (prefix.nick, withdrawamount, client.name, cmd.args[2]))
-                self.bot.act_PRIVMSG(prefix.nick, "Send: (You)->%s: Transaction ID: %s" % (cmd.args[2], txn))
+                self.bot.act_PRIVMSG(msg.args[0], "{}: .send: {} {} sent to {}. "
+                                     .format(msg.prefix.nick, withdrawamount, client.name, tx_dest))
+                self.bot.act_PRIVMSG(msg.prefix.nick, "Send: (You)->{}: Transaction ID: {}".format(tx_dest, txn))
             else:
-                self.bot.act_PRIVMSG(args[0], "%s: .send: Transaction create failed. Maybe the address is invalid or "
-                                              "transaction too large for the network? Try a smaller increment." %
-                                              prefix.nick)
-
+                self.bot.act_PRIVMSG(msg.args[0], "{}: .send: Transaction create failed. Maybe the address is invalid "
+                                                  "or transaction too large for the network?".format(msg.prefix.nick))
         else:
             # Move between local wallets
             # Check if dest user has a password set
-            destUserPassword = attr.getKey(cmd.args[2], "password")
+            destUserPassword = attr.getKey(tx_dest, "password")
             if destUserPassword is None:
-                self.bot.act_PRIVMSG(args[0], "%s .send: %s doesn't have a password set." % (prefix.nick, cmd.args[2]))
+                self.bot.act_PRIVMSG(msg.args[0], "{} .send: {} doesn't have a password set."
+                                                  .format(msg.prefix.nick, tx_dest))
                 return
 
             # Since the user has a password set, check that they have a wallet and create if not
-            self.checkUserHasWallet(cmd.args[2], cmd.args[0])
+            self.checkUserHasWallet(tx_dest, curr_name)
 
-            srcWalletName = attr.getKey(prefix.nick, "cryptowallet-account-%s" % cmd.args[0])
-            destWalletName = attr.getKey(cmd.args[2], "cryptowallet-account-%s" % cmd.args[0])
+            srcWalletName = attr.getKey(msg.prefix.nick, "cryptowallet-account-{}".format(curr_name))
+            destWalletName = attr.getKey(tx_dest, "cryptowallet-account-{}".format(curr_name))
 
             assert srcWalletName is not None
             assert destWalletName is not None
-            try:
-                assert srcWalletName != destWalletName
-            except:
-                self.bot.act_PRIVMSG(args[0], "%s: you can't send to yourself!" % prefix.nick)
+            if srcWalletName == destWalletName:
+                self.bot.act_PRIVMSG(msg.args[0], "{}: you can't send to yourself!".format(msg.prefix.nick))
                 return
             print(srcWalletName)
             print(destWalletName)
             if client.canMove(srcWalletName, destWalletName, withdrawamount):
                 if client.move(srcWalletName, destWalletName, withdrawamount):
-                    self.bot.act_PRIVMSG(args[0], "%s .send: %s %s sent to %s. " %
-                                         (prefix.nick, withdrawamount, client.name, cmd.args[2]))
+                    self.bot.act_PRIVMSG(msg.args[0], "{} .send: {} {} sent to {}. "
+                                         .format(msg.prefix.nick, withdrawamount, client.name, tx_dest))
                 else:
-                    self.bot.act_PRIVMSG(args[0], "%s: uh-oh, something went wrong doing that." % prefix.nick)
+                    self.bot.act_PRIVMSG(msg.args[0], "{}: uh-oh, something went wrong doing that."
+                                                      .format(msg.prefix.nick))
 
-    def handle_getaddr(self, args, prefix, trailing, cmd):
-        attr, rpc = self.getMods()
-        usage = ".getaddr <currency>"
-        # Check for args
-        if not len(cmd.args) == 1:
-            self.bot.act_PRIVMSG(args[0], ".getaddr: usage: %s" % usage)
-            self.bot.act_PRIVMSG(args[0], ".getaddr: usage: .getaddr BTC")
+    @info("getaddr <currency>          get deposit address", cmds=["getaddr"])
+    @command("getaddr", require_args=1, allow_private=True)
+    def handle_getaddr(self, msg, cmd):
+        if not self.check_login(msg.prefix, msg.args[0]):
             return
+        attr, rpc = self.getMods()
         # Check if currency is known
         if not rpc.isSupported(cmd.args[0]):
             supportedStr = ', '.join(rpc.getSupported())
-            self.bot.act_PRIVMSG(args[0], ".getaddr: '%s' is not a supported currency. Supported currencies are: %s" %
-                                 (cmd.args[0], supportedStr))
+            self.bot.act_PRIVMSG(msg.args[0], ".getaddr: '{}' is not a supported currency. Supported currencies are: {}"
+                                 .format(cmd.args[0], supportedStr))
             return
 
         # Just make sure they have a wallet
-        self.checkUserHasWallet(prefix.nick, cmd.args[0])
+        self.checkUserHasWallet(msg.prefix.nick, cmd.args[0])
 
-        walletaddr = attr.getKey(prefix.nick, "cryptowallet-depoaddr-%s" % cmd.args[0].lower())
-        self.bot.act_PRIVMSG(args[0], "%s: your %s deposit address is: %s" %
-                             (prefix.nick, cmd.args[0].upper(), walletaddr))
+        walletaddr = attr.getKey(msg.prefix.nick, "cryptowallet-depoaddr-{}".format(cmd.args[0].lower()))
+        self.bot.act_PRIVMSG(msg.args[0], "{}: your {} deposit address is: {}"
+                                          .format(msg.prefix.nick, cmd.args[0].upper(), walletaddr))
 
-    def handle_curinfo(self, args, prefix, trailing, cmd):
+    @info("curinfo           list supported coins", cmds=["curinfo"])
+    @command("curinfo", allow_private=True)
+    def handle_curinfo(self, msg, cmd):
         attr, rpc = self.getMods()
-
-        # Check for args
-        if len(cmd.args) == 0:
-            self.bot.act_PRIVMSG(args[0], ".curinfo: supported currencies: %s. Use '.curinfo BTC' to see details. " %
-                                 ', '.join([x.upper() for x in rpc.getSupported()]))
-            return
+        if not cmd.args:
+            self.bot.act_PRIVMSG(msg.args[0],
+                                 ".curinfo: supported currencies: {}. Use '.curinfo BTC' to see details. "
+                                 .format(', '.join([x.upper() for x in rpc.getSupported()])))
         else:
             if not rpc.isSupported(cmd.args[0]):
-                self.bot.act_PRIVMSG(args[0], ".curinfo: '%s' is not a supported currency. Supported currencies are: "
-                                              "%s" % (cmd.args[0], ', '.join([x.upper() for x in rpc.getSupported()])))
+                self.bot.act_PRIVMSG(msg.args[0],
+                                     ".curinfo: '{}' is not a supported currency. Supported currencies are: {}"
+                                     .format(cmd.args[0], ', '.join([x.upper() for x in rpc.getSupported()])))
                 return
             else:
                 info = rpc.getInfo(cmd.args[0])
-                self.bot.act_PRIVMSG(args[0], ".curinfo: %s - %s. More info: %s" %
-                                     (args[0], info["name"], info["link"]))
+                self.bot.act_PRIVMSG(msg.args[0], ".curinfo: {} - {}. More info: {}"
+                                     .format(cmd.args[0], info["name"], info["link"]))
 
     def checkUserHasWallet(self, username, currency):
         # Ensure the user has a wallet in the client
         attr, rpc = self.getMods()
         currency = currency.lower()
         username = username.lower()
-        if attr.getKey(username, "cryptowallet-account-%s" % currency) is None:
+        if attr.getKey(username, "cryptowallet-account-{}".format(currency)) is None:
             randName = self.md5(str(time.time()))[0:16]
-            attr.setKey(username, "cryptowallet-account-%s" % currency, randName)
+            attr.setKey(username, "cryptowallet-account-{}".format(currency), randName)
             # Generate a deposit addr to nudge the wallet
             wallet = rpc.getRpc(currency.lower())
             address = wallet.getAcctAddr(randName)
-            attr.setKey(username, "cryptowallet-depoaddr-%s" % currency, address)
-        elif attr.getKey(username, "cryptowallet-depoaddr-%s" % currency) is None:
-            walletName = attr.getKey(username, "cryptowallet-account-%s" % currency)
+            attr.setKey(username, "cryptowallet-depoaddr-{}".format(currency), address)
+        elif attr.getKey(username, "cryptowallet-depoaddr-{}".format(currency)) is None:
+            walletName = attr.getKey(username, "cryptowallet-account-{}".format(currency))
             wallet = rpc.getRpc(currency.lower())
             address = wallet.getAcctAddr(walletName)
-            attr.setKey(username, "cryptowallet-depoaddr-%s" % currency, address)
-
-    def handle_message(self, args, prefix, trailing):
-        prefix = self.bot.decodePrefix(prefix)
-
-        # Free commands
-        cmd = self.bot.messageHasCommand(".curinfo", trailing)
-        if cmd:
-            self.handle_curinfo(args, prefix, trailing, cmd)
-
-        # Login protected commands
-        cmd = self.bot.messageHasCommand(".setaddr", trailing)
-        if cmd and self.check_login(prefix, args[0]):
-            self.handle_setaddr(args, prefix, trailing, cmd)
-
-        cmd = self.bot.messageHasCommand(".getbal", trailing)
-        if cmd and self.check_login(prefix, args[0]):
-            self.handle_getbal(args, prefix, trailing, cmd)
-
-        cmd = self.bot.messageHasCommand(".withdraw", trailing)
-        if cmd and self.check_login(prefix, args[0]):
-            self.handle_withdraw(args, prefix, trailing, cmd)
-
-        cmd = self.bot.messageHasCommand(".getaddr", trailing)
-        if cmd and self.check_login(prefix, args[0]):
-            self.handle_getaddr(args, prefix, trailing, cmd)
-
-        cmd = self.bot.messageHasCommand(".send", trailing)
-        if cmd and self.check_login(prefix, args[0]):
-            self.handle_send(args, prefix, trailing, cmd)
+            attr.setKey(username, "cryptowallet-depoaddr-{}".format(currency), address)
 
     def check_login(self, prefix, replyTo):
         login = self.bot.getBestModuleForService("login")
         if not login.check(prefix.nick, prefix.hostname):
-            self.bot.act_PRIVMSG(replyTo, "%s: Please .login to use this command." % prefix.nick)
+            self.bot.act_PRIVMSG(replyTo, "{}: Please .login to use this command.".format(prefix.nick))
             return False
         return True
 

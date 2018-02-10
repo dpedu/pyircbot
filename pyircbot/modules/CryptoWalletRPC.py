@@ -9,6 +9,7 @@
 
 from pyircbot.modulebase import ModuleBase
 from bitcoinrpc.authproxy import AuthServiceProxy
+import re
 from threading import Thread
 
 
@@ -22,13 +23,17 @@ class CryptoWalletRPC(ModuleBase):
     def loadrpcservices(self):
         # Create a dict of abbreviation=>BitcoinRPC objcet relation
         self.log.info("CryptoWalletRPC: loadrpcservices: connecting to RPCs")
-        for key in self.config["types"]:
-            self.rpcservices[key.lower()] = BitcoinRPC(self, key, self.config["types"][key]["host"],
-                                                       self.config["types"][key]["port"],
-                                                       self.config["types"][key]["username"],
-                                                       self.config["types"][key]["password"],
-                                                       self.config["types"][key]["precision"],
-                                                       self.config["types"][key]["reserve"])
+        for abbr, coin in self.config["types"].items():
+            self.rpcservices[abbr.lower()] = BitcoinRPC(self,
+                                                        abbr.lower(),
+                                                        coin["name"],
+                                                        coin["host"],
+                                                        coin["port"],
+                                                        coin["username"],
+                                                        coin["password"],
+                                                        coin["precision"],
+                                                        coin["reserve"],
+                                                        re.compile(coin["addrfmt"]))
 
     def getRpc(self, currencyAbbr):
         # Return the rpc for the currency requested
@@ -47,14 +52,19 @@ class CryptoWalletRPC(ModuleBase):
         supported = self.getSupported()
         return abbr.lower() in supported
 
+    # def validate_addr(self, coin_abbr, address):
+    #     client = self.getRpc(coin_abbr.lower())
+    #     if not client or not client.validate_addr(:
+    #         return False
+
     def getInfo(self, abbr):
         # return the coin's info from config
         if self.isSupported(abbr):
             return self.config["types"][abbr.upper()]
 
 
-class BitcoinRPC:
-    def __init__(self, parent, name, host, port, username, password, precision, reserve):
+class BitcoinRPC(object):
+    def __init__(self, parent, name, fullname, host, port, username, password, precision, reserve, addr_re):
         # Store info and connect
         self.master = parent
         self.name = name
@@ -64,12 +74,19 @@ class BitcoinRPC:
         self.password = password
         self.precision = precision
         self.reserve = reserve
+        self.addr_re = addr_re
         self.log = self.master.log
+        self.con = None  # AuthServiceProxy (bitcoin json rpc client) stored here
+        Thread(target=self.ping).start()  # Initiate rpc connection
 
-        # AuthServiceProxy (json client) stored here
-        self.con = None
-        # Connect
-        Thread(target=self.ping).start()
+    def validate_addr(self, addr):
+        """
+        Validate an address string. Returns true if the `addr` provided is a valid address string
+        :param addr: address to validate
+        :type addr: str
+        :return: bool
+        """
+        return True if type(addr) is str and self.addr_re.match(addr) else False
 
     def getBal(self, acct):
         # get a balance of an address or an account
@@ -91,7 +108,7 @@ class BitcoinRPC:
     def canMove(self, fromAcct, toAcct, amount):
         # true or false if fromAcct can afford to give toAcct an amount of coins
         balfrom = self.getAcctBal(fromAcct)
-        return balfrom >= amount
+        return (balfrom - self.reserve) >= amount
 
     def move(self, fromAcct, toAcct, amount):
         # move coins from one account to another
