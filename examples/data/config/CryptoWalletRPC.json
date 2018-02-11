@@ -7,7 +7,7 @@
             "password": "pass",
             "port": 12893,
             "precision": 8,
-            "reserve": 0.01,
+            "reserve": "0.01",
             "link": "https://litecoin.org/",
             "addrfmt": "^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$"
         },
@@ -18,7 +18,7 @@
             "password": "pass",
             "port": 48191,
             "precision": 8,
-            "reserve": 0.001,
+            "reserve": "0.001",
             "link": "http://bitcoin.org/",
             "addrfmt": "^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$"
         }

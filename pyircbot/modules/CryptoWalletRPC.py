@@ -33,7 +33,7 @@ class CryptoWalletRPC(ModuleBase):
                                                         coin["username"],
                                                         coin["password"],
                                                         coin["precision"],
-                                                        coin["reserve"],
+                                                        Decimal(coin["reserve"]),
                                                         re.compile(coin["addrfmt"]))
 
     def getRpc(self, currencyAbbr):
