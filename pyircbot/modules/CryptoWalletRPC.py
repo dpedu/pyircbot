@@ -11,6 +11,7 @@ from pyircbot.modulebase import ModuleBase
 from bitcoinrpc.authproxy import AuthServiceProxy
 import re
 from threading import Thread
+from decimal import Decimal
 
 
 class CryptoWalletRPC(ModuleBase):
@@ -24,7 +25,7 @@ class CryptoWalletRPC(ModuleBase):
         # Create a dict of abbreviation=>BitcoinRPC objcet relation
         self.log.info("CryptoWalletRPC: loadrpcservices: connecting to RPCs")
         for abbr, coin in self.config["types"].items():
-            self.rpcservices[abbr.lower()] = BitcoinRPC(self,
+            self.rpcservices[abbr.lower()] = BitcoinRPC(self.log,
                                                         abbr.lower(),
                                                         coin["name"],
                                                         coin["host"],
@@ -64,9 +65,8 @@ class CryptoWalletRPC(ModuleBase):
 
 
 class BitcoinRPC(object):
-    def __init__(self, parent, name, fullname, host, port, username, password, precision, reserve, addr_re):
+    def __init__(self, logger, name, fullname, host, port, username, password, precision, reserve, addr_re):
         # Store info and connect
-        self.master = parent
         self.name = name
         self.host = host
         self.port = port
@@ -75,7 +75,7 @@ class BitcoinRPC(object):
         self.precision = precision
         self.reserve = reserve
         self.addr_re = addr_re
-        self.log = self.master.log
+        self.log = logger
         self.con = None  # AuthServiceProxy (bitcoin json rpc client) stored here
         Thread(target=self.ping).start()  # Initiate rpc connection
 
@@ -89,11 +89,20 @@ class BitcoinRPC(object):
         return True if type(addr) is str and self.addr_re.match(addr) else False
 
     def getBal(self, acct):
-        # get a balance of an address or an account
+        """
+        Return the balance of the passed account
+        :param acct: account name
+        :type acct: str
+        :return: decimal.Decimal
+        """
         return self.getAcctBal(acct)
 
     def getAcctAddr(self, acct):
-        # returns the address for an account. creates if necessary
+        """
+        Return the deposit address associated with the passed account
+        :param acct: account name
+        :type acct: str
+        """
         self.ping()
         addrs = self.con.getaddressesbyaccount(acct)
         if len(addrs) == 0:
@@ -103,7 +112,7 @@ class BitcoinRPC(object):
     def getAcctBal(self, acct):
         # returns an account's balance
         self.ping()
-        return float(self.con.getbalance(acct))
+        return Decimal(self.con.getbalance(acct))
 
     def canMove(self, fromAcct, toAcct, amount):
         # true or false if fromAcct can afford to give toAcct an amount of coins

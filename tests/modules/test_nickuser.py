@@ -1,5 +1,6 @@
 import pytest
 from contextlib import closing
+from tests.lib import pm
 from tests.lib import *  # NOQA - fixtures
 
 # TODO:
@@ -24,10 +25,6 @@ def nickbot(fakebot):
     fakebot.loadmodule("AttributeStorageLite")
     fakebot.loadmodule("NickUser")
     return fakebot
-
-
-def pm(nickbot, line):
-    nickbot.feed_line(line, args=['bot'])
 
 
 def test_blind_login(nickbot):

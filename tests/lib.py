@@ -168,3 +168,7 @@ def livebot(ircserver, tmpdir):
     yield port, server, bot, bot_t, channel, nick
 
     bot.kill(message="bye", forever=True)
+
+
+def pm(bot, line, nick="chatter"):
+    bot.feed_line(line, args=['bot'], sender=(nick, "root", "cia.gov"))

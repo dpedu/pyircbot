@@ -33,7 +33,8 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], ".setaddr: '{}' is not a supported currency. Supported currencies are: {}"
                                  .format(cmd.args[0], supportedStr))
             return
-        if len(cmd.args[1]) < 16 or len(cmd.args[1]) > 42:
+        client = rpc.getRpc(cmd.args[0])
+        if not client.validate_addr(cmd.args[1]):
             self.bot.act_PRIVMSG(msg.args[0], ".setaddr: '{}' appears to be an invalid address.".format(cmd.args[1]))
             return
 
@@ -48,14 +49,9 @@ class CryptoWallet(ModuleBase):
     @info("getbal <currency>           retrieve your balance ", cmds=["getbal"])
     @command("getbal", require_args=1, allow_private=True)
     def handle_getbal(self, msg, cmd):
-        usage = ".getbal <currency>"
         if not self.check_login(msg.prefix, msg.args[0]):
             return
         attr, rpc = self.getMods()
-        # Check for args
-        if len(cmd.args) != 1:
-            self.bot.act_PRIVMSG(msg.args[0], ".getbal: usage: {}".format(usage))
-            return
         # Check if currency is known
         if not rpc.isSupported(cmd.args[0]):
             supportedStr = ', '.join(rpc.getSupported())
@@ -76,7 +72,7 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0],
                                  "{}: your balance is: {} {}".format(msg.prefix.nick, amount, cmd.args[0].upper()))
 
-    @info("withdraw <currenyc> <amount>           send coins to your withdraw address", cmds=["withdraw"])
+    @info("withdraw <currency> <amount>           send coins to your withdraw address", cmds=["withdraw"])
     @command("withdraw", require_args=2, allow_private=True)
     def handle_withdraw(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -116,7 +112,7 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], ".withdraw: Withdrawing that much would put you below the reserve "
                                               "({} {}).".format(client.reserve, cmd.args[0].upper()))
             self.bot.act_PRIVMSG(msg.args[0], ".withdraw: The reserve is to cover network transaction fees. To recover "
-                                              "it you must close your account. (Talk to an admin)")
+                                              "it you must close your account. (Talk to my owner)")
             return
 
         # Check if the precision is wrong
@@ -128,8 +124,8 @@ class CryptoWallet(ModuleBase):
         # Create a transaction
         txn = client.send(walletname, withdrawaddr, withdrawamount)
         if txn:
-            self.bot.act_PRIVMSG(msg.args[0], "{}: .withdraw: {} {} sent to {}. "
-                                 .format(msg.prefix.nick, withdrawamount, client.name, withdrawaddr))
+            self.bot.act_PRIVMSG(msg.args[0], "{}: .withdraw: {} {} sent to {}."
+                                 .format(msg.prefix.nick, withdrawamount, client.name.upper(), withdrawaddr))
             self.bot.act_PRIVMSG(msg.prefix.nick, "Withdrawal: (You)->{}: Transaction ID: {}"
                                  .format(withdrawaddr, txn))
         else:
@@ -185,8 +181,8 @@ class CryptoWallet(ModuleBase):
             # Create a transaction
             txn = client.send(walletname, tx_dest, withdrawamount)
             if txn:
-                self.bot.act_PRIVMSG(msg.args[0], "{}: .send: {} {} sent to {}. "
-                                     .format(msg.prefix.nick, withdrawamount, client.name, tx_dest))
+                self.bot.act_PRIVMSG(msg.args[0], "{}: .send: {} {} sent to {}."
+                                     .format(msg.prefix.nick, withdrawamount, client.name.upper(), tx_dest))
                 self.bot.act_PRIVMSG(msg.prefix.nick, "Send: (You)->{}: Transaction ID: {}".format(tx_dest, txn))
             else:
                 self.bot.act_PRIVMSG(msg.args[0], "{}: .send: Transaction create failed. Maybe the address is invalid "
@@ -196,7 +192,7 @@ class CryptoWallet(ModuleBase):
             # Check if dest user has a password set
             destUserPassword = attr.getKey(tx_dest, "password")
             if destUserPassword is None:
-                self.bot.act_PRIVMSG(msg.args[0], "{} .send: {} doesn't have a password set."
+                self.bot.act_PRIVMSG(msg.args[0], "{}: .send: {} doesn't have a password set."
                                                   .format(msg.prefix.nick, tx_dest))
                 return
 
@@ -215,8 +211,8 @@ class CryptoWallet(ModuleBase):
             print(destWalletName)
             if client.canMove(srcWalletName, destWalletName, withdrawamount):
                 if client.move(srcWalletName, destWalletName, withdrawamount):
-                    self.bot.act_PRIVMSG(msg.args[0], "{} .send: {} {} sent to {}. "
-                                         .format(msg.prefix.nick, withdrawamount, client.name, tx_dest))
+                    self.bot.act_PRIVMSG(msg.args[0], "{}: .send: {} {} sent to {}."
+                                         .format(msg.prefix.nick, withdrawamount, client.name.upper(), tx_dest))
                 else:
                     self.bot.act_PRIVMSG(msg.args[0], "{}: uh-oh, something went wrong doing that."
                                                       .format(msg.prefix.nick))
@@ -247,7 +243,7 @@ class CryptoWallet(ModuleBase):
         attr, rpc = self.getMods()
         if not cmd.args:
             self.bot.act_PRIVMSG(msg.args[0],
-                                 ".curinfo: supported currencies: {}. Use '.curinfo BTC' to see details. "
+                                 ".curinfo: supported currencies: {}. Use '.curinfo BTC' to see details."
                                  .format(', '.join([x.upper() for x in rpc.getSupported()])))
         else:
             if not rpc.isSupported(cmd.args[0]):
