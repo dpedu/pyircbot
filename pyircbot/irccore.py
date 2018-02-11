@@ -58,6 +58,8 @@ class IRCCore(object):
         self.bind_addr = None
         """Optionally bind to a specific address. This should be a (host, port) tuple."""
 
+        self.nick = None
+
         # Set up hooks for modules
         self.initHooks()
 

@@ -74,26 +74,36 @@ class TouchReload(Thread):
             sleep(self.sleep)
 
 
-def messageHasCommand(command, message, requireArgs=False):
-    """Check if a message has a command with or without args in it
+def messageHasCommand(command, message, requireArgs=False, withHighlight=False):
+    """
+    Check if a message has a command with or without args in it
 
     :param command: the command string to look for, like !ban. If a list is passed, the first match is returned.
     :type command: str or list
     :param message: the message string to look in, like "!ban Lil_Mac"
     :type message: str
-    :param requireArgs: if true, only validate if the command use has any amount of trailing text
-    :type requireArgs: bool"""
+    :param requireArgs: only match if trailing data is passed with the command used. False-like values disable This
+        requirement. True-like values require any number of args greater than one. Int values require a specific number
+        of args
+    :type requireArgs: bool
+    :param withHighlight: if provided, treat 'Nick[:,] command args' the same as '.command args' where Nick is a string
+        provided by withHighlight
+    :type withHighlight: str
+    """
 
     if not type(command) == list:
         command = [command]
     for item in command:
-        cmd = messageHasCommandSingle(item, message, requireArgs)
+        cmd = messageHasCommandSingle(item, message, requireArgs, withHighlight)
         if cmd:
             return cmd
     return False
 
 
-def messageHasCommandSingle(command, message, requireArgs=False):
+def messageHasCommandSingle(command, message, requireArgs=False, withHighlight=False):
+    if withHighlight:
+        if message.startswith(withHighlight + ": ") or message.startswith(withHighlight + ", "):
+            message = "." + message[len(withHighlight) + 2:]
     # Check if the message at least starts with the command
     messageBeginning = message[0:len(command)]
     if messageBeginning != command:
@@ -108,13 +118,16 @@ def messageHasCommandSingle(command, message, requireArgs=False):
     args = ""
     if argsStart > 0:
         args = message[argsStart + 1:].strip()
-
-    if requireArgs and args == '':
-        return False
+    args_list = args.split()
+    if requireArgs:
+        if args == '':
+            return False
+        elif type(requireArgs) is int and len(args_list) != requireArgs:
+            return False
 
     # Verified! Return the set.
     return ParsedCommand(command,
-                         args.split(" ") if args else [],
+                         args_list,
                          args,
                          message)
 

@@ -9,7 +9,6 @@
 
 from pyircbot.modulebase import ModuleBase, command
 from pyircbot.modules.ModInfo import info
-from pyircbot.common import messageHasCommand
 from decimal import Decimal
 import time
 import hashlib

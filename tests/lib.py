@@ -50,6 +50,9 @@ class FakeBaseBot(PrimitiveBot):
         super().unloadmodule(module_name)
         self._modules.remove(module_name)
 
+    def get_nick(self):
+        return "testbot"
+
 
 @pytest.fixture
 def fakebot(tmpdir):

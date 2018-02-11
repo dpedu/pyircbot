@@ -18,16 +18,8 @@ class LMGTFY(ModuleBase):
     @info("lmgtfy <term>     display a condescending internet query", cmds=["lmgtfy"])
     @command("lmgtfy", require_args=True)
     def handleMessage(self, msg, cmd):
-        message = msg.trailing.split(" ")[1:]
-        link = self.createLink(message)
-        self.bot.act_PRIVMSG(msg.args[0], "%s: %s" % (msg.prefix.nick, link))
+        link = self.createLink(cmd.args_str)
+        self.bot.act_PRIVMSG(msg.args[0], "{}: {}".format(msg.prefix.nick, link))
 
     def createLink(self, message):
-        finalUrl = BASE_URL
-
-        for word in message:
-            finalUrl += urllib.parse.quote(word)
-            if word != message[-1]:
-                finalUrl += "+"
-
-        return finalUrl
+        return BASE_URL + "+".join([urllib.parse.quote(word) for word in message.split()])

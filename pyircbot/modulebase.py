@@ -197,10 +197,13 @@ class command(hook):
 
     :param keywords: commands to listen for
     :type keywords: str
-    :param require_args: only match if trailing data is passed with the command used
-    :type require_args: bool
+    :param require_args: only match if trailing data is passed with the command used. False-like values disable This
+        requirement. True-like values require any number of args greater than one. Int values require a specific
+        number of args
+    :type require_args: bool, int
     :param allow_private: enable matching in private messages
     :type allow_private: bool
+    :param allow_highlight: treat 'Nick[:,] command args' the same as '.command args'
     """
 
     prefix = "."
@@ -208,12 +211,12 @@ class command(hook):
     Hotkey that must appear before commands
     """
 
-    def __init__(self, *keywords, require_args=False, allow_private=False):
+    def __init__(self, *keywords, require_args=False, allow_private=False, allow_highlight=True):
         super().__init__("PRIVMSG")
         self.keywords = keywords
         self.require_args = require_args
         self.allow_private = allow_private
-        self.parsed_cmd = None
+        self.allow_highlight = allow_highlight
 
     def validate(self, msg, bot):
         """
@@ -224,19 +227,23 @@ class command(hook):
         :param bot: reference to main pyircbot
         :type bot: pyircbot.pyircbot.PyIRCBot
         """
+        bot_nick = bot.get_nick()
         if not super().validate(msg, bot):
             return False
         if msg.args[0][0] != "#" and not self.allow_private:
             return False
         for keyword in self.keywords:
-            single = self._validate_one(msg, keyword)
+            single = self._validate_prefixedcommand(msg, keyword, bot_nick)
             if single:
+                print(single)
                 return single
         return False
 
-    def _validate_one(self, msg, keyword):
+    def _validate_prefixedcommand(self, msg, keyword, nick):
         with_prefix = "{}{}".format(self.prefix, keyword)
-        return messageHasCommand(with_prefix, msg.trailing, requireArgs=self.require_args)
+        return messageHasCommand(with_prefix, msg.trailing,
+                                 requireArgs=self.require_args,
+                                 withHighlight=nick if self.allow_highlight else False)
 
 
 class regex(hook):

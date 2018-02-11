@@ -14,3 +14,8 @@ def googbot(fakebot):
 def test_lmgtfy_basic(googbot):
     googbot.feed_line(".lmgtfy foobar asdf")
     googbot.act_PRIVMSG.assert_called_once_with('#test', 'chatter: http://lmgtfy.com/?q=foobar+asdf')
+
+
+def test_lmgtfy_highlight(googbot):
+    googbot.feed_line("{}: lmgtfy foobar asdf".format(googbot.get_nick()))
+    googbot.act_PRIVMSG.assert_called_once_with('#test', 'chatter: http://lmgtfy.com/?q=foobar+asdf')
