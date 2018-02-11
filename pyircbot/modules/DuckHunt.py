@@ -29,7 +29,7 @@ class DuckHunt(ModuleBase):
 
         self.startHunt()
 
-    @info("huntscore         show your duckhunt score", cmds=["huntscore"])
+    @info("huntscore", "show your duckhunt score", cmds=["huntscore"])
     @command("huntscore", allow_private=True)
     def hunt(self, msg, cmd):
         scores = self.loadScores()
@@ -61,7 +61,7 @@ class DuckHunt(ModuleBase):
                                  (prime, runts, shots, misses))
             # self.bot.act_PRIVMSG(fromWho, "More info & highscores: http://duckhunt.xmopx.net/")
 
-    @info("shoot         shoot active targets", cmds=["shoot"])
+    @info("shoot", "shoot active targets", cmds=["shoot"])
     @command("shoot")
     def cmd_shoot(self, msg, args):
         if self.isDuckOut:

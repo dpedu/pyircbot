@@ -10,14 +10,8 @@ from tests.lib import *  # NOQA - fixtures
 @pytest.fixture
 def nickbot(fakebot):
     """
-    Provide a bot loaded with the Calc module. Clear the database.
+    Provide a bot loaded with the Nickuser module. Clear the database.
     """
-    fakebot.botconfig["module_configs"]["Calc"] = {
-        "allowDelete": True,
-        "delaySubmit": 0,
-        "delayCalc": 0,
-        "delayCalcSpecific": 0,
-        "delayMatch": 0}
     fakebot.loadmodule("SQLite")
     with closing(fakebot.moduleInstances["SQLite"].opendb("attributes.db")) as db:
         for table in ["attribute", "items", "values"]:

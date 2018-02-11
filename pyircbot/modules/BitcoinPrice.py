@@ -20,7 +20,7 @@ class BitcoinPrice(ModuleBase):
         self.cache = None
         self.cacheAge = 0
 
-    @info("btc               retrieve the current price of bitcoin", cmds=["btc"])
+    @info("btc", "retrieve the current price of bitcoin", cmds=["btc"])
     @command("btc", "bitcoin")
     def btc(self, msg, cmd):
         replyTo = msg.prefix.nick if "#" not in msg.args[0] else msg.args[0]

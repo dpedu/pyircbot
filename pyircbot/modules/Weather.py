@@ -32,7 +32,7 @@ class Weather(ModuleBase):
             self.log.error("Weather: An 'attributes' service is required")
             return
 
-    @info("weather [location]          display the forecast", cmds=["weather", "w"])
+    @info("weather [location]", "display the forecast", cmds=["weather", "w"])
     @command("weather", "w")
     def cmd_weather(self, msg, cmd):
         hasUnit = self.attr.get(msg.prefix.nick, "weather-unit")
@@ -50,7 +50,7 @@ class Weather(ModuleBase):
 
         self.bot.act_PRIVMSG(msg.args[0], "%s: %s" % (msg.prefix.nick, self.getWeather(weatherZip, hasUnit)))
 
-    @info("setloc <location>           set your home location for weather lookups", cmds=["setloc"])
+    @info("setloc <location>", "set your home location for weather lookups", cmds=["setloc"])
     @command("setloc", allow_private=True)
     def cmd_setloc(self, msg, cmd):
         # if not cmd.args:
@@ -79,7 +79,7 @@ class Weather(ModuleBase):
         if self.attr.get(msg.prefix.nick, "weather-zip") is None:
             self.bot.act_PRIVMSG(reply_to, "Tip: choose C or F with .wunit <C/F>")
 
-    @info("wunit <c|f>           set preferred weather unit", cmds=["wunit"])
+    @info("wunit <c|f>", "set preferred weather unit", cmds=["wunit"])
     @command("wunit", allow_private=True)
     def cmd_wunit(self, msg, cmd):
         if cmd.args[0].lower() not in ['c', 'f']:

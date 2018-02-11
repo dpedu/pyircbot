@@ -61,7 +61,7 @@ class Tell(ModuleBase):
             # Delete
             self.db.query("DELETE FROM `tells` WHERE `id`=?", (tell["id"],))
 
-    @info("tell <person> <message>               relay a message when the target is online", cmds=["tell"])
+    @info("tell <person> <message>", "relay a message when the target is online", cmds=["tell"])
     @command("tell", allow_private=True)
     def tellcmds(self, msg, cmd):
         if len(cmd.args) < 2:

@@ -106,7 +106,7 @@ class Remind(ModuleBase):
     def ondisable(self):
         self.disabled = True
 
-    @info("remind <time>     have the bot remind you", cmds=["remind", "at"])
+    @info("remind <time>", "have the bot remind you", cmds=["remind", "at"])
     @command("remind", "at", allow_private=True)
     def remindat(self, msg, cmd):
         regex = re.compile(r'(\d+):(\d+)(?::(\d+))?([^\s\d]+)? (.*)')
@@ -198,7 +198,7 @@ class Remind(ModuleBase):
         else:
             return zonestr
 
-    @info("after <duration> <reminder>           have the bot remind after", cmds=["after", "in"])
+    @info("after <duration> <reminder>", "have the bot remind after", cmds=["after", "in"])
     @command("after", "in", allow_private=True)
     def remindin(self, msg, cmd):
         replyTo = msg.args[0]

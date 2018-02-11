@@ -33,7 +33,7 @@ class RandQuote(ModuleBase):
             ) ;""")
             c.close()
 
-    @info("randquote         print a random quote", cmds=["randquote", "randomquote", "rq"])
+    @info("randquote", "print a random quote", cmds=["randquote", "randomquote", "rq"])
     @command("randquote", "randomquote", "rq")
     def fetchquotes(self, msg, cmd):
         c = self.db.query("SELECT * FROM `chat` ORDER BY RANDOM() LIMIT 1;")

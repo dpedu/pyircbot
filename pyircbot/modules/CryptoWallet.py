@@ -21,7 +21,7 @@ class CryptoWallet(ModuleBase):
     def getMods(self):
         return (self.bot.getBestModuleForService("attributes"), self.bot.getBestModuleForService("bitcoinrpc"))
 
-    @info("setaddr <currency> <address>          set withdraw address", cmds=["setaddr"])
+    @info("setaddr <currency> <address>", "set withdraw address", cmds=["setaddr"])
     @command("setaddr", require_args=2, allow_private=True)
     def handle_setaddr(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -46,7 +46,7 @@ class CryptoWallet(ModuleBase):
         self.bot.act_PRIVMSG(msg.args[0], ".setaddr: Your address has been saved as: {}. Please verify that this is "
                              "correct or your coins could be lost.".format(cmd.args[1]))
 
-    @info("getbal <currency>           retrieve your balance ", cmds=["getbal"])
+    @info("getbal <currency>", "retrieve your balance ", cmds=["getbal"])
     @command("getbal", require_args=1, allow_private=True)
     def handle_getbal(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -72,7 +72,7 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0],
                                  "{}: your balance is: {} {}".format(msg.prefix.nick, amount, cmd.args[0].upper()))
 
-    @info("withdraw <currency> <amount>           send coins to your withdraw address", cmds=["withdraw"])
+    @info("withdraw <currency> <amount>", "send coins to your withdraw address", cmds=["withdraw"])
     @command("withdraw", require_args=2, allow_private=True)
     def handle_withdraw(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -132,7 +132,7 @@ class CryptoWallet(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], "{}: .withdraw: Transaction create failed. Maybe the transaction was too "
                                               "large for the network? Try a smaller increment.".format(msg.prefix.nick))
 
-    @info("send <currency> <amount> <nick_or_address>      send coins elsewhere", cmds=["send"])
+    @info("send <currency> <amount> <nick_or_address>", "send coins elsewhere", cmds=["send"])
     @command("send", require_args=3, allow_private=True)
     def handle_send(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -217,7 +217,7 @@ class CryptoWallet(ModuleBase):
                     self.bot.act_PRIVMSG(msg.args[0], "{}: uh-oh, something went wrong doing that."
                                                       .format(msg.prefix.nick))
 
-    @info("getaddr <currency>          get deposit address", cmds=["getaddr"])
+    @info("getaddr <currency>", "get deposit address", cmds=["getaddr"])
     @command("getaddr", require_args=1, allow_private=True)
     def handle_getaddr(self, msg, cmd):
         if not self.check_login(msg.prefix, msg.args[0]):
@@ -237,7 +237,7 @@ class CryptoWallet(ModuleBase):
         self.bot.act_PRIVMSG(msg.args[0], "{}: your {} deposit address is: {}"
                                           .format(msg.prefix.nick, cmd.args[0].upper(), walletaddr))
 
-    @info("curinfo           list supported coins", cmds=["curinfo"])
+    @info("curinfo", "list supported coins", cmds=["curinfo"])
     @command("curinfo", allow_private=True)
     def handle_curinfo(self, msg, cmd):
         attr, rpc = self.getMods()

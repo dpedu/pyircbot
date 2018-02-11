@@ -15,7 +15,7 @@ BASE_URL = "http://lmgtfy.com/?q="
 
 class LMGTFY(ModuleBase):
 
-    @info("lmgtfy <term>     display a condescending internet query", cmds=["lmgtfy"])
+    @info("lmgtfy <term>", "display a condescending internet query", cmds=["lmgtfy"])
     @command("lmgtfy", require_args=True)
     def handleMessage(self, msg, cmd):
         link = self.createLink(cmd.args_str)

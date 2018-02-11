@@ -33,7 +33,7 @@ class Inventory(ModuleBase):
             ) ;""")
             c.close()
 
-    @info("have <item>       give the bot an item", cmds=["have"])
+    @info("have <item>", "give the bot an item", cmds=["have"])
     @command("have")
     def checkInv(self, msg, cmd):
         if len(cmd.args) < 1:
@@ -57,7 +57,7 @@ class Inventory(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], self.config["recv_msg"] %
                                  {"item": newItem, "adjective": "these " if newItem[-1:] == "s" else "this "})
 
-    @info("inventory         show the bot's inventory", cmds=["inventory", "inv"])
+    @info("inventory", "show the bot's inventory", cmds=["inventory", "inv"])
     @command("inventory", "inv")
     def cmd_inv(self, msg, cmd):
         inv = self.getinventory()

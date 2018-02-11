@@ -32,7 +32,7 @@ class ASCII(ModuleBase):
         self.running_asciis = defaultdict(lambda: None)
         self.killed_channels = defaultdict(lambda: False)
 
-    @info("listascii         list available asciis", cmds=["listascii"])
+    @info("listascii", "list available asciis", cmds=["listascii"])
     @command("listascii")
     def cmd_listascii(self, msg, cmd):
         """
@@ -48,7 +48,7 @@ class ASCII(ModuleBase):
             self.bot.act_PRIVMSG(msg.args[0], "...and {} more".format(len(fnames) - self.config.get("list_max")))
         return
 
-    @info("ascii <name>      print an ascii", cmds=["ascii"])
+    @info("ascii <name>", "print an ascii", cmds=["ascii"])
     @command("ascii", require_args=True)
     def cmd_ascii(self, msg, cmd):
         if self.channel_busy(msg.args[0]):
@@ -68,7 +68,7 @@ class ASCII(ModuleBase):
         except FileNotFoundError:
             return
 
-    @info("stopascii         stop the currently scrolling ascii", cmds=["stopascii"])
+    @info("stopascii", "stop the currently scrolling ascii", cmds=["stopascii"])
     @command("stopascii")
     def cmd_stopascii(self, msg, cmd):
         """
@@ -119,7 +119,7 @@ class ASCII(ModuleBase):
         del self.running_asciis[channel]
         del self.killed_channels[channel]
 
-    @info("asciiedit <args>            customize an ascii with input", cmds=["asciiedit"])
+    @info("asciiedit <args>", "customize an ascii with input", cmds=["asciiedit"])
     @command("asciiedit", require_args=True)
     def cmd_asciiedit(self, msg, cmd):
         ascii_name = cmd.args.pop(0)

@@ -134,7 +134,7 @@ class SMS(ModuleBase):
         """
         cherrypy.engine.exit()
 
-    @info("text-<name>       text somebody on the VIP list", cmds=["text"])
+    @info("text-<name>", "text somebody on the VIP list", cmds=["text"])
     @regex(r'(?:^\.text\-([a-zA-Z0-9]+)(?:\s+(.+))?)', types=['PRIVMSG'])
     def cmd_text(self, msg, match):
         """

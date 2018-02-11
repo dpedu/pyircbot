@@ -36,9 +36,9 @@ class NickUser(ModuleBase):
         else:
             self.handlePm(msg.prefix, msg.trailing)
 
-    @info("setpass [<oldpass>] <password>        set or change password", cmds=["setpass"])
-    @info("login <password>            authenticate with the bot", cmds=["login"])
-    @info("logout            log out of the bot", cmds=["logout"])
+    @info("setpass [<oldpass>] <password>", "set or change password", cmds=["setpass"])
+    @info("login <password>", "authenticate with the bot", cmds=["login"])
+    @info("logout", "log out of the bot", cmds=["logout"])
     def handlePm(self, prefix, trailing):
         cmd = messageHasCommand(".setpass", trailing)
         if cmd:

@@ -14,7 +14,7 @@ from pyircbot.modules.ModInfo import info
 
 class Urban(ModuleBase):
 
-    @info("urban <term>      lookup an urban dictionary definition", cmds=["urban", "u"])
+    @info("urban <term>", "lookup an urban dictionary definition", cmds=["urban", "u"])
     @command("urban", "u")
     def urban(self, msg, cmd):
         definitions = requests.get("http://www.urbandictionary.com/iphone/search/define",

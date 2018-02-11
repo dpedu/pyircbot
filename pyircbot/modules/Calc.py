@@ -80,7 +80,7 @@ class Calc(ModuleBase):
         seconds = int(remaining - (minutes * 60))
         return "Please wait %s minute(s) and %s second(s)." % (minutes, seconds)
 
-    @info("quote [key[ =[ value]]]     set or update facts", cmds=["quote"])
+    @info("quote [key[ =[ value]]]", "set or update facts", cmds=["quote"])
     @regex(r'(?:^\.?(?:calc|quote)(?:\s+?(?:([^=]+)(?:\s?(=)\s?(.+)?)?)?)?)', types=['PRIVMSG'])
     def cmd_calc(self, message, match):
         word, changeit, value = match.groups()
@@ -136,7 +136,7 @@ class Calc(ModuleBase):
                                          randCalc["definition"], randCalc["by"]))
                     self.updateTimeSince(channel, "calc")
 
-    @info("match <value>     search for facts by key", cmds=["match"])
+    @info("match <value>", "search for facts by key", cmds=["match"])
     @command("match", require_args=True)
     def cmd_match(self, msg, cmd):
         if self.config["delayMatch"] > 0 and self.timeSince(msg.args[0], "match") < self.config["delayMatch"]:

@@ -20,7 +20,7 @@ class NFLLive(ModuleBase):
         self.cache = None
         self.cacheAge = 0
 
-    @info("nfl               show nfl schedule & score", cmds=["nfl"])
+    @info("nfl", "show nfl schedule & score", cmds=["nfl"])
     @command("nfl")
     def nflitup(self, message, cmd):
         games = self.getNflGamesCached()

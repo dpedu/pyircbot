@@ -34,7 +34,7 @@ class Youtube(ModuleBase):
         )  # http://stackoverflow.com/a/16742742
         return ISO_8601_period_rx.match(stamp).groupdict()
 
-    @info("yt                search for youtube videos", cmds=["yt", "youtube"])
+    @info("yt", "search for youtube videos", cmds=["yt", "youtube"])
     @command("yt", "youtube")
     def youtube(self, msg, cmd):
         j = get("https://www.googleapis.com/youtube/v3/search",

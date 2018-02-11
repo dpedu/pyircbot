@@ -38,7 +38,7 @@ class Seen(ModuleBase):
             # self.log.info("Seen: %s on %s" % (nick.lower(), datest))
             sql.commit()
 
-    @info("seen <nick>       print last time user was seen", cmds=["seen"])
+    @info("seen <nick>", "print last time user was seen", cmds=["seen"])
     @command("seen", require_args=True)
     def lastSeen(self, message, command):
         sql = self.getSql()
