@@ -19,11 +19,13 @@ def test_helpindex(helpbot):
 
 def test_help(helpbot):
     helpbot.feed_line(".help")
-    helpbot.act_PRIVMSG.assert_has_calls([call('#test', 'ModInfo: .help [command]    show the manual for all or [commands]'),
-                                          call('#test', 'ModInfo: .helpindex         show a short list of all commands')],
-                                         any_order=True)
+    helpbot.act_PRIVMSG.assert_has_calls(
+        [call('#test', 'ModInfo .help [command] show the manual for all or [commands] '),
+         call('#test', 'ModInfo .helpindex      show a short list of all commands     ')],
+        any_order=True)
 
 
 def test_help_one(helpbot):
     helpbot.feed_line(".help .helpindex")
-    helpbot.act_PRIVMSG.assert_called_once_with('#test', 'RTFM: .helpindex: helpindex         show a short list of all commands')
+    helpbot.act_PRIVMSG.assert_called_once_with('#test',
+                                                'RTFM: .helpindex: (.helpindex) show a short list of all commands')

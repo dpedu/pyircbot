@@ -235,7 +235,6 @@ class command(hook):
         for keyword in self.keywords:
             single = self._validate_prefixedcommand(msg, keyword, bot_nick)
             if single:
-                print(single)
                 return single
         return False
 
