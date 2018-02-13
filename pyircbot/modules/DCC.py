@@ -17,6 +17,10 @@ from time import sleep
 BUFFSIZE = 8192
 
 
+class TransferFailedException(Exception):
+    pass
+
+
 def ip2int(ipstr):
     """
     Convert an ip address string to an integer
@@ -89,8 +93,9 @@ class RecieveGenerator(object):
                 yield chunk
                 if total >= self.length:
                     break
+            print("total", total, "expected", self.length)
             if total != self.length:
-                raise Exception("Transfer failed: expected {} bytes but got {}".format(self.length, total))
+                raise TransferFailedException("Transfer failed: expected {} bytes but got {}".format(self.length, total))
             raise StopIteration()
         finally:
             self.sock.shutdown(socket.SHUT_RDWR)
