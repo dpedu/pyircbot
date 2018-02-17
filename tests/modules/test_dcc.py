@@ -32,6 +32,7 @@ def _make_test_tempfiles(length, basedir):
     return tmpfpath, srchash
 
 
+@pytest.mark.slow
 def test_offerrecv(dccbot, tmpdir):
     # allocate a temp file
     flen = 1024 * 51
@@ -55,6 +56,7 @@ def test_offerrecv(dccbot, tmpdir):
     assert d.hexdigest() == srchash, "file was mangled in transfer"
 
 
+@pytest.mark.slow
 def test_tooshortfails(dccbot, tmpdir):
         # allocate a temp file
     flen = 1024 * 51
@@ -80,6 +82,7 @@ def test_tooshortfails(dccbot, tmpdir):
     raise Exception("Did not raise")
 
 
+@pytest.mark.slow
 def test_toolongfails(dccbot, tmpdir):
         # allocate a temp file
     flen = 1024 * 51
