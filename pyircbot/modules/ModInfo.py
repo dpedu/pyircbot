@@ -101,7 +101,7 @@ class ModInfo(ModuleBase):
         Iterator that cycles through module methods that are tagged with help information. The iterator yields tuples
         of:
 
-        (module_name, module_object, command_spec, command_help, command_list)
+        (module_name, module_object, command_spec, command_help, command_alias_list)
         """
         for modname, module in self.bot.moduleInstances.items():
             for attr_name in dir(module):
