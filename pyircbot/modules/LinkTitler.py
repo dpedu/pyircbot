@@ -76,7 +76,7 @@ class LinkTitler(ModuleBase):
         # subreddits
 
         # generic <title>
-        matches = re.compile(r'(https?://([a-zA-Z0-9_\-\.]+/([A-Za-z0-9\-\._~:\/?#[]@!$&\'\(\)\*\+\,\;=]+)?))') \
+        matches = re.compile(r'(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*))') \
             .findall(trailing)
         if matches:
             done = []
@@ -102,8 +102,6 @@ class LinkTitler(ModuleBase):
                                          (sender, headers["Content-Type"],
                                           self.nicesize(int(headers["Content-Length"])) if
                                           "Content-Length" in headers else "unknown size"))
-
-            return
 
     def get_reddit_submission(self, subid):
         r = praw.Reddit(**self.config["reddit"])
