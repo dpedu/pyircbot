@@ -9,3 +9,4 @@ __pycache__
 /pyircbot.egg-info
 /.coverage
 /htmlcov/
+/examples/data/data/ASCII/
