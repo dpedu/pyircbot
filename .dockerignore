@@ -1,0 +1,7 @@
+/testenv/*
+/share/*
+/docs/*
+/build/*
+/dist/*
+/*.egg-info
+

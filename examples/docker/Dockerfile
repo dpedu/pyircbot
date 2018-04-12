@@ -1,27 +1,19 @@
-FROM ubuntu:artful
+FROM ubuntu:bionic
 
 ENTRYPOINT ["/usr/local/bin/pyircbot"]
 WORKDIR /srv/bot/
 CMD ["-c", "config.json"]
+ADD requirements.txt /tmp/requirements.txt
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-setuptools python3-requests curl unzip sqlite3 && \
-    easy_install3 pip && \
-    pip3 install praw==5.0.1 pytz cherrypy twilio==6.9.0 && \
-    cd /tmp && \
-    curl -o msgbus.tar.gz 'http://gitlab.davepedu.com/dave/pymsgbus/repository/archive.tar.gz?ref=master' && \
-    mkdir pymsgbus && tar zxvf msgbus.tar.gz --strip-components 1 -C pymsgbus/ &&\
-    cd pymsgbus && \
-    pip3 install -r requirements.txt && \
-    python3 setup.py install && \
-    cd /tmp && \
-    curl -o bitcoinrpc.tar.gz https://codeload.github.com/dpedu/python-bitcoinrpc/tar.gz/master && \
-    tar zxvf bitcoinrpc.tar.gz && \
-    cd python-bitcoinrpc-master && \
-    python3 setup.py install && \
+    apt-get install -y python3 python3-setuptools python3-pip sqlite3 git && \
+    pip3 install -r /tmp/requirements.txt && \
     useradd --home-dir /srv/bot bot && \
     chown bot /srv/bot && \
-    rm -rf /var/lib/apt/lists/* /tmp/bitcoinrpc.tar.gz /tmp/python-bitcoinrpc-master
+    apt-get remove -y python3-pip perl && \
+    apt-get autoremove -y && \
+    apt-get clean -y && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY . /tmp/pyircbot/
 
