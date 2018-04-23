@@ -10,5 +10,10 @@ setup(name='pyircbot',
       author='dpedu',
       author_email='dave@davepedu.com',
       packages=['pyircbot', 'pyircbot.modules'],
-      scripts=['bin/pyircbot'],
+      entry_points={
+          "console_scripts": [
+              "pyircbot = pyircbot.cli:main",
+              "pubsubbot = pyircbot.clipub:main"
+          ]
+      },
       zip_safe=False)

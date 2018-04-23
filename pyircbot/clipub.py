@@ -112,7 +112,7 @@ class PyIRCBotSub(PrimitiveBot):
         return self.meta.get("nick", None)
 
 
-if __name__ == "__main__":
+def main():
     logging.basicConfig(level=logging.WARNING,
                         format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
     log = logging.getLogger('main')
@@ -160,3 +160,6 @@ if __name__ == "__main__":
 
     bot.run()
 
+
+if __name__ == "__main__":
+    main()

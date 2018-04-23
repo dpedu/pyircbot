@@ -8,7 +8,7 @@ from pyircbot import PyIRCBot
 from json import loads
 
 
-if __name__ == "__main__":
+def main():
     " logging level and facility "
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)-15s %(levelname)-8s %(filename)s:%(lineno)d %(message)s")
@@ -45,3 +45,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, signal_handler)
 
     bot.run()
+
+
+if __name__ == "__main__":
+    main()
