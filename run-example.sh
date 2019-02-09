@@ -6,4 +6,4 @@ shift || true
 export PYTHONUNBUFFERED=1
 export PYTHONPATH=.
 
-./bin/pyircbot -c $CONFPATH --debug $@
+pyircbot -c $CONFPATH --debug $@

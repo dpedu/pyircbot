@@ -72,7 +72,6 @@ class ModInfo(ModuleBase):
         # Find widest value per col
         for row in rows:
             for col, value in enumerate(row):
-                print(col, value)
                 vlen = len(value)
                 if vlen > widths[col]:
                     widths[col] = vlen
@@ -109,4 +108,3 @@ class ModInfo(ModuleBase):
                 if callable(attr) and hasattr(attr, "irchelp"):
                     for cmdinfo in attr.irchelp:
                         yield (modname, module, cmdinfo.cmdspec, cmdinfo.docstring, cmdinfo.aliases)
-        raise StopIteration()
