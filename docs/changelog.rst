@@ -2,9 +2,10 @@
 Changelog
 =========
 
+* :feature:`-` Added StockPlay module
+
 * :release:`4.1.0 <2019-02-10>`
 * :support:`-` First documented release in awhile. Many new modules and tests have been added. See the git log if you so desire.
-* :feature:`-` Added StockPlay module
 * :feature:`-` Upgraded docker base image to ubuntu:bionic
 * :feature:`-` Misc macOs related fixes
 * :feature:`-` Misc python 3.7 related fixes

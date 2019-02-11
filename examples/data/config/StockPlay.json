@@ -1,0 +1,8 @@
+{
+    "startbalance": 10000,
+    "tradedelay": 0,
+    "apikey": "",
+    "tcachesecs": 300,
+    "rcachesecs": 14400,
+    "bginterval": 300
+}
