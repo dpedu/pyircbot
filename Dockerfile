@@ -10,7 +10,6 @@ COPY ./requirements.txt /requirements.txt
 
 RUN pip3 install -r /requirements.txt
 
-
 COPY ./ /tmp/pyircbot
 RUN cd /tmp/pyircbot && \
     python3 setup.py install
@@ -19,3 +18,4 @@ ENTRYPOINT ["/usr/local/bin/pyircbot"]
 WORKDIR /srv/bot/
 CMD ["-c", "config.json"]
 USER bot
+
