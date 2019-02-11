@@ -96,9 +96,8 @@ class RecieveGenerator(object):
             print("total", total, "expected", self.length)
             if total != self.length:
                 raise TransferFailedException("Transfer failed: expected {} bytes but got {}".format(self.length, total))
-            raise StopIteration()
         finally:
-            self.sock.shutdown(socket.SHUT_RDWR)
+            # self.sock.shutdown(socket.SHUT_RDWR)
             self.sock.close()
 
 
@@ -140,8 +139,11 @@ class OfferThread(Thread):
                 clientsocket.shutdown(socket.SHUT_RDWR)
                 clientsocket.close()
         finally:
-            self.listener.shutdown(socket.SHUT_RDWR)
+            # try:
+            #     self.listener.shutdown(socket.SHUT_RDWR)
             self.listener.close()
+            # except Exception:
+            #     pass
 
     def abort(self):
         """

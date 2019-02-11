@@ -22,7 +22,7 @@ class PingResponder(ModuleBase):
         """Respond to the PING command"""
         # got a ping? send it right back
         self.bot.act_PONG(msg.trailing)
-        self.log.info("%s Responded to a ping: %s" % (self.bot.get_nick(), msg.trailing))
+        self.log.debug("%s Responded to a ping: %s" % (self.bot.get_nick(), msg.trailing))
 
     @hook("_RECV", "_SEND")
     def resettimer(self, msg, cmd):

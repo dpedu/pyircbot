@@ -50,13 +50,15 @@ class NickUser(ModuleBase):
                 oldpass = attr.getKey(prefix.nick, "password")
                 if oldpass is None:
                     attr.setKey(prefix.nick, "password", cmd.args[0])
-                    self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." % cmd.args[0])
+                    self.bot.act_PRIVMSG(prefix.nick, ".setpass: You've been logged in and "
+                                                      "your password has been set to \"%s\"." % cmd.args[0])
                 else:
                     if len(cmd.args) == 2:
                         if cmd.args[0] == oldpass:
                             attr.setKey(prefix.nick, "password", cmd.args[1])
-                            self.bot.act_PRIVMSG(prefix.nick, ".setpass: Your password has been set to \"%s\"." %
-                                                 cmd.args[1])
+                            self.bot.act_PRIVMSG(prefix.nick,
+                                                 ".setpass: Your password has been set to \"%s\"." % cmd.args[1])
+                            attr.setKey(prefix.nick, "loggedinfrom", prefix.hostname)
                         else:
                             self.bot.act_PRIVMSG(prefix.nick, ".setpass: Old password incorrect.")
                     else:
@@ -89,3 +91,23 @@ class NickUser(ModuleBase):
             else:
                 attr.setKey(prefix.nick, "loggedinfrom", None)
                 self.bot.act_PRIVMSG(prefix.nick, ".logout: You have been logged out.")
+
+
+# Decorator for methods that require login
+# Assumes your args matches the same format that @command(...) expects
+#TODO better docs
+class protected(object):
+    def __init__(self, message=None):
+        self.message = message or "{}: you need to .login to do that"
+
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            module, message, command = args
+            login = module.bot.getBestModuleForService("login")
+
+            if not login.check(message.prefix.nick, message.prefix.hostname):
+                module.bot.act_PRIVMSG(message.args[0], self.message.format(message.prefix.nick))
+                return
+
+            func(*args, **kwargs)
+        return wrapper

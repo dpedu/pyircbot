@@ -78,7 +78,7 @@ class IRCCore(object):
                                                                          family=self.connection_family,
                                                                          local_addr=self.bind_addr)
                 self.fire_hook("_CONNECT")
-            except (socket.gaierror, ConnectionRefusedError):
+            except (socket.gaierror, ConnectionRefusedError, OSError):
                 traceback.print_exc()
                 logging.warning("Non-fatal connect error, trying next server...")
                 self.server = (self.server + 1) % len(self.servers)

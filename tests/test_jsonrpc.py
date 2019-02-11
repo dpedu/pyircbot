@@ -3,7 +3,6 @@ import pytest
 from pyircbot import jsonrpc
 from threading import Thread
 from random import randint
-from socket import SHUT_RDWR
 from time import sleep
 
 
@@ -37,7 +36,7 @@ def j1testserver():
     Thread(target=server.serve, daemon=True).start()
     sleep(0.1)  # Give the serve() time to set up the serversocket
     yield (server, port)
-    server._Server__transport.s.shutdown(SHUT_RDWR)
+    server._Server__transport.close()
 
 
 @pytest.fixture
@@ -48,9 +47,9 @@ def j2testserver():
     server.register_function(sample)
     server.register_instance(_sample(), name="obj")
     Thread(target=server.serve, daemon=True).start()
-    sleep(0.1)  # Give the serve() time to set up the serversocket
+    sleep(0.2)  # Give the serve() time to set up the serversocket
     yield (server, port)
-    server._Server__transport.s.shutdown(SHUT_RDWR)
+    server._Server__transport.close()
 
 
 # Basic functionality

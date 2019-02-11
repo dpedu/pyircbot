@@ -36,7 +36,7 @@ def test_register(nickbot):
     nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: usage: ".setpass newpass" or ".setpass oldpass newpass"')
     nickbot.act_PRIVMSG.reset_mock()
     pm(nickbot, ".setpass foobar")
-    nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: Your password has been set to "foobar".')
+    nickbot.act_PRIVMSG.assert_called_once_with('chatter', '.setpass: You\'ve been logged in and your password has been set to "foobar".')
     nickbot.act_PRIVMSG.reset_mock()
 
 

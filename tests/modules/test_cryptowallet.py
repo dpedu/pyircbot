@@ -70,8 +70,9 @@ def test_getbal_authed(cryptobot):
 
 def test_setup(cryptobot, mynick="chatter"):
     pm(cryptobot, ".setpass foobar", nick=mynick)
-    cryptobot.act_PRIVMSG.assert_called_once_with(mynick, '.setpass: Your password has been set to "foobar".')
+    cryptobot.act_PRIVMSG.assert_called_once_with(mynick, '.setpass: You\'ve been logged in and your password has been set to "foobar".')
     cryptobot.act_PRIVMSG.reset_mock()
+    # TODO shouldn't need .login here, the setpass does it
     pm(cryptobot, ".login foobar", nick=mynick)
     cryptobot.act_PRIVMSG.assert_called_once_with(mynick, '.login: You have been logged in from: cia.gov')
     cryptobot.act_PRIVMSG.reset_mock()
