@@ -4,6 +4,7 @@ chardet==3.0.4
 cheroot==6.2.4
 CherryPy==14.2.0
 idna==2.6
+lxml==4.3.1
 more-itertools==4.1.0
 -e git+http://git.davepedu.com/dave/pymsgbus.git@373a9c5f153078fce57bde43f493785859f51de4#egg=msgbus
 portend==2.2

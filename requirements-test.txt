@@ -8,6 +8,7 @@ CherryPy==14.2.0
 coverage==4.5.1
 execnet==1.5.0
 idna==2.6
+lxml==4.3.1
 more-itertools==4.1.0
 -e git+http://git.davepedu.com/dave/pymsgbus.git@373a9c5f153078fce57bde43f493785859f51de4#egg=msgbus
 pluggy==0.6.0
@@ -27,6 +28,7 @@ pytest-xdist==1.22.2
 -e git+https://github.com/jgarzik/python-bitcoinrpc.git@76ced424dc16f997365265487487056e653238c6#egg=python_bitcoinrpc
 pytz==2018.4
 pyzmq==17.0.0
+-e git+https://github.com/bitprophet/releases.git@1.6.1#egg=releases
 requests==2.18.4
 six==1.11.0
 tempora==1.11
