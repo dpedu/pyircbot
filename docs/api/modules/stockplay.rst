@@ -51,7 +51,8 @@ Config
         "apikey": "xxxxxxxxxxxxxx",
         "tcachesecs": 300,
         "rcachesecs": 14400,
-        "bginterval": 300
+        "bginterval": 300,
+        "midnight_offset": 0
     }
 
 .. cmdoption:: startbalance
@@ -91,6 +92,16 @@ Config
     started that updates the price of symbols older than *rcachesecs*.
 
     Estimated 5 minute (300), but likely will need tuning depending on playerbase
+
+.. cmdoption:: midnight_offset
+
+    Number of seconds **added** to the clock when calculating midnight.
+
+    At midnight, the bot logs all player balances for use in gain/loss over time calculations later on. If you want this
+    to happen at midnight system time, leave this at 0. Otherwise, it can be set to some number of seconds to e.g. to
+    compensate for time zones.
+
+    Default: 0
 
 
 Class Reference

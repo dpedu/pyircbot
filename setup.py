@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
-__version__ = "4.0.0-r03"
+__version__ = "4.1.0"
 
 setup(name='pyircbot',
-      version='4.0.0-r03',
+      version=__version__,
       description='A modular python irc bot',
       url='http://gitlab.xmopx.net/dave/pyircbot3/tree/master',
       author='dpedu',
