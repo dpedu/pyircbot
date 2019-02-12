@@ -50,6 +50,7 @@ class NickUser(ModuleBase):
                 oldpass = attr.getKey(prefix.nick, "password")
                 if oldpass is None:
                     attr.setKey(prefix.nick, "password", cmd.args[0])
+                    attr.setKey(prefix.nick, "loggedinfrom", prefix.hostname)
                     self.bot.act_PRIVMSG(prefix.nick, ".setpass: You've been logged in and "
                                                       "your password has been set to \"%s\"." % cmd.args[0])
                 else:
@@ -74,10 +75,8 @@ class NickUser(ModuleBase):
             else:
                 if len(cmd.args) == 1:
                     if userpw == cmd.args[0]:
-                        #################
                         attr.setKey(prefix.nick, "loggedinfrom", prefix.hostname)
                         self.bot.act_PRIVMSG(prefix.nick, ".login: You have been logged in from: %s" % prefix.hostname)
-                        #################
                     else:
                         self.bot.act_PRIVMSG(prefix.nick, ".login: incorrect password.")
                 else:
@@ -95,7 +94,6 @@ class NickUser(ModuleBase):
 
 # Decorator for methods that require login
 # Assumes your args matches the same format that @command(...) expects
-#TODO better docs
 class protected(object):
     def __init__(self, message=None):
         self.message = message or "{}: you need to .login to do that"
@@ -106,7 +104,8 @@ class protected(object):
             login = module.bot.getBestModuleForService("login")
 
             if not login.check(message.prefix.nick, message.prefix.hostname):
-                module.bot.act_PRIVMSG(message.args[0], self.message.format(message.prefix.nick))
+                module.bot.act_PRIVMSG(message.args[0] if message.args[0].startswith("#") else message.prefix.nick,
+                                       self.message.format(message.prefix.nick))
                 return
 
             func(*args, **kwargs)
