@@ -1,5 +1,5 @@
-:mod:`StockPlay` --- Simulated stock trading game
-=================================================
+:mod:`StockPlay` --- Stock-like trading game
+============================================
 
 This module provides a simulated stock trading game. Requires and api key from
 https://www.alphavantage.co/ to fetch stock quotes.
@@ -7,12 +7,21 @@ https://www.alphavantage.co/ to fetch stock quotes.
 Most commands require that the player login as described in the NickUser module.
 
 Note that it is important to configure api limitations when configuring this module. The alphavantage.co api allows a
-maximum of 5 requests per minute and 500 requests per day. For reporting reasons we need to keep the prices of all
-traded symbols reasonably up-to-date (see *bginterval*). This happens at some interval.
+maximum of 5 requests per minute and 500 requests per day. For reasonable trading - that is, executing trades at the
+current market price - we need to be able to lookup the price of any symbol at any time. Likewise, to generate reports
+we need to keep the prices of all symbols somewhat up to date. This happens at some interval - see *bginterval*.
 
 Considering the daily limit means, when evenly spread, we can sent a request *no more often* than 173 seconds:
-(24 * 60 * 60 / 500) - and therefore, the value of *bginterval* must be some value larger than 173, as this value will
-completely consume the daily limit leaving no room for normal trades.
+`(24 * 60 * 60 / 500)` - and therefore, the value of *bginterval* must be some value larger than 173, as this value will
+completely consume the daily limit.
+
+When trading, the price of the traded symbol is allowed to be *tcachesecs* seconds old before the API will be used to
+fetch a more recent price. This value must be balanced against *bginterval* depending on your trade frequency
+and variety.
+
+Background or batch-style tasks that rely on symbol prices run afoul with the above constraints - but in a
+magnified way as they rely on api-provided data to calculate player stats across many players at a time. The
+*rcachesecs* setting controls the maximum price age before the API is hit.
 
 
 Commands
@@ -20,24 +29,18 @@ Commands
 
 .. cmdoption:: .buy <amount> <symbol>
 
-    Buy some number of the specified stock symbol such as ".buy 10 amd"
+    Buy some number of the specified symbol such as ".buy 10 amd"
 
 .. cmdoption:: .sell <amount> <symbol>
 
     Sell similar to .buy
 
-.. cmdoption:: .bal
+.. cmdoption:: .port [<player>] [<full>]
 
-    Show a summary report on the value of the player's cash + stock holdings
-
-.. cmdoption:: .cash
-
-    Show the player's cash balance
-
-.. cmdoption:: .port
-
-    Get a report on the player's portfolio. Value based on stocks may be delayed based on the *rcachesecs*
-    config setting.
+    Get a report on the calling player's portfolio. Another player's name can be passed as an argument to retrieve
+    information about a player other than the calling player. Finally, the 'full' argument can be added to retrieve a
+    full listing of the player's holdings. Per the above, values based on symbol prices may be delayed based on the
+    *rcachesecs* config setting.
 
 
 Config
@@ -72,13 +75,13 @@ Config
 
 .. cmdoption:: tcachesecs
 
-    When performing a trade, how old of a cached stock value is permitted before fetching from API.
+    When performing a trade, how old of a cached symbol price is permitted before fetching from API.
 
     Recommended ~30 minutes (1800)
 
 .. cmdoption:: rcachesecs
 
-    When calculating a portfolio report, how old of a cached stock value is permitted before fetching from API.
+    When calculating a portfolio report, how old of a cached symbol price is permitted before fetching from API.
 
     Recommended ~4 hours (14400)
 

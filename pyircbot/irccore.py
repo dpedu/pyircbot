@@ -15,6 +15,8 @@ from inspect import getargspec
 from pyircbot.common import burstbucket, parse_irc_line
 from collections import namedtuple
 from io import StringIO
+from time import time
+
 
 IRCEvent = namedtuple("IRCEvent", "command args prefix trailing")
 UserPrefix = namedtuple("UserPrefix", "nick username hostname")
@@ -110,8 +112,8 @@ class IRCCore(object):
     async def outputqueue(self):
         self.bucket = burstbucket(self.rate_max, self.rate_int)
         while True:
-            prio, line = await self.outputq.get()
             # sleep until the bucket allows us to send
+            # TODO warn/drop option if age (the _ above is older than some threshold)
             if self.rate_limit:
                 while True:
                     s = self.bucket.get()
@@ -119,6 +121,7 @@ class IRCCore(object):
                         break
                     else:
                         await asyncio.sleep(s, loop=self._loop)
+            prio, _, line = await self.outputq.get()
             self.fire_hook('_SEND', args=None, prefix=None, trailing=None)
             self.log.debug(">>> {}".format(repr(line)))
             self.outputq.task_done()
@@ -152,7 +155,7 @@ class IRCCore(object):
         if priority is None:
             self.outseq += 1
             priority = self.outseq
-        asyncio.run_coroutine_threadsafe(self.outputq.put((priority, data, )), self._loop)
+        asyncio.run_coroutine_threadsafe(self.outputq.put((priority, time(), data, )), self._loop)
 
     " Module related code "
     def initHooks(self):
@@ -313,12 +316,12 @@ class IRCCore(object):
         return self.nick
 
     " Action Methods "
-    def act_PONG(self, data):
+    def act_PONG(self, data, priority=1):
         """Use the `/pong` command - respond to server pings
 
         :param data: the string or number the server sent with it's ping
         :type data: str"""
-        self.sendRaw("PONG :%s" % data)
+        self.sendRaw("PONG :%s" % data, priority)
 
     def act_USER(self, username, hostname, realname, priority=2):
         """Use the USER protocol command. Used during connection
@@ -344,18 +347,18 @@ class IRCCore(object):
 
         :param channel: the channel to attempt to join
         :type channel: str"""
-        self.sendRaw("JOIN %s" % channel, priority=3)
+        self.sendRaw("JOIN %s" % channel, priority)
 
-    def act_PRIVMSG(self, towho, message):
+    def act_PRIVMSG(self, towho, message, priority=3):
         """Use the `/msg` command
 
         :param towho: the target #channel or user's name
         :type towho: str
         :param message: the message to send
         :type message: str"""
-        self.sendRaw("PRIVMSG %s :%s" % (towho, message))
+        self.sendRaw("PRIVMSG %s :%s" % (towho, message), priority)
 
-    def act_MODE(self, channel, mode, extra=None):
+    def act_MODE(self, channel, mode, extra=None, priority=2):
         """Use the `/mode` command
 
         :param channel: the channel this mode is for
@@ -365,20 +368,20 @@ class IRCCore(object):
         :param extra: additional argument if the mode needs it. Example: user@*!*
         :type extra: str"""
         if extra is not None:
-            self.sendRaw("MODE %s %s %s" % (channel, mode, extra))
+            self.sendRaw("MODE %s %s %s" % (channel, mode, extra), priority)
         else:
-            self.sendRaw("MODE %s %s" % (channel, mode))
+            self.sendRaw("MODE %s %s" % (channel, mode), priority)
 
-    def act_ACTION(self, channel, action):
+    def act_ACTION(self, channel, action, priority=2):
         """Use the `/me <action>` command
 
         :param channel: the channel name or target's name the message is sent to
         :type channel: str
         :param action: the text to send
         :type action: str"""
-        self.sendRaw("PRIVMSG %s :\x01ACTION %s" % (channel, action))
+        self.sendRaw("PRIVMSG %s :\x01ACTION %s" % (channel, action), priority)
 
-    def act_KICK(self, channel, who, comment=""):
+    def act_KICK(self, channel, who, comment="", priority=2):
         """Use the `/kick <user> <message>` command
 
         :param channel: the channel from which the user will be kicked
@@ -387,7 +390,7 @@ class IRCCore(object):
         :type action: str
         :param comment: the kick message
         :type comment: str"""
-        self.sendRaw("KICK %s %s :%s" % (channel, who, comment))
+        self.sendRaw("KICK %s %s :%s" % (channel, who, comment), priority)
 
     def act_QUIT(self, message, priority=2):
         """Use the `/quit` command
@@ -396,8 +399,8 @@ class IRCCore(object):
         :type message: str"""
         self.sendRaw("QUIT :%s" % message, priority)
 
-    def act_PASS(self, password):
+    def act_PASS(self, password, priority=1):
         """
         Send server password, for use on connection
         """
-        self.sendRaw("PASS %s" % password)
+        self.sendRaw("PASS %s" % password, priority)
