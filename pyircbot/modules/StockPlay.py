@@ -143,9 +143,25 @@ class StockPlay(ModuleBase):
                         self.do_trade(data)
                     elif action == "portreport":
                         self.do_report(*data)
+                    elif action == "topten":
+                        self.do_topten(*data)
             except Exception:
                 traceback.print_exc()
                 continue
+
+    def do_topten(self, nick, replyto):
+        """
+        Do lookup of highest valued portfolios
+        """
+        self.log.warning("{} wants top 10 sent to {}".format(nick, replyto))
+
+        with closing(self.sql.getCursor()) as c:
+            for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.total as total FROM stockplay_balance_history h1
+                                INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history GROUP BY nick) h2
+                                ON h1.nick = h2.nick AND h1.day = h2.MaxDate 
+                                ORDER BY total DESC""").fetchall(), start=1):
+                
+                self.bot.act_PRIVMSG(replyto, "{}: {} with total: ~{}".format(num, row.nick, row.total))
 
     def do_trade(self, trade):
         """
@@ -451,6 +467,17 @@ class StockPlay(ModuleBase):
                                         message.prefix.nick if full or not message.args[0].startswith("#")
                                         else message.args[0],
                                         full)))
+
+    @info("top", "show top portfolios", cmds=["top", "top10"])
+    @command("top", "top10", allow_private=True)
+    @protected()
+    def cmd_top(self, message, command):
+        """
+        Top 10 report command
+        """
+        self.asyncq.put(("topten", (message.prefix.nick,
+                                    message.prefix.nick if not message.args[0].startswith("#") 
+                                    else message.args[0])))
 
     def check_nick(self, nick):
         """
