@@ -159,7 +159,7 @@ class StockPlay(ModuleBase):
             for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.total as total FROM stockplay_balance_history h1
                                 INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history GROUP BY nick) h2
                                 ON h1.nick = h2.nick AND h1.day = h2.MaxDate 
-                                ORDER BY total DESC""").fetchall(), start=1):
+                                ORDER BY total DESC LIMIT 10""").fetchall(), start=1):
                 
                 self.bot.act_PRIVMSG(replyto, "{}: {} with total: ~{}".format(num, row.nick, row.total))
 
