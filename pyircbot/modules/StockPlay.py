@@ -156,7 +156,7 @@ class StockPlay(ModuleBase):
         self.log.warning("{} wants top 10 sent to {}".format(nick, replyto))
 
         with closing(self.sql.getCursor()) as c:
-            for num, row in enumerate(c.execute("""SELECT h1.nick as nick, CAST(h1.cents as INTEGER) as cents
+            for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.cents as cents
                                 FROM stockplay_balance_history h1
                                 INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history 
                                 WHERE nick != ? GROUP BY nick) h2
