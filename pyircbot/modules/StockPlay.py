@@ -229,9 +229,9 @@ class StockPlay(ModuleBase):
         with closing(self.sql.getCursor()) as c:
             for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.cents as cents
                                 FROM stockplay_balance_history h1
-                                INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history 
+                                INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history
                                 WHERE nick != ? GROUP BY nick) h2
-                                ON h1.nick = h2.nick AND h1.day = h2.MaxDate 
+                                ON h1.nick = h2.nick AND h1.day = h2.MaxDate
                                 ORDER BY cents DESC LIMIT 10""", (DUSTACCT, )).fetchall(), start=1):
                 total = Decimal(row["cents"]) / 100
                 self.bot.act_PRIVMSG(replyto,
@@ -559,9 +559,7 @@ class StockPlay(ModuleBase):
         """
         Top 10 report command
         """
-        self.asyncq.put(("topten", (message.prefix.nick,
-                                    message.prefix.nick if not message.args[0].startswith("#") 
-                                    else message.args[0])))
+        self.asyncq.put(("topten", (message.prefix.nick, message.prefix.nick)))
 
     def check_nick(self, nick):
         """
