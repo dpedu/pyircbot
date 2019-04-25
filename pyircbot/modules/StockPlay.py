@@ -162,9 +162,9 @@ class StockPlay(ModuleBase):
                                 WHERE nick != ? GROUP BY nick) h2
                                 ON h1.nick = h2.nick AND h1.day = h2.MaxDate 
                                 ORDER BY cents DESC LIMIT 10""", (DUSTACCT, )).fetchall(), start=1):
-                total = Decimal(row.cents) / 100
+                total = Decimal(row['cents']) / 100
                 self.bot.act_PRIVMSG(replyto,
-                                     "{}: {} with total: ~{}".format(num, row.nick, total), priority=5)
+                                     "{}: {} with total: ~${}".format(num, row['nick'], total), priority=5)
 
     def do_trade(self, trade):
         """
