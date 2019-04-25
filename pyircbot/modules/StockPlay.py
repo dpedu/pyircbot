@@ -156,12 +156,13 @@ class StockPlay(ModuleBase):
         self.log.warning("{} wants top 10 sent to {}".format(nick, replyto))
 
         with closing(self.sql.getCursor()) as c:
-            for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.total as total FROM stockplay_balance_history h1
-                                INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history GROUP BY nick) h2
+            for num, row in enumerate(c.execute("""SELECT h1.nick as nick, CAST(h1.cents as INTEGER) as cents FROM stockplay_balance_history h1
+                                INNER JOIN (SELECT nick, max(day) as MaxDate FROM stockplay_balance_history WHERE nick != ? GROUP BY nick) h2
                                 ON h1.nick = h2.nick AND h1.day = h2.MaxDate 
-                                ORDER BY total DESC LIMIT 10""").fetchall(), start=1):
-                
-                self.bot.act_PRIVMSG(replyto, "{}: {} with total: ~{}".format(num, row.nick, row.total))
+                                ORDER BY cents DESC LIMIT 10""", (DUSTACCT, )).fetchall(), start=1):
+                total = Decimal(row.cents) / 100
+                self.bot.act_PRIVMSG(replyto,
+                                     "{}: {} with total: ~{}".format(num, row.nick, total), priority=5)
 
     def do_trade(self, trade):
         """
@@ -470,7 +471,6 @@ class StockPlay(ModuleBase):
 
     @info("top", "show top portfolios", cmds=["top", "top10"])
     @command("top", "top10", allow_private=True)
-    @protected()
     def cmd_top(self, message, command):
         """
         Top 10 report command

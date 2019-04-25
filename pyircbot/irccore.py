@@ -346,14 +346,14 @@ class IRCCore(object):
         :type channel: str"""
         self.sendRaw("JOIN %s" % channel, priority=3)
 
-    def act_PRIVMSG(self, towho, message):
+    def act_PRIVMSG(self, towho, message, priority=None):
         """Use the `/msg` command
 
         :param towho: the target #channel or user's name
         :type towho: str
         :param message: the message to send
         :type message: str"""
-        self.sendRaw("PRIVMSG %s :%s" % (towho, message))
+        self.sendRaw("PRIVMSG %s :%s" % (towho, message), priority=priority)
 
     def act_MODE(self, channel, mode, extra=None):
         """Use the `/mode` command
