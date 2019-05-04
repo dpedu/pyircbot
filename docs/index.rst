@@ -15,6 +15,7 @@ Contents:
    module_guide/_module_guide.rst
    module_guide/_pubsub_mode.rst
    changelog.rst
+   contributing.rst
 
 More Information
 ================
