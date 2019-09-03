@@ -5,9 +5,18 @@ from collections import namedtuple
 from time import sleep
 import os
 from threading import Thread
+try:
+    import sentry_sdk
+except ImportError:
+    sentry_sdk = None
 
 
 ParsedCommand = namedtuple("ParsedCommand", "command args args_str message")
+
+
+def report(exception):
+    if sentry_sdk:
+        sentry_sdk.capture_exception(exception)
 
 
 class burstbucket(object):

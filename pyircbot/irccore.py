@@ -12,7 +12,7 @@ import logging
 import traceback
 import sys
 from inspect import getargspec
-from pyircbot.common import burstbucket, parse_irc_line
+from pyircbot.common import burstbucket, parse_irc_line, report
 from collections import namedtuple
 from io import StringIO
 from time import time
@@ -80,9 +80,10 @@ class IRCCore(object):
                                                                          family=self.connection_family,
                                                                          local_addr=self.bind_addr)
                 self.fire_hook("_CONNECT")
-            except (socket.gaierror, ConnectionRefusedError, OSError):
-                traceback.print_exc()
+            except (socket.gaierror, ConnectionRefusedError, OSError) as e:
                 logging.warning("Non-fatal connect error, trying next server...")
+                self.trace()
+                report(e)
                 self.server = (self.server + 1) % len(self.servers)
                 await asyncio.sleep(1, loop=loop)
                 continue
@@ -97,11 +98,13 @@ class IRCCore(object):
                                          .format(command, prefix, args, trailing))
                     else:
                         self.fire_hook(command, args=args, prefix=prefix, trailing=trailing)
-                except (ConnectionResetError, asyncio.streams.IncompleteReadError):
-                    traceback.print_exc()
+                except (ConnectionResetError, asyncio.streams.IncompleteReadError) as e:
+                    self.trace()
+                    report(e)
                     break
-                except (UnicodeDecodeError, ):
-                    traceback.print_exc()
+                except (UnicodeDecodeError, ) as e:
+                    self.trace()
+                    report(e)
             self.fire_hook("_DISCONNECT")
             self.writer.close()
             if self.alive:
@@ -128,8 +131,8 @@ class IRCCore(object):
             try:
                 self.writer.write((line + "\r\n").encode("UTF-8"))
             except Exception as e:  # Probably fine if we drop messages while offline
-                print(e)
-                print(self.trace())
+                self.trace()
+                report(e)
 
     async def kill(self, message="Help! Another thread is killing me :(", forever=True):
         """Send quit message, flush queue, and close the socket
@@ -221,8 +224,9 @@ class IRCCore(object):
                 else:
                     hook(args, prefix, trailing)
 
-            except:
+            except Exception as e:
                 self.log.warning("Error processing hook: \n%s" % self.trace())
+                report(e)
 
     def addHook(self, command, method):
         """**Internal.** Enable (connect) a single hook of a module

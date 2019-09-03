@@ -3,7 +3,7 @@ import sys
 import logging
 import signal
 from argparse import ArgumentParser
-from pyircbot.common import load
+from pyircbot.common import load, sentry_sdk
 from pyircbot import PyIRCBot
 from json import loads
 
@@ -32,6 +32,9 @@ def main():
         sys.exit(1)
 
     botconfig = loads(sys.stdin.read()) if args.config == "-" else load(args.config)
+
+    if sentry_sdk and "dsn" in botconfig["bot"]:
+        sentry_sdk.init(botconfig["bot"]["dsn"])
 
     log.debug(botconfig)
 

@@ -10,6 +10,7 @@ import logging
 import sys
 from pyircbot.rpc import BotRPC
 from pyircbot.irccore import IRCCore
+from pyircbot.common import report
 from socket import AF_INET, AF_INET6
 import os.path
 import asyncio
@@ -44,6 +45,7 @@ class ModuleLoader(object):
                 self.log.error("Module %s failed to load: " % name)
                 self.log.error("Module load failure reason: " + str(e))
                 traceback.print_exc()
+                report(e)
                 return (False, str(e))
         else:
             self.log.warning("Module %s already imported" % name)
