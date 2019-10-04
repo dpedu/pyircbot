@@ -8,7 +8,7 @@ from queue import Queue, Empty
 from threading import Thread
 from requests import get
 from collections import namedtuple
-from math import ceil
+from math import ceil, floor
 from datetime import datetime, timedelta
 import re
 import json
@@ -112,7 +112,8 @@ class StockPlay(ModuleBase):
                       `type` varchar(8),
                       `symbol` varchar(12),
                       `count` integer,
-                      `price` integer
+                      `price` integer,
+                      `quoteprice` varchar(12)
                     );""")
             if not self.sql.tableExists("stockplay_prices"):
                 c.execute("""CREATE TABLE `stockplay_prices` (
@@ -263,10 +264,19 @@ class StockPlay(ModuleBase):
 
         # calculate various prices needed
         # symprice -= Decimal("0.0001")  # for testing dust collection
-        dprice = symprice * trade.amount
-        price_rounded = int(ceil(dprice * 100))  # now in cents
-        dust = abs((dprice * 100) - price_rounded)  # cent fractions that we rounded out
-        self.log.info("our price: {}".format(price_rounded))
+        real_price = symprice * trade.amount * 100  # now in cents
+
+        self.log.info("real_price: {}".format(real_price))
+
+        if trade.buy:
+            trade_price = int(ceil(real_price))
+            dust = trade_price - real_price
+
+        else:
+            trade_price = int(floor(real_price))
+            dust = real_price - trade_price
+
+        self.log.info("trade_price: {}".format(trade_price))
         self.log.info("dust: {}".format(dust))
 
         # fetch existing user balances
@@ -274,9 +284,9 @@ class StockPlay(ModuleBase):
         count = self.get_holding(trade.nick, trade.symbol)
 
         # check if trade is legal
-        if trade.buy and nickbal < price_rounded:
+        if trade.buy and nickbal < trade_price:
             self.bot.act_PRIVMSG(trade.replyto, "{}: you can't afford {}."
-                                 .format(trade.nick, format_price(price_rounded)))
+                                 .format(trade.nick, format_price(trade_price)))
             return  # can't afford trade
         if not trade.buy and trade.amount > count:
             self.bot.act_PRIVMSG(trade.replyto, "{}: you don't have that many.".format(trade.nick))
@@ -284,10 +294,10 @@ class StockPlay(ModuleBase):
 
         # perform trade calculations
         if trade.buy:
-            nickbal -= price_rounded
+            nickbal -= trade_price
             count += trade.amount
         else:
-            nickbal += price_rounded
+            nickbal += trade_price
             count -= trade.amount
 
         # commit the trade
@@ -304,11 +314,11 @@ class StockPlay(ModuleBase):
                                                                     "bought" if trade.buy else "sold",
                                                                     trade.amount,
                                                                     trade.symbol,
-                                                                    format_price(price_rounded),
+                                                                    format_price(trade_price),
                                                                     format_price(nickbal)))
 
         self.log_trade(trade.nick, time(), "buy" if trade.buy else "sell",
-                       trade.symbol, trade.amount, price_rounded)
+                       trade.symbol, trade.amount, trade_price, str(symprice))
 
     def do_report(self, lookup, sender, replyto, full):
         """
@@ -615,13 +625,13 @@ class StockPlay(ModuleBase):
             c.execute("REPLACE INTO stockplay_holdings VALUES (?, ?, ?)",
                       (nick, symbol, count, ))
 
-    def log_trade(self, nick, time, type, symbol, count, price):
+    def log_trade(self, nick, time, type, symbol, count, price, symprice):
         """
         Append a record of a trade to the database log
         """
         with closing(self.sql.getCursor()) as c:
-            c.execute("INSERT INTO stockplay_trades VALUES (?, ?, ?, ?, ?, ?)",
-                      (nick, time, type, symbol, count, price, ))
+            c.execute("INSERT INTO stockplay_trades VALUES (?, ?, ?, ?, ?, ?, ?)",
+                      (nick, time, type, symbol, count, price, symprice, ))
 
     def get_latest_hist_bal(self, nick):
         """
