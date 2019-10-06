@@ -55,7 +55,9 @@ Config
         "tcachesecs": 300,
         "rcachesecs": 14400,
         "bginterval": 300,
-        "midnight_offset": 0
+        "midnight_offset": 0,
+        "announce_trades": false,
+        "announce_channel": "#trades"
     }
 
 .. cmdoption:: startbalance
@@ -105,6 +107,18 @@ Config
     compensate for time zones.
 
     Default: 0
+
+.. cmdoption:: announce_trades
+
+    Boolean option to announce all trades in a specific channel.
+
+    Default: false
+
+.. cmdoption:: announce_channel
+
+    Channel name to announce all trades in.
+
+    Default: not set
 
 
 Class Reference

@@ -5,5 +5,7 @@
     "tcachesecs": 300,
     "rcachesecs": 14400,
     "bginterval": 300,
-    "midnight_offset": 0
+    "midnight_offset": 0,
+    "announce_trades": true,
+    "announce_channel": "#trades"
 }

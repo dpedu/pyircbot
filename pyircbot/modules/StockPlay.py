@@ -309,13 +309,18 @@ class StockPlay(ModuleBase):
         self.set_bal(DUSTACCT, dustbal + int(dust * 100))
 
         # notify user
-        self.bot.act_PRIVMSG(trade.replyto,
-                             "{}: {} {} {} for {}. cash: {}".format(trade.nick,
-                                                                    "bought" if trade.buy else "sold",
-                                                                    trade.amount,
-                                                                    trade.symbol,
-                                                                    format_price(trade_price),
-                                                                    format_price(nickbal)))
+        message = "{} {} {} for {}. cash: {}".format("bought" if trade.buy else "sold",
+                                                     trade.amount,
+                                                     trade.symbol,
+                                                     format_price(trade_price),
+                                                     format_price(nickbal))
+        self.bot.act_PRIVMSG(trade.replyto, "{}: {}".format(trade.nick, message))
+
+        # announce message
+        if self.config.get("announce_trades"):
+            channel = self.config.get("announce_channel")
+            if channel:
+                self.bot.act_PRIVMSG(channel, "{}_ {}".format(trade.nick, message), priority=10)
 
         self.log_trade(trade.nick, time(), "buy" if trade.buy else "sell",
                        trade.symbol, trade.amount, trade_price, str(symprice))
