@@ -119,6 +119,7 @@ class StockPlay(ModuleBase):
                 c.execute("""CREATE TABLE `stockplay_prices` (
                       `symbol` varchar(12) PRIMARY KEY,
                       `time` integer,
+                      `attempt_time` integer,
                       `data` text
                     );""")
             if not self.sql.tableExists("stockplay_balance_history"):
@@ -184,8 +185,9 @@ class StockPlay(ModuleBase):
                 with closing(self.sql.getCursor()) as c:
                     row = c.execute("""SELECT * FROM stockplay_prices
                                         WHERE symbol in (SELECT symbol FROM stockplay_holdings WHERE count>0)
-                                       ORDER BY time ASC LIMIT 1""").fetchone()
+                                       ORDER BY attempt_time ASC LIMIT 1""").fetchone()
                     updatesym = row["symbol"] if row else None
+                    c.execute("UPDATE stockplay_prices SET attempt_time=? WHERE symbol=?;", (time(), updatesym))
 
                 if updatesym:
                     self.get_price(updatesym, 0)
@@ -382,7 +384,7 @@ class StockPlay(ModuleBase):
                 # The background thread updates the oldest price every 5 minutes. Here, we allow even very stale quotes
                 # because it's simply impossible to request fresh data for every stock right now. Recommended rcachesecs
                 # is 86400 (1 day)
-                symprice = Decimal(self.get_price(row["symbol"], self.config["rcachesecs"]))
+                symprice = Decimal(self.get_price(row["symbol"], -1))
                 holding_value += symprice * row["count"]
                 avgbuy = self.calc_user_avgbuy(nick, row["symbol"])
                 symbol_count.append((row["symbol"],
@@ -443,8 +445,8 @@ class StockPlay(ModuleBase):
 
     def _set_cache_priceinfo(self, symbol, data):
         with closing(self.sql.getCursor()) as c:
-            c.execute("REPLACE INTO stockplay_prices VALUES (?, ?, ?)",
-                      (symbol, time(), json.dumps(data)))
+            c.execute("REPLACE INTO stockplay_prices (symbol, attempt_time, time, data) VALUES (?, ?, ?, ?)",
+                      (symbol, time(), time(), json.dumps(data)))
 
     def _get_cache_priceinfo(self, symbol, thresh):
         with closing(self.sql.getCursor()) as c:
@@ -452,7 +454,7 @@ class StockPlay(ModuleBase):
                             (symbol, )).fetchone()
             if not row:
                 return
-            if time() - row["time"] > thresh:
+            if thresh != -1 and time() - row["time"] > thresh:
                 return
             return json.loads(row["data"])
 
