@@ -228,6 +228,7 @@ class StockPlay(ModuleBase):
         Do lookup of highest valued portfolios
         """
         self.log.warning("{} wants top 10 sent to {}".format(nick, replyto))
+        rows = []
 
         with closing(self.sql.getCursor()) as c:
             for num, row in enumerate(c.execute("""SELECT h1.nick as nick, h1.cents as cents
@@ -237,8 +238,10 @@ class StockPlay(ModuleBase):
                                 ON h1.nick = h2.nick AND h1.day = h2.MaxDate
                                 ORDER BY cents DESC LIMIT 10""", (DUSTACCT, )).fetchall(), start=1):
                 total = Decimal(row["cents"]) / 100
-                self.bot.act_PRIVMSG(replyto,
-                                     "{}: {} with total: ~${}".format(num, row["nick"], total), priority=5)
+                rows.append(("#{}".format(num), row["nick"], "with total:", "~{}".format(format_decimal(total)), ))
+
+        for line in tabulate(rows, justify=[False, True, False, False]):
+            self.bot.act_PRIVMSG(replyto, line, priority=5)
 
     def do_trade(self, trade):
         """
