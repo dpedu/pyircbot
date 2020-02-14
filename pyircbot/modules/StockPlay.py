@@ -163,16 +163,22 @@ class StockPlay(ModuleBase):
         target_count = self.get_holding(nick, symbol)  # backtrack until we hit this many shares
         spent = 0
         count = 0
+        buys = 0
         with closing(self.sql.getCursor()) as c:
             for row in c.execute("SELECT * FROM stockplay_trades WHERE nick=? AND symbol=? ORDER BY time DESC",
                                  (nick, symbol)).fetchall():
-                count += row["count"] * (1 if row["type"] == "buy" else -1)
-                spent += row["price"] * (1 if row["type"] == "buy" else -1)
+                if row["type"] == "buy":
+                    count += row["count"]
+                    spent += row["price"]
+                    buys += row["count"]
+                else:
+                    count -= row["count"]
+
                 if count == target_count:  # at this point in history the user held 0 of the symbol, stop backtracking
                     break
         if not count:
             return Decimal(0)
-        return Decimal(spent) / 100 / Decimal(count)
+        return Decimal(spent) / 100 / Decimal(buys)
 
     def price_updater(self):
         """
