@@ -272,6 +272,9 @@ class StockPlay(ModuleBase):
             self.bot.act_PRIVMSG(trade.replyto,
                                  "{}: invalid symbol '{}'".format(trade.nick, trade.symbol))
             return  # invalid stock
+        if not symprice and trade.buy:
+            self.bot.act_PRIVMSG(trade.replyto, "{}: trading is halted on '{}'".format(trade.nick, trade.symbol))
+            return
 
         # calculate various prices needed
         # symprice -= Decimal("0.0001")  # for testing dust collection
