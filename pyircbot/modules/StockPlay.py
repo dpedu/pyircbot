@@ -617,14 +617,15 @@ class PriceCache(object):
             self.providers.append(PROVIDER_TYPES[provider["provider"]](provider, self.log))
 
     def get_price(self, symbol, thresh):
-        if symbol in self.unsupported:
-            return
         symbol = symbol.upper()
         # load from cache
         price = self._load_priceinfo(symbol)
         # if present and meets thresh
         if price and (thresh == -1 or time() - price.time < thresh):
             return price
+
+        if symbol in self.unsupported:
+            return
 
         return self.api_fetch(symbol)
 
