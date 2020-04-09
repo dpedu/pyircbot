@@ -15,13 +15,12 @@ Considering the daily limit means, when evenly spread, we can sent a request *no
 `(24 * 60 * 60 / 500)` - and therefore, the value of *bginterval* must be some value larger than 173, as this value will
 completely consume the daily limit.
 
-When trading, the price of the traded symbol is allowed to be *tcachesecs* seconds old before the API will be used to
-fetch a more recent price. This value must be balanced against *bginterval* depending on your trade frequency
+When trading, the price of the traded symbol is allowed to be *trade_cache_seconds* seconds old before the API will be
+used to fetch a more recent price. This value must be balanced against *bginterval* depending on your trade frequency
 and variety.
 
 Background or batch-style tasks that rely on symbol prices run afoul with the above constraints - but in a
-magnified way as they rely on api-provided data to calculate player stats across many players at a time. The
-*rcachesecs* setting controls the maximum price age before the API is hit.
+magnified way as they rely on api-provided data to calculate player stats across many players at a time.
 
 
 Commands
@@ -39,8 +38,7 @@ Commands
 
     Get a report on the calling player's portfolio. Another player's name can be passed as an argument to retrieve
     information about a player other than the calling player. Finally, the 'full' argument can be added to retrieve a
-    full listing of the player's holdings. Per the above, values based on symbol prices may be delayed based on the
-    *rcachesecs* config setting.
+    full listing of the player's holdings.
 
 
 Config
@@ -51,13 +49,20 @@ Config
     {
         "startbalance": 10000,
         "tradedelay": 0,
-        "apikey": "xxxxxxxxxxxxxx",
-        "tcachesecs": 300,
-        "rcachesecs": 14400,
+        "trade_cache_seconds": 300,
         "bginterval": 300,
-        "midnight_offset": 0,
         "announce_trades": false,
-        "announce_channel": "#trades"
+        "announce_channel": "#trades",
+        "providers": [
+            {
+                "provider": "iexcloud",
+                "apikey": "xxxxxxxxxxxxxxx"
+            },
+            {
+                "provider": "alphavantage",
+                "apikey": "xxxxxxxxxxxxxxx"
+            }
+        ]
     }
 
 .. cmdoption:: startbalance
@@ -71,21 +76,20 @@ Config
 
     NOT IMPLEMENTED
 
-.. cmdoption:: apikey
+.. cmdoption:: providers
 
-    API key from https://www.alphavantage.co/support/#api-key
+    A list of providers to fetch stock data from
 
-.. cmdoption:: tcachesecs
+    Supported providers:
+
+        * https://www.alphavantage.co/
+        * https://iexcloud.io/
+
+.. cmdoption:: trade_cache_seconds
 
     When performing a trade, how old of a cached symbol price is permitted before fetching from API.
 
     Recommended ~30 minutes (1800)
-
-.. cmdoption:: rcachesecs
-
-    When calculating a portfolio report, how old of a cached symbol price is permitted before fetching from API.
-
-    Recommended ~4 hours (14400)
 
 .. cmdoption:: bginterval
 
@@ -94,7 +98,7 @@ Config
     fetching a report would take multiple minutes with more than 5 symbols, which would not work.
 
     For this reason, we update symbols at a low interval in the background. Every *bginterval* seconds, a task will be
-    started that updates the price of symbols older than *rcachesecs*.
+    started that updates the price of the oldest symbol.
 
     Estimated 5 minute (300), but likely will need tuning depending on playerbase
 

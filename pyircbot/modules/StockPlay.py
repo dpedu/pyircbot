@@ -136,12 +136,15 @@ class StockPlay(ModuleBase):
             #           `data` text
             #         );""")
 
+        self.cache = PriceCache(self)
+
         # Last time the interval tasks were executed
         self.task_time = 0
 
         # background work executor thread
         self.asyncq = Queue()
         self.running = True
+
         self.trader = Thread(target=self.trader_background)
         self.trader.start()
 
@@ -196,7 +199,7 @@ class StockPlay(ModuleBase):
                     c.execute("UPDATE stockplay_prices SET attempt_time=? WHERE symbol=?;", (time(), updatesym))
 
                 if updatesym:
-                    self.get_price(updatesym, 0)
+                    self.cache.get_price(updatesym, 0)
 
             except Exception:
                 traceback.print_exc()
@@ -262,19 +265,18 @@ class StockPlay(ModuleBase):
                                                           trade.symbol))
         # Update quote price
         try:
-            symprice = self.get_price(trade.symbol, self.config["tcachesecs"])
+            price = self.cache.get_price(trade.symbol, self.config["trade_cache_seconds"])
         except Exception:
             traceback.print_exc()
             self.bot.act_PRIVMSG(trade.replyto, "{}: invalid symbol or api failure, trade aborted!"
                                                 .format(trade.nick))
             return
-        if symprice is None:
+        if price is None:
             self.bot.act_PRIVMSG(trade.replyto,
                                  "{}: invalid symbol '{}'".format(trade.nick, trade.symbol))
             return  # invalid stock
-        if not symprice and trade.buy:
-            self.bot.act_PRIVMSG(trade.replyto, "{}: trading is halted on '{}'".format(trade.nick, trade.symbol))
-            return
+
+        symprice = price.price
 
         # calculate various prices needed
         # symprice -= Decimal("0.0001")  # for testing dust collection
@@ -394,9 +396,10 @@ class StockPlay(ModuleBase):
                                  (nick, )).fetchall():
                 # the API limits us to 5 requests per minute or 500 requests per day or about 1 request every 173s
                 # The background thread updates the oldest price every 5 minutes. Here, we allow even very stale quotes
-                # because it's simply impossible to request fresh data for every stock right now. Recommended rcachesecs
-                # is 86400 (1 day)
-                symprice = Decimal(self.get_price(row["symbol"], -1))
+                # because it's simply impossible to request fresh data for every stock right now.
+                print("build_report: processing", row["symbol"])
+                price = self.cache.get_price(row["symbol"], -1)
+                symprice = price.price
                 holding_value += symprice * row["count"]
                 avgbuy = self.calc_user_avgbuy(nick, row["symbol"])
                 symbol_count.append((row["symbol"],
@@ -434,83 +437,6 @@ class StockPlay(ModuleBase):
             return
         self.task_time = now
         self.record_nightly_balances()
-
-    def get_price(self, symbol, thresh=None):
-        """
-        Get symbol price, with quote being at most $thresh seconds old
-        """
-        return self.get_priceinfo_cached(symbol, thresh or 60)["price"]
-
-    def get_priceinfo_cached(self, symbol, thresh):
-        """
-        Return the cached symbol price if it's more recent than the last 15 minutes
-        Otherwise, fetch the price then cache and return it.
-        """
-        cached = self._get_cache_priceinfo(symbol, thresh)
-        if not cached:
-            cached = self.fetch_priceinfo(symbol)
-            if cached:
-                self._set_cache_priceinfo(symbol, cached)
-
-        numfields = set(['open', 'high', 'low', 'price', 'volume', 'change', 'previous close'])
-        return {k: Decimal(v) if k in numfields else v for k, v in cached.items()}
-
-    def _set_cache_priceinfo(self, symbol, data):
-        with closing(self.sql.getCursor()) as c:
-            c.execute("REPLACE INTO stockplay_prices (symbol, attempt_time, time, data) VALUES (?, ?, ?, ?)",
-                      (symbol, time(), time(), json.dumps(data)))
-
-    def _get_cache_priceinfo(self, symbol, thresh):
-        with closing(self.sql.getCursor()) as c:
-            row = c.execute("SELECT * FROM stockplay_prices WHERE symbol=?",
-                            (symbol, )).fetchone()
-            if not row:
-                return
-            if thresh != -1 and time() - row["time"] > thresh:
-                return
-            return json.loads(row["data"])
-
-    def fetch_priceinfo(self, symbol):
-        """
-        Request a stock quote from the API. The API provides the format::
-
-            {'Global Quote': {
-             {'01. symbol': 'MSFT',
-              '02. open': '104.3900',
-              '03. high': '105.7800',
-              '04. low': '104.2603',
-              '05. price': '105.6700',
-              '06. volume': '21461093',
-              '07. latest trading day':'2019-02-08',
-              '08. previous close':'105.2700',
-              '09. change': '0.4000',
-              '10. change percent': '0.3800%'}}
-
-        Reformat as::
-
-            {'symbol': 'AMD',
-             'open': '22.3300',
-             'high': '23.2750',
-             'low': '22.2700',
-             'price': '23.0500',
-             'volume': '78129280',
-             'latest trading day': '2019-02-08',
-             'previous close': '22.6700',
-             'change': '0.3800',
-             'change percent': '1.6762%'}
-        """
-        keys = set(['symbol', 'open', 'high', 'low', 'price', 'volume',
-                    'latest trading day', 'previous close', 'change', 'change percent'])
-        self.log.info("fetching api quote for symbol: {}".format(symbol))
-        data = get("https://www.alphavantage.co/query",
-                   params={"function": "GLOBAL_QUOTE",
-                           "symbol": symbol,
-                           "apikey": self.config["apikey"]},
-                   timeout=10).json()
-        data = data["Global Quote"]
-        if not data:
-            return None
-        return {k[4:]: v for k, v in data.items() if k[4:] in keys}
 
     def checksym(self, s):
         """
@@ -672,3 +598,217 @@ class StockPlay(ModuleBase):
                 total = int((data["cash"] + data["holding_value"]) * 100)
                 self.log.info("Recording {} daily balance for {}".format(now, row["nick"]))
                 c.execute("INSERT INTO stockplay_balance_history VALUES (?, ?, ?)", (row["nick"], now, total))
+
+
+class PriceCache(object):
+    def __init__(self, mod):
+        self.sql = mod.sql
+        self.log = mod.log
+        self.mod = mod
+        self.providers = []
+
+        self.configure_providers(mod.config["providers"])
+        self.which_provider = dict()
+        self.unsupported = set()
+
+    def configure_providers(self, config):
+        for provider in config:
+            self.providers.append(PROVIDER_TYPES[provider["provider"]](provider, self.log))
+
+    def get_price(self, symbol, thresh):
+        if symbol in self.unsupported:
+            return
+        symbol = symbol.upper()
+        # load from cache
+        price = self._load_priceinfo(symbol)
+        # if present and meets thresh
+        if price and (thresh == -1 or time() - price.time < thresh):
+            return price
+
+        return self.api_fetch(symbol)
+
+    def api_fetch(self, symbol):
+        fetched = None
+
+        if symbol in self.which_provider:
+            fetched = self.which_provider[symbol].get_price(symbol)
+
+        if not fetched:
+            for provider in self.providers:
+                try:
+                    fetched = provider.get_price(symbol)
+                    self.which_provider[symbol] = provider
+                    break
+                except NotSupported as nse:
+                    self.unsupported.update([symbol])
+                    self.log.info("provider {}: {}".format(provider.__class__.__name__, nse))
+
+        if not fetched:
+            self.log.critical("unsupported symbol: %s", symbol)
+            return
+
+        self._store_priceinfo(fetched)
+
+        return fetched
+
+    def _store_priceinfo(self, price):
+        with closing(self.sql.getCursor()) as c:
+            c.execute("REPLACE INTO stockplay_prices (symbol, attempt_time, time, data) VALUES (?, ?, ?, ?)",
+                      (price.symbol, price.time, time(), price.to_json()))
+
+    def _load_priceinfo(self, symbol):
+        with closing(self.sql.getCursor()) as c:
+            row = c.execute("SELECT * FROM stockplay_prices WHERE symbol=?",
+                            (symbol, )).fetchone()
+            if not row:
+                return
+            return Price.from_json(row["data"])
+
+
+class Price(object):
+    def __init__(self, symbol, price, time_):
+        self.symbol = symbol.upper()
+        self.price = round(Decimal(price), 4)
+        self.time = time_
+
+    def to_json(self):
+        return json.dumps({
+            "symbol": self.symbol,
+            "price": str(self.price),
+            "time": self.time,
+        })
+
+    @staticmethod
+    def from_json(data):
+        data = json.loads(data)
+        return Price(data["symbol"].upper(), data["price"], data.get("time", 0))
+
+
+class PriceProvider(object):
+    def __init__(self, config, logger):
+        """
+        config::
+
+            {
+                "provider": "name",
+                "apikey": "xxxxxxxxxxxxxx",
+            }
+
+        """
+        self.config = config
+        self.log = logger
+
+    def get_price(self, symbol):
+        """
+        :return: tuple of:
+
+        * price (as a Decimal)
+        * next_after (the time() after which the next background call should happen)
+
+        or raise:
+
+        NotSupported  - if the symbol isnt supported
+        """
+        raise NotImplementedError()
+
+
+class IEXCloudProvider(PriceProvider):
+    def get_price(self, symbol):
+        """
+        Request a stock quote from the API. The API provides the format::
+
+            {"symbol": "AAPL",
+             "companyName": "Apple, Inc.",
+             "calculationPrice": "close",
+             "open": 184.7,
+             "openTime": 1552656600847,
+             "close": 186.12,
+             "closeTime": 1552680000497,
+             "high": 187.33,
+             "low": 183.74,
+             "latestPrice": 186.12,
+             "latestSource": "Close",
+             "latestTime": "March 15, 2019",
+             "latestUpdate": 1552680000497,
+             "latestVolume": 39141464,
+             "iexRealtimePrice": 186.195,
+             "iexRealtimeSize": 100,
+             "iexLastUpdated": 1552679999536,
+             "delayedPrice": 186.124,
+             "delayedPriceTime": 1552680900008,
+             "extendedPrice": 185.92,
+             "extendedChange": -0.2,
+             "extendedChangePercent": -0.00107,
+             "extendedPriceTime": 1552693471549,
+             "previousClose": 183.73,
+             "change": 2.39,
+             "changePercent": 0.01301,
+             "iexMarketPercent": 0.021849182749015213,
+             "iexVolume": 855209,
+             "avgTotalVolume": 25834564,
+             "iexBidPrice": 0,
+             "iexBidSize": 0,
+             "iexAskPrice": 0,
+             "iexAskSize": 0,
+             "marketCap": 877607913600,
+             "peRatio": 15.17,
+             "week52High": 233.47,
+             "week52Low": 142,
+             "ytdChange": 0.176447}
+        """
+
+        self.log.info("{}: fetching api quote for symbol: {}".format(self.__class__.__name__, symbol))
+
+        response = get("https://cloud.iexapis.com/beta/stock/{}/quote".format(symbol.lower()),
+                       params={"token": self.config["apikey"]},
+                       timeout=10)
+
+        if response.status_code != 200:
+            if response.status_code == 404:
+                raise NotSupported(symbol)
+            else:
+                response.raise_for_status()
+
+        data = response.json()
+        return Price(symbol, Decimal(data["latestPrice"]), int(time()))
+
+
+class AlphaVantProvider(PriceProvider):
+    def get_price(self, symbol):
+        """
+        Request a stock quote from the API. The API provides the format::
+
+            {'Global Quote': {
+             {'01. symbol': 'MSFT',
+              '02. open': '104.3900',
+              '03. high': '105.7800',
+              '04. low': '104.2603',
+              '05. price': '105.6700',
+              '06. volume': '21461093',
+              '07. latest trading day':'2019-02-08',
+              '08. previous close':'105.2700',
+              '09. change': '0.4000',
+              '10. change percent': '0.3800%'}}
+        """
+        self.log.info("{}: fetching api quote for symbol: {}".format(self.__class__.__name__, symbol))
+
+        data = get("https://www.alphavantage.co/query",
+                   params={"function": "GLOBAL_QUOTE",
+                           "symbol": symbol,
+                           "apikey": self.config["apikey"]},
+                   timeout=10).json()
+
+        if "Global Quote" not in data:
+            raise NotSupported(symbol)
+
+        return Price(symbol, Decimal(data["Global Quote"]["05. price"]), int(time()))
+
+
+PROVIDER_TYPES = {
+    "iexcloud": IEXCloudProvider,
+    "alphavantage": AlphaVantProvider
+}
+
+
+class NotSupported(Exception):
+    pass
