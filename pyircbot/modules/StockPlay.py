@@ -377,9 +377,10 @@ class StockPlay(ModuleBase):
                          format_decimal(avgbuy),
                          *format_gainloss_inner(symprice - avgbuy, buychange),
                          "now",
-                         format_decimal(symprice)])
+                         format_decimal(symprice),
+                         "({})".format(format_decimal(symprice * count))])
 
-        for line in tabulate(rows, justify=[False, True, True, False, False, False, True, False]):
+        for line in tabulate(rows, justify=[False, True, True, False, False, False, True, False, False]):
             self.bot.act_PRIVMSG(dest, "{}: {}".format(sender, line), priority=5)
 
     def build_report(self, nick):
