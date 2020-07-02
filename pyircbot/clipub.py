@@ -9,7 +9,7 @@ from msgbus.client import MsgbusSubClient
 import pyircbot
 import traceback
 from pyircbot.pyircbot import PrimitiveBot
-from pyircbot.irccore import IRCEvent, UserPrefix
+from pyircbot.irccore import IRCEvent, UserPrefix, IRCCore
 from pyircbot.common import TouchReload
 from json import dumps
 
@@ -57,12 +57,10 @@ class PyIRCBotSub(PrimitiveBot):
         args, sender, trailing, extras = loads(rest)
         nick, username, hostname = extras["prefix"]
 
-        msg = IRCEvent(command.upper(),
-                       args,
-                       UserPrefix(nick,
-                                  username,
-                                  hostname),
-                       trailing)
+        msg = IRCCore.packetAsObject(command.upper(),
+                                     args,
+                                     f"{nick}!{username}@{hostname}",   # hack
+                                     trailing)
 
         for module_name, module in self.moduleInstances.items():
             for hook in module.irchooks:

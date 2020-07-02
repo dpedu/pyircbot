@@ -18,7 +18,7 @@ from io import StringIO
 from time import time
 
 
-IRCEvent = namedtuple("IRCEvent", "command args prefix trailing")
+IRCEvent = namedtuple("IRCEvent", "command args prefix trailing replyto")
 UserPrefix = namedtuple("UserPrefix", "nick username hostname")
 ServerPrefix = namedtuple("ServerPrefix", "hostname")
 
@@ -258,6 +258,7 @@ class IRCCore(object):
             self.log.warning("Invalid hook - %s" % command)
             return False
 
+    @staticmethod
     def packetAsObject(command, args, prefix, trailing):
         """Given an irc message's args, prefix, and trailing data return an object with these properties
 
@@ -269,9 +270,15 @@ class IRCCore(object):
         :type trailing: str
         :returns: object -- a IRCEvent object with the ``args``, ``prefix``, ``trailing``"""
 
-        return IRCEvent(command, args,
-                        IRCCore.decodePrefix(prefix) if prefix else None,
-                        trailing)
+        prefix = IRCCore.decodePrefix(prefix) if prefix else None
+
+        replyto = None
+        if command == "PRIVMSG":
+            # prefix will always be set for PRIVMSG
+            # TODO server side fuzzing
+            replyto = args[0] if args[0].startswith("#") else prefix.nick
+
+        return IRCEvent(command, args, prefix, trailing, replyto)
 
     " Utility methods "
     @staticmethod

@@ -5,7 +5,7 @@ from threading import Thread
 from random import randint
 from pyircbot import PyIRCBot
 from pyircbot.pyircbot import PrimitiveBot
-from pyircbot.irccore import IRCEvent, UserPrefix
+from pyircbot.irccore import IRCEvent, UserPrefix, IRCCore
 from unittest.mock import MagicMock
 from tests.miniircd import Server as MiniIrcServer
 
@@ -27,10 +27,10 @@ class FakeBaseBot(PrimitiveBot):
         """
         Feed a message into the bot.
         """
-        msg = IRCEvent(cmd,
-                       args,
-                       UserPrefix(*sender),
-                       trailing)
+        msg = IRCCore.packetAsObject(cmd,
+                                     args,
+                                     f"{sender[0]}!{sender[1]}@{sender[2]}",   # hack
+                                     trailing)
 
         for module_name, module in self.moduleInstances.items():# TODO dedupe this block across the various base classes
             for hook in module.irchooks:
