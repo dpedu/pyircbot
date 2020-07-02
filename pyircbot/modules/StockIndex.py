@@ -71,11 +71,11 @@ class StockIndex(ModuleBase):
 
         warning = "" if time() - self.last_update < warn_thresh else " \x030(quote is out-of-date)"
 
-        self.bot.act_PRIVMSG(to, "{}{} ${:.2f} {}{:.2f} ({:.2f}%){}{}".format(color,
-                                                                              symbol,
-                                                                              index["price"],
-                                                                              plusmin,
-                                                                              change,
-                                                                              percentchange,
-                                                                              arrow,
-                                                                              warning))
+        self.bot.act_PRIVMSG(to, "{} ${:,.2f} {}{}{:,.2f} ({:.2f}%){}{}".format(symbol,
+                                                                                index["price"],
+                                                                                color,
+                                                                                plusmin,
+                                                                                change,
+                                                                                percentchange,
+                                                                                arrow,
+                                                                                warning))
