@@ -58,7 +58,12 @@ class StockIndex(ModuleBase):
     @command("nasdaq", allow_private=True)
     def cmd_nasdaq(self, message, command):
         self.send_quote("^IXIC", "NASDAQ", message.replyto)
-
+        
+    @info("vix", "get the current value of the vix/fear index", cmds=["vix"])
+    @command("vix", allow_private=True)
+    def cmd_vix(self, message, command):
+        self.send_quote("^VIX", "VIX", message.replyto)
+        
     def send_quote(self, key, symbol, to):
         index = self.cache[key]
         is_gain = index["price"] >= index["previousClose"]
