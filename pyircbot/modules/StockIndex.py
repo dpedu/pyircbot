@@ -62,7 +62,7 @@ class StockIndex(ModuleBase):
     @info("vix", "get the current value of the vix/fear index", cmds=["vix"])
     @command("vix", allow_private=True)
     def cmd_vix(self, message, command):
-        self.send_quote("^vix", "VIX", message.replyto)
+        self.send_quote("^VIX", "VIX", message.replyto)
         
     def send_quote(self, key, symbol, to):
         index = self.cache[key]
